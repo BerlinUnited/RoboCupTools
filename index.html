@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="test">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+  <script src="lib/player/jquery.js"></script>
+  
+  <script src="lib/angular.min.js"></script>
+  <script src="lib/angular-sanitize.min.js"></script>
+  <script src="lib/tv4.min.js"></script>
+  <script src="lib/ObjectPath.js"></script>
+  
+  <script src="lib/schema-form.min.js"></script>
+  <script src="lib/bootstrap-decorator.js"></script>
+  
+  <script src="lib/player/mediaelement-and-player.min.js"></script>
+  <link rel="stylesheet" href="lib/player/mediaelementplayer.css" />
+  
+  <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css" />
+  <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+  
+  
+  <script type="text/javascript">
+  
+  function PeriodicPlayer(player) 
+  { 
+    this.player = player;    
+    this.currentStopListener = null;
+
+    this.setPeriod = function(start,end) 
+    {
+      player.pause();
+      if(this.currentStopListener != null) {
+        this.player.media.removeEventListener("timeupdate", this.currentStopListener, false);
+      }
+      
+      this.currentStopListener = function() {
+       if (this.currentTime > end) {
+            player.setCurrentTime(start);
+            this.pause();
+        }
+      };
+      
+      player.media.addEventListener("timeupdate", this.currentStopListener, false);
+      player.setCurrentTime(start);
+    }
+  }
+  
+  var playerGlobal;
+  $( document ).ready(function() {
+    $('#player').mediaelementplayer({
+      success: function(media, node, player) {
+        $('#' + node.id + '-mode').html('mode: ' + player.pluginType);
+        
+        media.addEventListener('loadedmetadata', function() {
+          playerGlobal = new PeriodicPlayer(player);
+        });
+      }
+    });
+  });
+
+  </script>
+  
+  <script type="text/javascript">
+    var app = angular.module('test', ['schemaForm']);
+    
+    app.controller('MainController', function($rootScope, $scope, $compile) {
+    
+      $scope.model = {};
+      $scope.selected = null;
+    
+      $scope.openFile = function(input) {
+      
+        var reader = new FileReader();
+        
+        reader.onload = function(){
+          jsonData = JSON.parse(reader.result);
+          $scope.model = jsonData;
+          
+          for (var i = 0; i < jsonData.intervals.length; i++) 
+          {
+            var v = jsonData.intervals[i];
+            if (typeof v.labels === 'undefined') {
+              v.labels = {};
+            }
+            $scope.addPeriod(v);
+          }
+          
+          $('[data-toggle="tooltip"]').tooltip();
+        };
+        reader.readAsText(input.files[0]);
+      };
+      
+      $scope.addPeriod = function(data) 
+      {
+        max_time = playerGlobal.player.media.duration;
+        width = Math.min((data.end-data.begin)/max_time*100, 100);
+        
+        var str = '<a href="#" class="'+data.type+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.label+'"></a>';
+        var o = $compile(str)($scope);
+
+        o[0].onclick = function() {
+          playerGlobal.setPeriod(data.begin,data.end);
+          $rootScope.$broadcast('setPeriod', data);
+          o.addClass("selected");
+          
+          if($scope.selected != null) {
+            $scope.selected.removeClass("selected");
+          }
+          $scope.selected = o;
+          
+          /*
+          for (var i = 0; i < $scope.model.intervals.length; i++) 
+          {
+            var v = $scope.model.intervals[i];
+            for(var j = 0; j < v.labels.labels.length; j++) {
+              var l = v.labels.labels[j];
+            }
+          }*/
+          
+        };
+        
+        angular.element(document.getElementById('timeline')).append(o);
+      };
+      
+      $scope.save = function(event) {
+        var str = JSON.stringify($scope.model, null, '  ');
+        console.log(str);
+        event.target.href = 'data:text/json;charset=utf8,' + encodeURIComponent(str);
+      }
+    });
+    
+    
+    app.controller('FormController', function($scope) {
+      
+      
+      var labelMap = [
+        {"value":"pushed",   "name": "<b>pushed</b> by opponent while kicking"},
+        {"value":"fall",     "name": "<b>fall</b> after kick"},
+        {"value":"ballmiss", "name": "kick empty space just after ball has left"},
+        {"value":"touch",    "name": "<b>touch</b> the ball before kick"},
+        {"value":"moved",    "name": "<b>moved</b> ball by the kick"},
+        {"value":"miss",     "name": "ball was <b>not moved</b> by the kick"},
+        {"value":"ghost",    "name": "empty space kick"}
+      ];
+      
+      var myTitle = "Labels for different kick actions";
+      
+      
+      $scope.schema = {
+        "type" : "object", 
+        "properties": {
+          "labels": {
+            "type": "array", 
+            "title": myTitle,
+            "items": {"type": "string", "enum": labelMap.map(i => i.value)}
+          },
+          "comment": {"type": "string", "title": "Comment"}
+        }
+      };
+      
+      $scope.form = [
+        {
+          "key": "labels",
+          "type": "checkboxes",
+          "titleMap": labelMap
+        },
+        {
+          "key": "comment",
+          "type": "textarea",
+          "placeholder": "Make a comment"
+        }
+      ];
+
+      $scope.model = {};
+      
+      /*
+      $scope.onSubmit = function(form) {
+      
+        $scope.$broadcast('schemaFormValidate');
+        
+        if (form.$valid) {
+          x = JSON.stringify($scope.model);
+          v = 3;
+          
+          tmp = '{"labels":["fall after kick","touch the ball before kick","kick successful"],"comment":"ewfwefw"}';
+        }
+      }*/
+  
+      $scope.$on('setPeriod', function(event, data) {
+          $scope.model = data.labels;
+          $scope.$apply();
+      });
+  
+    });
+  </script>
+  
+  </code>
+  
+<style>
+
+body {
+  padding-top: 50px;
+}
+
+.timeline {
+  width: 100%;
+  height: 30px;
+  border: solid 1px #999;
+  background-color:#eee;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top:1%;
+  clear: both;
+}
+
+.timeline a {
+  display: inline-block;
+  border:solid 0px #000;
+  margin:0px;
+  padding:0px;
+  width:100%;
+  height:100%;
+}
+
+.timeline a.button {
+  background-color:#66a;
+}
+
+.timeline a.blank {
+  background-color:none;
+}
+
+.timeline a.selected {
+  background-color:#f00;
+}
+
+</style>
+  
+</head>
+
+<body>
+
+<div class="container-fluid" ng-controller="MainController">
+
+  <div class="row">
+    <div class="col-sm-1"></div>
+    <div class="col-sm-2">
+      <div ng-controller="FormController"> 
+        <form name="labels" sf-schema="schema" sf-form="form" sf-model="model" ng-submit="onSubmit(labels)"></form>
+      </div>
+    </div>
+    
+    <div class="col-sm-8">
+        <video src="./log/half1.MP4" width="640" height="480" style="width: 100%; height: 100%;" id="player"></video>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-1"></div>
+    <div class="col-sm-10">
+      <div id="timeline" class="timeline"></div>
+
+      <input type='file' onchange="angular.element(this).scope().openFile(this)">
+      <a ng-click="save($event)" download="labels.json" href="#">Export</a>
+    </div>
+  </div>
+  
+</div>
+
+</body>
+</html>
