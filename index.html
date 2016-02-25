@@ -263,7 +263,7 @@ body {
     </div>
     
     <div class="col-sm-3">
-      <canvas id="canvas" width="7400" height="10040" style="width: 100%; height: 100%;"></canvas>
+      <canvas id="canvas" width="7400" height="10400" style="width: 100%; height: 100%;"></canvas>
     </div>
   </div>
 
@@ -283,10 +283,115 @@ body {
 function draw() {
   var canvas = document.getElementById('canvas');
   if (canvas.getContext){
-    var ctx = canvas.getContext('2d');
+    var width = canvas.width;
+    var height = canvas.height;
 
-    ctx.fillStyle="#00AA00";
-    ctx.fillRect(0,0,7400, 10040);
+    var xOwnGround = 9000;
+    var xOppGround = 700;
+    var yRightBorder = 6000;
+    var yLeftBorder = 700;
+
+    var ctx = canvas.getContext('2d');
+      ctx.beginPath();
+      ctx.rect(0,0,7400,10400);
+      ctx.fillStyle = '#00AA00';
+      ctx.fill();
+      //Field Borders      
+      ctx.rect(yLeftBorder,xOppGround,yRightBorder,xOwnGround)
+      ctx.lineWidth = 50;
+      ctx.strokeStyle = 'white';
+      ctx.stroke();
+
+      //Center Line
+      ctx.beginPath();
+      ctx.moveTo(yLeftBorder, 10400/2);
+      ctx.lineTo(7400-700, 10400/2);
+      ctx.stroke();
+      //Opp Penalty  Mark
+      ctx.translate(width/2,height/2);
+      ctx.beginPath();
+      ctx.arc(0, -1300, 50, 0, 2 * Math.PI, false);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+      ctx.stroke();
+      //Own Penalty  Mark
+      ctx.beginPath();
+      ctx.arc(0, 1300, 50, 0, 2 * Math.PI, false);
+      ctx.fillStyle = 'white';
+      ctx.fill();
+      ctx.stroke();
+      //Circle
+      ctx.beginPath();
+      ctx.arc(0, 0, 700, 0, 2 * Math.PI, false);
+      ctx.stroke();
+      //Own Goal Posts
+      ctx.beginPath();
+      ctx.arc(750, 4500, 50, 0, 2 * Math.PI, false);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(-750, 4500, 50, 0, 2 * Math.PI, false);
+      ctx.stroke();
+      //Own Goal
+      ctx.beginPath();
+      ctx.moveTo(750, 4500);
+      ctx.lineTo(750, 4500+500);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-750, 4500);
+      ctx.lineTo(-750, 4500+500);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-750, 4500+500);
+      ctx.lineTo(750, 4500+500);
+      ctx.stroke();
+      //Opp Goal Posts
+      ctx.beginPath();
+      ctx.arc(750, -4500, 50, 0, 2 * Math.PI, false);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(-750, -4500, 50, 0, 2 * Math.PI, false);
+      ctx.stroke();
+      //Opp Goal
+      ctx.beginPath();
+      ctx.moveTo(750, -4500);
+      ctx.lineTo(750, -4500-500);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-750, -4500);
+      ctx.lineTo(-750, -4500-500);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-750, -4500-500);
+      ctx.lineTo(750, -4500-500);
+      ctx.stroke();
+
+      //Own Penalty Area
+      ctx.beginPath();
+      ctx.moveTo(1100, 4500);
+      ctx.lineTo(1100, 4500-500);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-1100, 4500);
+      ctx.lineTo(-1100, 4500-500);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-1100, 4500-500);
+      ctx.lineTo(1100, 4500-500);
+      ctx.stroke();
+
+      //Opp Penalty Area
+      ctx.beginPath();
+      ctx.moveTo(1100, -4500);
+      ctx.lineTo(1100, -4500+500);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-1100, -4500);
+      ctx.lineTo(-1100, -4500+500);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-1100, -4500+500);
+      ctx.lineTo(1100, -4500+500);
+      ctx.stroke();
   }
 }
 
