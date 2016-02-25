@@ -278,7 +278,9 @@ body {
   </div>
   
 </div>
-
+<div style="display:none;">
+  <img id="nao" src="nao.png">
+</div>
 <script>
 function draw() {
   var canvas = document.getElementById('canvas');
@@ -308,7 +310,7 @@ function draw() {
       ctx.lineTo(7400-700, 10400/2);
       ctx.stroke();
       //Opp Penalty  Mark
-      ctx.translate(width/2,height/2);
+      ctx.translate((width/2),(height/2));
       ctx.beginPath();
       ctx.arc(0, -1300, 50, 0, 2 * Math.PI, false);
       ctx.fillStyle = 'white';
@@ -392,6 +394,13 @@ function draw() {
       ctx.moveTo(-1100, -4500+500);
       ctx.lineTo(1100, -4500+500);
       ctx.stroke();
+
+      var image = document.getElementById("nao");
+      //length: 557, height = 865
+      ctx.scale(0.7,0.7);
+      ctx.rotate(-90*Math.PI/180);
+      ctx.drawImage(image, (-557/2)-450, (-865/2)); // consider the rotation
+      
   }
 }
 
