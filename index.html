@@ -95,6 +95,11 @@
       
       $scope.addPeriod = function(data) 
       {
+        var video_offset = 12.993253731;
+        var log_offset = 98.408;
+        var offset = video_offset - log_offset;
+        
+      
         max_time = playerGlobal.player.media.duration;
         width = Math.min((data.end-data.begin)/max_time*100, 100);
         
@@ -102,7 +107,7 @@
         var o = $compile(str)($scope);
 
         o[0].onclick = function() {
-          playerGlobal.setPeriod(data.begin,data.end);
+          playerGlobal.setPeriod(data.begin + offset, data.end + offset);
           $rootScope.$broadcast('setPeriod', data);
           o.addClass("selected");
           
@@ -246,21 +251,25 @@ body {
 <div class="container-fluid" ng-controller="MainController">
 
   <div class="row">
-    <div class="col-sm-1"></div>
+    
     <div class="col-sm-2">
       <div ng-controller="FormController"> 
         <form name="labels" sf-schema="schema" sf-form="form" sf-model="model" ng-submit="onSubmit(labels)"></form>
       </div>
     </div>
     
-    <div class="col-sm-8">
-        <video src="./log/half1.MP4" width="640" height="480" style="width: 100%; height: 100%;" id="player"></video>
+    <div class="col-sm-7">
+        <video src="./log/20150426-Game-NaoDevils/half1.MP4" width="640" height="480" style="width: 100%; height: 100%;" id="player"></video>
+    </div>
+    
+    <div class="col-sm-3">
+      <canvas id="canvas" width="7400" height="10040" style="width: 100%; height: 100%;"></canvas>
     </div>
   </div>
 
   <div class="row">
-    <div class="col-sm-1"></div>
-    <div class="col-sm-10">
+    
+    <div class="col-sm-12">
       <div id="timeline" class="timeline"></div>
 
       <input type='file' onchange="angular.element(this).scope().openFile(this)">
@@ -270,5 +279,18 @@ body {
   
 </div>
 
+<script>
+function draw() {
+  var canvas = document.getElementById('canvas');
+  if (canvas.getContext){
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle="#00AA00";
+    ctx.fillRect(0,0,7400, 10040);
+  }
+}
+
+draw();
+</script>
 </body>
 </html>
