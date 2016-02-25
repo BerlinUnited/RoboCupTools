@@ -294,6 +294,10 @@ function draw() {
     var yLeftBorder = 700;
 
     var ctx = canvas.getContext('2d');
+    if(typeof InstallTrigger !== 'undefined'){
+      //HACK: Scales the canvas if browser is firefox
+      ctx.scale(0.7,0.7);
+    } 
       ctx.beginPath();
       ctx.rect(0,0,7400,10400);
       ctx.fillStyle = '#00AA00';
