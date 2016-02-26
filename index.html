@@ -282,7 +282,7 @@ body {
   <img id="nao" src="nao.png">
 </div>
 <script>
-function draw() {
+function draw(x,y,rot) {
   var canvas = document.getElementById('canvas');
   if (canvas.getContext){
     var width = canvas.width;
@@ -293,7 +293,15 @@ function draw() {
     var yRightBorder = 6000;
     var yLeftBorder = 700;
 
+    var goalPostRadius = 50;
+    var borderStripWidth = 700;
+    var lineWidth = 50;
+
+    var image = document.getElementById("nao");
+
     var ctx = canvas.getContext('2d');
+    ctx.restore();
+    ctx.save();
     if(typeof InstallTrigger !== 'undefined'){
       //HACK: Scales the canvas if browser is firefox
       ctx.scale(0.7,0.7);
@@ -304,14 +312,14 @@ function draw() {
       ctx.fill();
       //Field Borders      
       ctx.rect(yLeftBorder,xOppGround,yRightBorder,xOwnGround)
-      ctx.lineWidth = 50;
+      ctx.lineWidth = lineWidth;
       ctx.strokeStyle = 'white';
       ctx.stroke();
 
       //Center Line
       ctx.beginPath();
-      ctx.moveTo(yLeftBorder, 10400/2);
-      ctx.lineTo(7400-700, 10400/2);
+      ctx.moveTo(yLeftBorder, height/2);
+      ctx.lineTo(7400-borderStripWidth, height/2);
       ctx.stroke();
       //Opp Penalty  Mark
       ctx.translate((width/2),(height/2));
@@ -328,14 +336,14 @@ function draw() {
       ctx.stroke();
       //Circle
       ctx.beginPath();
-      ctx.arc(0, 0, 700, 0, 2 * Math.PI, false);
+      ctx.arc(0, 0, borderStripWidth, 0, 2 * Math.PI, false);
       ctx.stroke();
       //Own Goal Posts
       ctx.beginPath();
-      ctx.arc(750, 4500, 50, 0, 2 * Math.PI, false);
+      ctx.arc(750, 4500, goalPostRadius, 0, 2 * Math.PI, false);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(-750, 4500, 50, 0, 2 * Math.PI, false);
+      ctx.arc(-750, 4500, goalPostRadius, 0, 2 * Math.PI, false);
       ctx.stroke();
       //Own Goal
       ctx.beginPath();
@@ -352,10 +360,10 @@ function draw() {
       ctx.stroke();
       //Opp Goal Posts
       ctx.beginPath();
-      ctx.arc(750, -4500, 50, 0, 2 * Math.PI, false);
+      ctx.arc(750, -4500, goalPostRadius, 0, 2 * Math.PI, false);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(-750, -4500, 50, 0, 2 * Math.PI, false);
+      ctx.arc(-750, -4500, goalPostRadius, 0, 2 * Math.PI, false);
       ctx.stroke();
       //Opp Goal
       ctx.beginPath();
@@ -399,16 +407,19 @@ function draw() {
       ctx.lineTo(1100, -4500+500);
       ctx.stroke();
 
-      var image = document.getElementById("nao");
-      //length: 557, height = 865
+      //Draw Robot: Image-length: 557, Image-height = 865
       ctx.scale(0.7,0.7);
-      ctx.rotate(-90*Math.PI/180);
-      ctx.drawImage(image, (-557/2)-450, (-865/2)); // consider the rotation
-      
-  }
-}
+      ctx.rotate(-rot*Math.PI/180);
+      ctx.drawImage(image, (-x/2)-450, (-y/2)); //      
+  }//end if  
+}//end draw
+function updateCanvas(){
 
-draw();
+      draw(557,865,90);
+      setTimeout(function(){draw(3000,865,90)}, 1000);
+      //draw(3000,865,90);
+  }
+updateCanvas();
 </script>
 </body>
 </html>
