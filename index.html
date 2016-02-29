@@ -122,15 +122,6 @@
           console.log(data.pose.x, data.pose.y, data.pose.r);
           draw(data.pose.x, data.pose.y, data.pose.r, data.ball.x, data.ball.y);
           
-          /*
-          for (var i = 0; i < $scope.model.intervals.length; i++) 
-          {
-            var v = $scope.model.intervals[i];
-            for(var j = 0; j < v.labels.labels.length; j++) {
-              var l = v.labels.labels[j];
-            }
-          }*/
-          
         };
         
         angular.element(document.getElementById('timeline')).append(o);
@@ -206,6 +197,27 @@
       });
   
     });
+    
+    app.directive('timeline', function() {
+      return {
+        restrict: 'AE',
+        replace: true,
+        template: '<div id="timeline" class="timeline"></div>',
+        link: function(scope, elem, attrs) {
+          alert(attrs.file);
+          $.getJSON( attrs.file, function( data ) {
+            for (var i = 0; i < jsonData.intervals.length; i++) 
+            {
+              var v = jsonData.intervals[i];
+              if (typeof v.labels === 'undefined') {
+                v.labels = {};
+              }
+              //$scope.addPeriod(v);
+            }
+          });
+        }
+      };
+    });
   </script>
   
   </code>
@@ -236,6 +248,7 @@
   <div class="row">
     <div class="col-sm-12">
       <div id="timeline" class="timeline"></div>
+      <timeline file="log/labels.json"></timeline>
 
       <input type='file' onchange="angular.element(this).scope().openFile(this)">
       <a ng-click="save($event)" download="labels.json" href="#">Export</a>
