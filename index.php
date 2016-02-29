@@ -1,3 +1,26 @@
+<?php
+  include 'php/listcontents.php';
+  
+  $game = NULL;
+  
+  foreach ($games as $key => $g) {
+		if(sizeof($g->logs) > 0) {
+			
+      /*
+			echo '<div><a href="'.$g->video_path.'">'.$g->name.' - '.$g->half.'</a>';
+			
+			foreach ($g->logs as $key => $log) {
+				echo '<div><a href="'.$log->json.'">'.$g->name.'</a></div>';
+			}
+			
+			echo '</div>';
+      */
+      $game = $g;
+      break;
+		}
+	}
+?>
+
 <!DOCTYPE html>
 <html lang="en" ng-app="test">
 <head>
@@ -102,9 +125,9 @@
       
       $scope.addPeriod = function(timeline, data) 
       {
-        var video_offset = 12.993253731;
-        var log_offset = 98.408;
-        var offset = video_offset - log_offset;
+        //var video_offset = 12.993253731;
+        //var log_offset = 98.408;
+        //var offset = video_offset - log_offset;
         
         max_time = 600;//playerGlobal.player.media.duration;
         width = Math.min((data.end-data.begin)/max_time*100, 100);
@@ -201,6 +224,19 @@
   
     });
     
+    
+    app.controller('PlayerController', function($scope) {
+      $scope.$on('setPeriod', function(event, data) {
+        var video_offset = 12.993253731;
+        var log_offset = 98.408;
+        var offset = video_offset - log_offset;
+        
+        
+        playerGlobal.setPeriod(data.begin + offset, data.end + offset);
+
+      });
+    });
+    
     app.directive('timeline', function($compile) {
       return {
         restrict: 'AE',
@@ -242,7 +278,9 @@
     </div>
     
     <div class="col-sm-7">
-        <video src="./log/20150426-Game-NaoDevils/half1.MP4" width="640" height="480" style="width: 100%; height: 100%;" id="player"></video>
+      <div ng-controller="PlayerController">
+        <video src="<?php echo $g->video_path; ?>" width="640" height="480" style="width: 100%; height: 100%;" id="player"></video>
+      </div>
     </div>
     
     <div class="col-sm-3">
@@ -252,10 +290,12 @@
 
   <div class="row">
     <div class="col-sm-12">
-      <div data-timeline data-file="log/labels.json"></div>
-      <div data-timeline data-file="log/labels.json"></div>
-      <div data-timeline data-file="log/labels.json"></div>
-      
+      <?php
+      //<div data-timeline data-file="log/labels.json"></div>
+        foreach ($g->logs as $key => $log) {
+          echo '<div data-timeline data-file="'.$log->json.'"></div>';
+        }
+      ?>
       <a ng-click="save($event)" download="labels.json" href="#">Export</a>
     </div>
   </div>
