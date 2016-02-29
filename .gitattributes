@@ -1,0 +1,34 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# These files are text and should be normalized (convert crlf =&gt; lf)
+*.h      text diff=cpp
+*.hpp    text diff=cpp
+*.cpp    text diff=cpp
+*.c      text diff=cpp
+*.cc     text diff=cpp
+*.java	 text diff=java
+
+*.lua    text
+*.proto  text
+
+# Declare files that will always have LF line endings on checkout.
+*.sh     text eol=lf
+*.bat    text
+*.cfg    text eol=lf
+*.mef    text eol=lf
+*.xml    text
+*.properties text
+*.form   text
+*.html   text
+*.js     text
+*.css    text
+
+# Images should be treated as binary
+# (binary is a macro for -text -diff)
+*.png    binary
+*.jpg    binary
+*.jar    binary
+*.zip    binary
+*.wav    binary
+*.mp3    binary

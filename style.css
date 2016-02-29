@@ -1,0 +1,35 @@
+body {
+  padding-top: 50px;
+}
+
+.timeline {
+  width: 100%;
+  height: 30px;
+  border: solid 1px #999;
+  background-color:#eee;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top:1%;
+  clear: both;
+}
+
+.timeline a {
+  display: inline-block;
+  border:solid 0px #000;
+  margin:0px;
+  padding:0px;
+  width:100%;
+  height:100%;
+}
+
+.timeline a.button {
+  background-color:#66a;
+}
+
+.timeline a.blank {
+  background-color:none;
+}
+
+.timeline a.selected {
+  background-color:#f00;
+}
