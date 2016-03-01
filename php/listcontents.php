@@ -13,7 +13,7 @@ class Log
 	}
   
   function parse_sync() {
-    // TODO: read and parse the sync file
+    // TODO: read and parse the file $this->sync
     $this->video_offset = 12.993253731;
     $this->log_offset = 270.937;
   }
