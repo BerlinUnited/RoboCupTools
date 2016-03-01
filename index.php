@@ -123,20 +123,19 @@
       };
       */
       
-      $scope.addPeriod = function(timeline, data) 
+      $scope.addPeriod = function(timeline, data, duration) 
       {
         //var video_offset = 12.993253731;
         //var log_offset = 98.408;
         //var offset = video_offset - log_offset;
         
-        max_time = 600;//playerGlobal.player.media.duration;
-        width = Math.min((data.end-data.begin)/max_time*100, 100);
+        //var duration = playerGlobal.player.media.duration;
+        var width = Math.min((data.end-data.begin)/duration*100, 100);
         
         var str = '<a href="#" class="'+data.type+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.label+'"></a>';
         var o = $compile(str)($scope);
 
         o[0].onclick = function() {
-          //playerGlobal.setPeriod(data.begin + offset, data.end + offset);
           $rootScope.$broadcast('setPeriod', data);
           o.addClass("selected");
           
@@ -144,10 +143,6 @@
             $scope.selected.removeClass("selected");
           }
           $scope.selected = o;
-          
-          // draw the robot position
-          console.log(data.pose.x, data.pose.y, data.pose.r);
-          draw(data.pose.x, data.pose.y, data.pose.r, data.ball.x, data.ball.y);
         };
         
         timeline.append(o);
@@ -163,7 +158,7 @@
     
     app.controller('FormController', function($scope) {
       
-      
+      // TODO: load those from file
       var labelMap = [
         {"value":"pushed",   "name": "<b>pushed</b> by opponent while kicking"},
         {"value":"fall",     "name": "<b>fall</b> after kick"},
@@ -237,14 +232,32 @@
       });
     });
     
+    app.controller('DrawingController', function($scope) {
+      $scope.$on('setPeriod', function(event, data) {
+        //draw the robot position
+        //console.log(data.pose.x, data.pose.y, data.pose.r);
+        draw(data.pose.x, data.pose.y, data.pose.r, data.ball.x, data.ball.y);
+      });
+    });
+    
+    
     app.directive('timeline', function($compile) {
       return {
         restrict: 'AE',
         replace: true,
         template: '<div id="timeline" class="timeline"></div>',
-        link: function(scope, elem, attrs) {
+        link: function(scope, element, attrs) {
 
           $.getJSON( attrs.file, function( data ) {
+            
+            // HACK: estimate the duration of the logfile
+            var duration = 0;
+            for (var i = 0; i < data.intervals.length; i++) 
+            {
+              var v = data.intervals[i];
+              duration = duration + (v.end-v.begin);
+            }
+            
             for (var i = 0; i < data.intervals.length; i++) 
             {
               var v = data.intervals[i];
@@ -252,7 +265,7 @@
                 v.labels = {};
               }
               
-              scope.addPeriod(elem, v);
+              scope.addPeriod(element, v, duration);
               scope.model = data;
             }
           });
@@ -284,7 +297,9 @@
     </div>
     
     <div class="col-sm-3">
-      <canvas id="canvas" width="7400" height="10400" style="width: 100%; height: 100%;"></canvas>
+      <div ng-controller="DrawingController">
+        <canvas id="canvas" width="7400" height="10400" style="width: 100%; height: 100%;"></canvas>
+      </div>
     </div>
   </div>
 
