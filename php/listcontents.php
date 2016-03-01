@@ -114,7 +114,7 @@ function show_game($path, $game_name, &$games) {
 		
 		$file_path = $path . "/" . $value;
 		//is a video
-		if(is_file($file_path) && strlen($value) > 4 && substr($value, -4) == ".mp4")
+		if(!is_dir($file_path) && strlen($value) > 4 && substr($value, -4) == ".mp4")
 		{
 			$g = new Game();
 			$g->name = $game_name;
