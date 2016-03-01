@@ -123,11 +123,9 @@
       };
       */
       
-      $scope.addPeriod = function(timeline, data, duration) 
+      $scope.addPeriod = function(timeline, data, duration, log_offset, video_offset) 
       {
-        //var video_offset = 12.993253731;
-        //var log_offset = 98.408;
-        //var offset = video_offset - log_offset;
+        var offset = video_offset - log_offset;
         
         //var duration = playerGlobal.player.media.duration;
         var width = Math.min((data.end-data.begin)/duration*100, 100);
@@ -136,7 +134,7 @@
         var o = $compile(str)($scope);
 
         o[0].onclick = function() {
-          $rootScope.$broadcast('setPeriod', data);
+          $rootScope.$broadcast('setPeriod', data, offset);
           o.addClass("selected");
           
           if($scope.selected != null) {
@@ -221,11 +219,7 @@
     
     
     app.controller('PlayerController', function($scope) {
-      $scope.$on('setPeriod', function(event, data) {
-        var video_offset = 12.993253731;
-        var log_offset = 98.408;
-        var offset = video_offset - log_offset;
-        
+      $scope.$on('setPeriod', function(event, data, offset) {
         
         playerGlobal.setPeriod(data.begin + offset, data.end + offset);
 
@@ -265,7 +259,7 @@
                 v.labels = {};
               }
               
-              scope.addPeriod(element, v, duration);
+              scope.addPeriod(element, v, duration, attrs.logoffset, attrs.videooffset);
               scope.model = data;
             }
           });
@@ -308,7 +302,7 @@
       <?php
       //<div data-timeline data-file="log/labels.json"></div>
         foreach ($g->logs as $key => $log) {
-          echo '<div data-timeline data-file="'.$log->json.'"></div>';
+          echo '<div data-timeline data-file="'.$log->json.'" data-logoffset="'.$log->log_offset.'" data-videooffset="'.$log->video_offset.'"></div>';
         }
       ?>
       <a ng-click="save($event)" download="labels.json" href="#">Export</a>
