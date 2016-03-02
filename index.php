@@ -123,14 +123,26 @@
       };
       */
       
-      $scope.addPeriod = function(timeline, data, duration, log_offset, video_offset) 
+      $scope.addPeriod = function(timeline, data, duration, log_offset, video_offset, duration_none, num_event) 
       {
         var offset = video_offset - log_offset;
         
         //var duration = playerGlobal.player.media.duration;
-        var width = Math.min((data.end-data.begin)/duration*100, 100);
+        var width = 0;
         
-        var str = '<a href="#" class="'+data.type+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.label+'"></a>';
+        var non_supression = 0.2;
+        var event_duration_add = duration_none * non_supression / num_event;
+        
+        if(data.type == 'none') {
+          width = (data.end-data.begin)/duration*(1.0 - non_supression);
+        } else {
+          width = (data.end-data.begin + event_duration_add)/duration;
+        }
+        width = Math.min(width*100, 100);
+        
+        var c = data.type == 'none'?'blank':'button';
+        
+        var str = '<a href="#" class="'+c+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.type+'"></a>';
         var o = $compile(str)($scope);
 
         o[0].onclick = function() {
@@ -221,7 +233,9 @@
     app.controller('PlayerController', function($scope) {
       $scope.$on('setPeriod', function(event, data, offset) {
         
-        playerGlobal.setPeriod(data.begin + offset, data.end + offset);
+        var t_begin = data.begin + offset;
+        var t_end = data.end + offset + (data.type == 'none'?0.0:3.0);
+        playerGlobal.setPeriod(t_begin, t_end);
 
       });
     });
@@ -246,10 +260,20 @@
             
             // HACK: estimate the duration of the logfile
             var duration = 0;
+            var num_none = 0;
+            var num_event = 0;
+            var duration_none = 0;
             for (var i = 0; i < data.intervals.length; i++) 
             {
               var v = data.intervals[i];
               duration = duration + (v.end-v.begin);
+              
+              if(v.type == 'none') {
+                num_none = num_none + 1;
+                duration_none = duration_none + (v.end-v.begin);
+              } else {
+                num_event = num_event + 1;
+              }
             }
             
             for (var i = 0; i < data.intervals.length; i++) 
@@ -259,7 +283,7 @@
                 v.labels = {};
               }
               
-              scope.addPeriod(element, v, duration, attrs.logoffset, attrs.videooffset);
+              scope.addPeriod(element, v, duration, attrs.logoffset, attrs.videooffset, duration_none, num_event);
               scope.model = data;
             }
           });
