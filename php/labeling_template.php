@@ -296,7 +296,7 @@
     
     <div class="col-sm-7">
       <div ng-controller="PlayerController">
-        <video src="<?php echo $g->video_path; ?>" style="width: 100%; height: 100%;" id="player"></video>
+        <video src="<?php echo $g->video_path; ?>" style="width: 100%;" id="player"></video>
       </div>
     </div>
     

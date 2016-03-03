@@ -36,7 +36,7 @@
       echo '<div class="col-sm-1"></div>';
       echo '<div class="col-sm-3">';
       echo '<h3><a href="./index.php?game='.$key.'">'.$g->name.' - '.$g->half.' ('.count($g->logs).')</a></h3>';
-      echo '<video src="'.$g->video_path.'" style="width: 100%; height: 100%;" id="player"></video>';
+      echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player"></video>';
       echo '</div>';
       echo '</div>';
     }
