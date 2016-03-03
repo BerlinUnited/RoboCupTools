@@ -18,8 +18,8 @@
 <?php
 
 if( $game != NULL) {
-  include 'labeling_template.php';
+  include 'php/labeling_template.php';
 } else {  
-  include 'overview_template.php';
+  include 'php/overview_template.php';
 }
 ?>
