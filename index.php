@@ -16,7 +16,9 @@
 			echo '</div>';
       */
       $game = $g;
-      break;
+      if($key == 1) {
+        break;
+      }
 		}
 	}
 ?>
@@ -298,6 +300,7 @@
 
 <body onload="draw(0,1000,0.1, 1000, 2000);">
 
+<?php echo $g->name; ?>
 <div class="container-fluid" ng-controller="MainController">
 
   <div class="row">
