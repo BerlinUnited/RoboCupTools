@@ -100,31 +100,36 @@
       };
       */
       
-      $scope.addPeriod = function(timeline, data) 
+      $scope.addPeriod = function(timeline, data, duration, log_offset, video_offset, duration_none, num_event) 
       {
-        var video_offset = 12.993253731;
-        var log_offset = 98.408;
         var offset = video_offset - log_offset;
         
-        max_time = 600;//playerGlobal.player.media.duration;
-        width = Math.min((data.end-data.begin)/max_time*100, 100);
+        //var duration = playerGlobal.player.media.duration;
+        var width = 0;
         
-        var str = '<a href="#" class="'+data.type+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.label+'"></a>';
+        var non_supression = 0.2;
+        var event_duration_add = duration_none * non_supression / num_event;
+        
+        if(data.type == 'none') {
+          width = (data.end-data.begin)/duration*(1.0 - non_supression);
+        } else {
+          width = (data.end-data.begin + event_duration_add)/duration;
+        }
+        width = Math.min(width*100, 100);
+        
+        var c = data.type == 'none'?'blank':'button';
+        
+        var str = '<a href="#" class="'+c+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.type+'"></a>';
         var o = $compile(str)($scope);
 
         o[0].onclick = function() {
-          //playerGlobal.setPeriod(data.begin + offset, data.end + offset);
-          $rootScope.$broadcast('setPeriod', data);
+          $rootScope.$broadcast('setPeriod', data, offset);
           o.addClass("selected");
           
           if($scope.selected != null) {
             $scope.selected.removeClass("selected");
           }
           $scope.selected = o;
-          
-          // draw the robot position
-          console.log(data.pose.x, data.pose.y, data.pose.r);
-          draw(data.pose.x, data.pose.y, data.pose.r, data.ball.x, data.ball.y);
         };
         
         timeline.append(o);
@@ -140,7 +145,7 @@
     
     app.controller('FormController', function($scope) {
       
-      
+      // TODO: load those from file
       var labelMap = [
         {"value":"pushed",   "name": "<b>pushed</b> by opponent while kicking"},
         {"value":"fall",     "name": "<b>fall</b> after kick"},
@@ -201,14 +206,53 @@
   
     });
     
+    
+    app.controller('PlayerController', function($scope) {
+      $scope.$on('setPeriod', function(event, data, offset) {
+        
+        var t_begin = data.begin + offset;
+        var t_end = data.end + offset + (data.type == 'none'?0.0:3.0);
+        playerGlobal.setPeriod(t_begin, t_end);
+
+      });
+    });
+    
+    app.controller('DrawingController', function($scope) {
+      $scope.$on('setPeriod', function(event, data) {
+        //draw the robot position
+        //console.log(data.pose.x, data.pose.y, data.pose.r);
+        draw(data.pose.x, data.pose.y, data.pose.r, data.ball.x, data.ball.y);
+      });
+    });
+    
+    
     app.directive('timeline', function($compile) {
       return {
         restrict: 'AE',
         replace: true,
         template: '<div id="timeline" class="timeline"></div>',
-        link: function(scope, elem, attrs) {
+        link: function(scope, element, attrs) {
 
           $.getJSON( attrs.file, function( data ) {
+            
+            // HACK: estimate the duration of the logfile
+            var duration = 0;
+            var num_none = 0;
+            var num_event = 0;
+            var duration_none = 0;
+            for (var i = 0; i < data.intervals.length; i++) 
+            {
+              var v = data.intervals[i];
+              duration = duration + (v.end-v.begin);
+              
+              if(v.type == 'none') {
+                num_none = num_none + 1;
+                duration_none = duration_none + (v.end-v.begin);
+              } else {
+                num_event = num_event + 1;
+              }
+            }
+            
             for (var i = 0; i < data.intervals.length; i++) 
             {
               var v = data.intervals[i];
@@ -216,7 +260,7 @@
                 v.labels = {};
               }
               
-              scope.addPeriod(elem, v);
+              scope.addPeriod(element, v, duration, attrs.logoffset, attrs.videooffset, duration_none, num_event);
               scope.model = data;
             }
           });
@@ -234,6 +278,15 @@
 <div class="container-fluid" ng-controller="MainController">
 
   <div class="row">
+    <div class="col-sm-3">
+      <h3><a href="./index.php"><< BACK</a></h3>
+    </div>
+    <div class="col-sm-3">
+      <h3><?php echo $g->name; ?></h3>
+    </div>
+  </div>
+
+  <div class="row">
     
     <div class="col-sm-2">
       <div ng-controller="FormController"> 
@@ -242,20 +295,26 @@
     </div>
     
     <div class="col-sm-7">
-        <video src="./log/20150426-Game-NaoDevils/half1.MP4" width="640" height="480" style="width: 100%; height: 100%;" id="player"></video>
+      <div ng-controller="PlayerController">
+        <video src="<?php echo $g->video_path; ?>" style="width: 100%; height: 100%;" id="player"></video>
+      </div>
     </div>
     
     <div class="col-sm-3">
-      <canvas id="canvas" width="7400" height="10400" style="width: 100%; height: 100%;"></canvas>
+      <div ng-controller="DrawingController">
+        <canvas id="canvas" width="7400" height="10400" style="width: 100%; height: 100%;"></canvas>
+      </div>
     </div>
   </div>
 
   <div class="row">
     <div class="col-sm-12">
-      <div data-timeline data-file="log/labels.json"></div>
-      <div data-timeline data-file="log/labels.json"></div>
-      <div data-timeline data-file="log/labels.json"></div>
-      
+      <?php
+      //<div data-timeline data-file="log/labels.json"></div>
+        foreach ($g->logs as $key => $log) {
+          echo '<div data-timeline data-file="'.$log->json.'" data-logoffset="'.$log->log_offset.'" data-videooffset="'.$log->video_offset.'"></div>';
+        }
+      ?>
       <a ng-click="save($event)" download="labels.json" href="#">Export</a>
     </div>
   </div>
