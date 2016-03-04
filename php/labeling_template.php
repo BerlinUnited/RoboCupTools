@@ -296,13 +296,13 @@
     
     <div class="col-sm-7">
       <div ng-controller="PlayerController">
-        <video src="<?php echo $g->video_path; ?>" style="width: 100%;" id="player"></video>
+        <video src="<?php echo $g->video_path; ?>" style="width: 100%; height: 100%;" id="player"></video>
       </div>
     </div>
     
     <div class="col-sm-3">
       <div ng-controller="DrawingController">
-        <canvas id="canvas" width="7400" height="10400" style="width: 100%; height: 100%;"></canvas>
+        <canvas id="canvas" width="7400" height="10400" style="width: 100%;"></canvas>
       </div>
     </div>
   </div>
