@@ -147,13 +147,36 @@
       
       // TODO: load those from file
       var labelMap = [
-        {"value":"pushed",   "name": "<b>pushed</b> by opponent while kicking"},
-        {"value":"fall",     "name": "<b>fall</b> after kick"},
-        {"value":"ballmiss", "name": "kick empty space just after ball has left"},
-        {"value":"touch",    "name": "<b>touch</b> the ball before kick"},
-        {"value":"moved",    "name": "<b>moved</b> ball by the kick"},
-        {"value":"miss",     "name": "ball was <b>not moved</b> by the kick"},
-        {"value":"ghost",    "name": "empty space kick"}
+		{"value":"delocalized",   "name": "<b>robot</b> is not localized"},
+		{"value":"wrongBall",     "name": "<b>ball</b> is not in front of robot"},
+		{"value":"badView",      "name": "<b>View</b> is obstructed"},
+		
+		{"value":"moved",    "name": "<b>moved</b> ball by the kick"},
+		{"value":"kick",     "name": "kick motion was performed"},
+	  
+		{"value":"pushed",   "name": "<b>pushed</b> by opponent while kicking"},
+		{"value":"fall",     "name": "<b>fall</b> after kick"},
+		{"value":"touch",    "name": "<b>touch</b> the ball before kick"},
+        {"value":"balldirection",    "name": "<b>ball</b> rolled in the desired direction"},
+		
+		{"value":"goal",    "name": "<b>goal</b> was scored"},
+		{"value":"leftOut",    "name": "<b>ball</b> went outside on the left"},
+		{"value":"rightOut",    "name": "<b>ball</b> went outside on the right"},
+		{"value":"ownOut",    "name": "<b>ball</b> went outside on own groundline"},
+		{"value":"oppOut",    "name": "<b>ball</b> went outside on opponent groundline"},
+		{"value":"ballToOwnGoal",    "name": "<b>ball</b> went closer to own goal"},
+        {"value":"ballToOppGoal",    "name": "<b>ball</b> went closer to opponent goal"},		
+		
+		//Old Labels
+        //{"value":"ballmiss", "name": "kick empty space just after ball has left"},        
+        //{"value":"miss",     "name": "ball was <b>not moved</b> by the kick"},
+        //{"value":"ghost",    "name": "empty space kick"}
+		
+		//maybe add labels Later
+		//{"value":"ballNearOpp", "name": "Ball landed near opponent robot"},  
+		//{"value":"ballNearOwn", "name": "Ball landed near own robot"},
+		//{"value":"gotBallControl", "name": "Kicking robot got the ball in controll again"},
+		//{"value":"BallNearOut", "name": "Ball landed near field borders"},  		
       ];
       
       var myTitle = "Labels for different kick actions";
