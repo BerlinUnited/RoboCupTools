@@ -103,7 +103,7 @@ function list_logs($path, $g)
 	$g->allErrors = $errors;
 }
 
-function is_video(name)
+function is_video($name)
 {
   return strlen($name) > 4 && 
     (substr($name, -4) == ".mp4" || substr($name, -4) == ".MP4");
