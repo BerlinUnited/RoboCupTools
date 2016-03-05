@@ -172,27 +172,25 @@
 
       var labels = {
         "basisLabels" : {"title": "Basis", "labels": [
-          {"value":"delocalized",   "name": "robot is <b>delocalized</b>"},
-          {"value":"noBall",        "name": "<b>no ball</b> in front of robot"},
-          {"value":"badView",       "name": "<b>view</b> is obstructed"}
-        ]},
-        "motionLabels" : {"title": "Motion", "labels": [
-          {"value":"moved",         "name": "<b>moved</b> ball by the kick"},
-          {"value":"kick",          "name": "kick <b>motion</b> was performed"}
+          {"value":"badView",       "name": "<b>view</b> obstructed"},
+          {"value":"kick",          "name": "kick <b>motion</b> performed"},
+          {"value":"delocalized",   "name": "robot <b>delocalized</b>"},
+          {"value":"noBall",        "name": "<b>no ball</b> in front of robot"}
         ]},
         "situationLabels" : {"title": "Situation", "labels": [
+          {"value":"moved",         "name": "ball <b>moved</b> by the kick"},
+          {"value":"touch",         "name": "<b>touch</b> the ball <b>before</b> kick"},
           {"value":"pushed",        "name": "<b>pushed</b> by opponent while kicking"},
           {"value":"fall",          "name": "<b>fall</b> after kick"},
-          {"value":"touch",         "name": "<b>touch</b> the ball before kick"},
-          {"value":"balldirection", "name": "ball rolled in the <b>desired direction</b>"}
+          {"value":"balldirection", "name": "ball moved in the <b>desired direction</b>"}
         ]},
         "resultLabels" : {"title": "Result", "labels": [
-          {"value":"goal",          "name": "<b>goal</b> was scored"},
-          {"value":"sideOut",       "name": "ball went outside on a <b>side line</b>"},
-          {"value":"ownOut",        "name": "ball went outside on <b>own groundline</b>"},
-          {"value":"oppOut",        "name": "ball went outside on <b>opponent groundline</b>"},
-          {"value":"ballToOwnGoal", "name": "ball went <b>closer to own</b> goal"},
-          {"value":"ballToOppGoal", "name": "ball went <b>closer to opponent</b> goal"}
+          {"value":"oppgoal",       "name": "<b>goal</b> scored"},
+          {"value":"sideOut",       "name": "ball out on a <b>side line</b>"},
+          {"value":"ownOut",        "name": "ball out on the <b>own groundline</b>"},
+          {"value":"oppOut",        "name": "ball out on the <b>opponent groundline</b>"},
+          {"value":"ballToOwnGoal", "name": "ball moved <b>closer to own</b> goal"},
+          {"value":"ballToOppGoal", "name": "ball moved <b>closer to opponent</b> goal"}
         ]}
       };
       
