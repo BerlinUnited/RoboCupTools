@@ -103,6 +103,12 @@ function list_logs($path, $g)
 	$g->allErrors = $errors;
 }
 
+function is_video(name)
+{
+  return strlen($name) > 4 && 
+    (substr($name, -4) == ".mp4" || substr($name, -4) == ".MP4");
+}
+
 function show_game($path, $game_name, &$games) {
 	$a = scandir($path);
 	
@@ -114,7 +120,7 @@ function show_game($path, $game_name, &$games) {
 		
 		$file_path = $path . "/" . $value;
 		//is a video
-		if(!is_dir($file_path) && strlen($value) > 4 && substr($value, -4) == ".mp4")
+		if(!is_dir($file_path) && is_video($value))
 		{
 			$g = new Game();
 			$g->name = $game_name;
