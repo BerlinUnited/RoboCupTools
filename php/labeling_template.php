@@ -169,66 +169,65 @@
     app.controller('FormController', function($scope) {
       
       // TODO: load those from file
-      var labelMap = [
-		{"value":"delocalized",   "name": "<b>robot</b> is not localized"},
-		{"value":"wrongBall",     "name": "<b>ball</b> is not in front of robot"},
-		{"value":"badView",      "name": "<b>View</b> is obstructed"},
-		
-		{"value":"moved",    "name": "<b>moved</b> ball by the kick"},
-		{"value":"kick",     "name": "kick motion was performed"},
-	  
-		{"value":"pushed",   "name": "<b>pushed</b> by opponent while kicking"},
-		{"value":"fall",     "name": "<b>fall</b> after kick"},
-		{"value":"touch",    "name": "<b>touch</b> the ball before kick"},
-        {"value":"balldirection",    "name": "<b>ball</b> rolled in the desired direction"},
-		
-		{"value":"goal",    "name": "<b>goal</b> was scored"},
-		{"value":"leftOut",    "name": "<b>ball</b> went outside on the left"},
-		{"value":"rightOut",    "name": "<b>ball</b> went outside on the right"},
-		{"value":"ownOut",    "name": "<b>ball</b> went outside on own groundline"},
-		{"value":"oppOut",    "name": "<b>ball</b> went outside on opponent groundline"},
-		{"value":"ballToOwnGoal",    "name": "<b>ball</b> went closer to own goal"},
-        {"value":"ballToOppGoal",    "name": "<b>ball</b> went closer to opponent goal"},		
-		
-		//Old Labels
-        //{"value":"ballmiss", "name": "kick empty space just after ball has left"},        
-        //{"value":"miss",     "name": "ball was <b>not moved</b> by the kick"},
-        //{"value":"ghost",    "name": "empty space kick"}
-		
-		//maybe add labels Later
-		//{"value":"ballNearOpp", "name": "Ball landed near opponent robot"},  
-		//{"value":"ballNearOwn", "name": "Ball landed near own robot"},
-		//{"value":"gotBallControl", "name": "Kicking robot got the ball in controll again"},
-		//{"value":"BallNearOut", "name": "Ball landed near field borders"},  		
-      ];
+
+      var labels = {
+        "basisLabels" : {"title": "Basis", "labels": [
+          {"value":"delocalized",   "name": "robot is <b>delocalized</b>"},
+          {"value":"noBall",        "name": "<b>no ball</b> in front of robot"},
+          {"value":"badView",       "name": "<b>view</b> is obstructed"}
+        ]},
+        "motionLabels" : {"title": "Motion", "labels": [
+          {"value":"moved",         "name": "<b>moved</b> ball by the kick"},
+          {"value":"kick",          "name": "kick <b>motion</b> was performed"}
+        ]},
+        "situationLabels" : {"title": "Situation", "labels": [
+          {"value":"pushed",        "name": "<b>pushed</b> by opponent while kicking"},
+          {"value":"fall",          "name": "<b>fall</b> after kick"},
+          {"value":"touch",         "name": "<b>touch</b> the ball before kick"},
+          {"value":"balldirection", "name": "ball rolled in the <b>desired direction</b>"}
+        ]},
+        "resultLabels" : {"title": "Result", "labels": [
+          {"value":"goal",          "name": "<b>goal</b> was scored"},
+          {"value":"sideOut",       "name": "ball went outside on a <b>side line</b>"},
+          {"value":"ownOut",        "name": "ball went outside on <b>own groundline</b>"},
+          {"value":"oppOut",        "name": "ball went outside on <b>opponent groundline</b>"},
+          {"value":"ballToOwnGoal", "name": "ball went <b>closer to own</b> goal"},
+          {"value":"ballToOppGoal", "name": "ball went <b>closer to opponent</b> goal"}
+        ]}
+      };
       
-      var myTitle = "Labels for different kick actions";
+      var properties = {};
+      var form = [];
+      
+      for(var key in labels) {
+        var p = labels[key];
+        properties[key] = {
+          "type": "array", 
+          "title": p.title,
+          "items": {"type": "string", "enum": p.labels.map(i => i.value)}
+        };
+        form.push({
+          "key": key,
+          "type": "checkboxes",
+          "titleMap": p.labels
+        });
+      }
+      
+      properties["comment"] = {"type": "string", "title": "Comment"};
+      form.push({
+          "key": "comment",
+          "type": "textarea",
+          "placeholder": "Make a comment"
+        });
+      
       
       
       $scope.schema = {
         "type" : "object", 
-        "properties": {
-          "labels": {
-            "type": "array", 
-            "title": myTitle,
-            "items": {"type": "string", "enum": labelMap.map(i => i.value)}
-          },
-          "comment": {"type": "string", "title": "Comment"}
-        }
+        "properties": properties
       };
       
-      $scope.form = [
-        {
-          "key": "labels",
-          "type": "checkboxes",
-          "titleMap": labelMap
-        },
-        {
-          "key": "comment",
-          "type": "textarea",
-          "placeholder": "Make a comment"
-        }
-      ];
+      $scope.form = form;
 
       $scope.model = {};
       
