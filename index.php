@@ -2,6 +2,11 @@
   include 'php/listcontents.php';
   
   $game = NULL;
+  $name = "blank";
+  
+  if(isset($_GET["name"])) {
+    $name = $_GET["name"];
+  }
   
   if(isset($_GET["game"])) {
     foreach ($games as $key => $g) {

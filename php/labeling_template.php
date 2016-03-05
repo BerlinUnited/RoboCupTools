@@ -73,8 +73,10 @@
     
     app.controller('MainController', function($rootScope, $scope, $compile) {
     
-      $scope.model = {};
+      $scope.model = [];
       $scope.selected = null;
+    
+      $scope.widget = {title: '<?php if($name != "blank") { echo $name; } ?>'};
     
       /*
       $scope.openFile = function(input) {
@@ -99,6 +101,11 @@
         reader.readAsText(input.files[0]);
       };
       */
+      
+      $scope.addLogfileToModel = function(file, data) 
+      {
+        $scope.model.push({"file":file, "data":data});
+      }
       
       $scope.addPeriod = function(timeline, data, duration, log_offset, video_offset, duration_none, num_event) 
       {
@@ -135,10 +142,26 @@
         timeline.append(o);
       };
       
-      $scope.save = function(event) {
-        var str = JSON.stringify($scope.model, null, '  ');
-        console.log(str);
-        event.target.href = 'data:text/json;charset=utf8,' + encodeURIComponent(str);
+      $scope.save = function(event) 
+      {
+        if($scope.widget.title == '') {
+          alert("ERROR: you need to set a tag.");
+        }
+        
+        //console.log($scope.widget.title);
+        for(var i = 0; i < $scope.model.length; ++i) {
+          var log = $scope.model[i];
+          var str = JSON.stringify(log.data, null, '  ');
+          //console.log(log.file);
+          //console.log(str);
+          //event.target.href = 'data:text/json;charset=utf8,' + encodeURIComponent(str);
+          
+          $.post( "php/save.php", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
+           .done(function( result ) {
+              console.log(result);
+            });
+        }
+        //var str = JSON.stringify($scope.model, null, '  ');
       }
     });
     
@@ -284,8 +307,9 @@
               }
               
               scope.addPeriod(element, v, duration, attrs.logoffset, attrs.videooffset, duration_none, num_event);
-              scope.model = data;
             }
+            
+            scope.addLogfileToModel(attrs.file, data);
           });
         }
       };
@@ -301,11 +325,11 @@
 <div class="container-fluid" ng-controller="MainController">
 
   <div class="row">
-    <div class="col-sm-3">
+    <div class="col-sm-2">
       <h3><a href="./index.php"><< BACK</a></h3>
     </div>
-    <div class="col-sm-3">
-      <h3><?php echo $g->name; ?></h3>
+    <div class="col-sm-10">
+      <h3><?php echo $g->name." - ".$g->half; ?></h3>
     </div>
   </div>
 
@@ -335,10 +359,14 @@
       <?php
       //<div data-timeline data-file="log/labels.json"></div>
         foreach ($g->logs as $key => $log) {
-          echo '<div data-timeline data-file="'.$log->json.'" data-logoffset="'.$log->log_offset.'" data-videooffset="'.$log->video_offset.'"></div>';
+          echo '<div data-timeline data-file="'.$log->json[$name].'" data-logoffset="'.$log->log_offset.'" data-videooffset="'.$log->video_offset.'"></div>';
         }
       ?>
-      <a ng-click="save($event)" download="labels.json" href="#">Export</a>
+      
+      <form>
+        Name: <input type="text" name="lastname" data-ng-model="widget.title">
+        <input type="button" value="Submit" ng-click="save($event)">
+      </form>
     </div>
   </div>
   
