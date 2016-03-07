@@ -15,11 +15,16 @@ else if(substr($file, -5) == ".json") {
     $path = "../".$file;
   }
   
+  ini_set('track_errors', 1);
   $myfile = fopen($path, "w");
-  fwrite($myfile, $data);
-  fclose($myfile);
-  
-  echo $path;
+  if ( $myfile ) {
+    fwrite($myfile, $data);
+    fclose($myfile);
+    echo "SUCCESS: writing to ".$path. " -- ".$myfile." ". $data;
+  } else {
+    echo "ERROR: writing to ".$path."\n";
+    echo $php_errormsg;
+  }
 }
 
 ?>

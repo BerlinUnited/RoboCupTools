@@ -173,7 +173,7 @@
       var labels = {
         "basisLabels" : {"title": "Basis", "labels": [
           {"value":"badView",       "name": "<b>view</b> obstructed"},
-          {"value":"kick",          "name": "kick <b>motion</b> performed"},
+          {"value":"nokick",        "name": "<b>no kick motion</b> performed"},
           {"value":"delocalized",   "name": "robot <b>delocalized</b>"},
           {"value":"noBall",        "name": "<b>no ball</b> in front of robot"}
         ]},
