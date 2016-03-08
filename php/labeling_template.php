@@ -126,7 +126,7 @@
         
         var c = data.type == 'none'?'blank':'button';
         
-        var str = '<a href="#" class="'+c+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.type+'"></a>';
+        var str = '<a href="#" class="'+c+' '+data.type+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.type+'"></a>';
         var o = $compile(str)($scope);
 
         o[0].onclick = function() {

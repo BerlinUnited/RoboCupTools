@@ -24,6 +24,9 @@ body {
 
 .timeline a.button {
   background-color:#66a;
+  text-align: center;
+  line-height:30px;
+  color: #000;
 }
 
 .timeline a.blank {
@@ -32,4 +35,24 @@ body {
 
 .timeline a.selected {
   background-color:#f00;
+}
+
+.timeline a.button.turn {
+  background-color:#fff;
+}
+
+.timeline a.button.kick_left {
+  background-color:#eae;
+}
+
+.timeline a.button.kick_right {
+  background-color:#aee;
+}
+
+.timeline a.button.kick_short {
+  background-color:#99e;
+}
+
+.timeline a.button.kick_long {
+  background-color:#66a;
 }
