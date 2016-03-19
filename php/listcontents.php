@@ -156,7 +156,8 @@ function show_game($path, $game_name, &$games) {
       if(is_dir($log_path)) {
         list_logs($log_path, $g);
       } else {
-        echo "no logs!!!";
+        $g->allErrors .= "ERROR: no logs in \"" . $log_path . "\"\n";
+        //echo "no logs!!!";
       }
       
       
