@@ -1,7 +1,9 @@
 <?php
   include 'php/listcontents.php';
   
-  $result = "{\n";
+  
+  $data = array();
+  
   foreach ($games as $key => $g) {
     
     if(sizeof($g->logs) > 0) {
@@ -30,13 +32,10 @@
       
       if(sizeof($game_data) > 0) {
         $name = $g->name.'-'.$g->half;
-        $result .= "\"".$name."\": [\n";
-        $result .= join(",\n",$game_data);
-        $result .= "]\n";
+        array_push($data, "\"".$name."\": [\n".join(",\n",$game_data)."]\n");
       }
     }
   }
-  $result .= "}";
-
-  echo $result;
+  
+  echo "{\n".join(",\n",$data)."}";
 ?>
