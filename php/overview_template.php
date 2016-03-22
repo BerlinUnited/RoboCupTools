@@ -57,13 +57,19 @@
         
         echo '</div>';
       }
-      
-      
     }
     echo '</div>';
-  ?>
     
+    echo '<div style=""><pre>';
+    foreach ($games as $key => $g) 
+    {
+      echo $g->allErrors;
+    }
+    echo '</pre></div>';
+  ?>
   </div>
+  
+  
   
 </div>
 

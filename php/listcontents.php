@@ -184,7 +184,7 @@ function list_games($path) {
       
       show_game($file_path, $value, $games);
     }
-    }
+  }
   return $games;
 }
 
