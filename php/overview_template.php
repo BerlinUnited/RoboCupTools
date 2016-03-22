@@ -26,29 +26,41 @@
 
 </head>
 
+<style>
+.labels a {
+  margin: 5px;
+}
+.labels {
+  margin-bottom:5px;
+}
+</style>
+
 <body>
 
 <div class="container-fluid" ng-controller="MainController">
 
   <?php
+    echo '<div class="row">';
     foreach ($games as $key => $g) {
-      echo '<div class="row">';
-      echo '<div class="col-sm-1"></div>';
-      echo '<div class="col-sm-4">';
       
-      if(sizeof($g->logs) > 0) {
-        echo '<h3>'.$g->name.' - '.$g->half.'('.count($g->logs).')</h3>';
-        echo '<ul>';
+      if(sizeof($g->logs) > 0) 
+      {
+        echo '<div class="col-sm-2">';
+      
+        echo '<h4>'.$g->name.' - '.$g->half.'('.count($g->logs).')</h4>';
+        echo '<div class="labels">';
         foreach ($g->logs[0]->json as $name => $path) {
-          echo '<li><a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a></li>';
+          echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
         }
-        echo '</ul>';
+        echo '</div>';
         echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player"></video>';
+        
+        echo '</div>';
       }
       
-      echo '</div>';
-      echo '</div>';
+      
     }
+    echo '</div>';
   ?>
     
   </div>
