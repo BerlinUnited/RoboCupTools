@@ -47,7 +47,8 @@
       {
         echo '<div class="col-sm-2">';
       
-        echo '<h4>'.$g->name.' - '.$g->half.'('.count($g->logs).')</h4>';
+        echo '<h4>'.$g->name.'</h4>'; 
+        echo '<h4>'.$g->half.' ('.count($g->logs).') </h4>';
         echo '<div class="labels">';
         foreach ($g->logs[0]->json as $name => $path) {
           echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
