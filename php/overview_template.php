@@ -7,14 +7,6 @@
     
   <script src="lib/player/jquery.js"></script>
   
-  <script src="lib/angular.min.js"></script>
-  <script src="lib/angular-sanitize.min.js"></script>
-  <script src="lib/tv4.min.js"></script>
-  <script src="lib/ObjectPath.js"></script>
-  
-  <script src="lib/schema-form.min.js"></script>
-  <script src="lib/bootstrap-decorator.js"></script>
-  
   <script src="lib/player/mediaelement-and-player.min.js"></script>
   <link rel="stylesheet" href="lib/player/mediaelementplayer.css" />
   
