@@ -57,7 +57,7 @@
                 echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
               }
               echo '</div>';
-              echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player"></video>';
+              echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player'.$i.'"></video>';
             
             echo '</div>';
             echo '</div>';
