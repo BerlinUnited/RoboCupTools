@@ -32,33 +32,45 @@
 <div class="container-fluid" ng-controller="MainController">
 
   <?php
-    echo '<div class="row">';
-    echo '<div class="row-height">';
+      $i = 0;
       foreach ($games as $key => $g) {
         
         if(sizeof($g->logs) > 0) 
         {
-          echo '<div class="col-sm-2 col-height">';
-          echo '<div class="inside inside-full-height">';
-          echo '<div class="content">';
-          
-            echo '<h4>'.$g->name.'</h4>'; 
-            echo '<h4>'.$g->half.' ('.count($g->logs).') </h4>';
-            echo '<div class="labels">';
-            foreach ($g->logs[0]->json as $name => $path) {
-              echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
+          if($i % 6 == 0) {
+            if($i > 0) {
+              echo '</div>';
+              echo '</div>';
             }
+            echo '<div class="row">';
+            echo '<div class="row-height">';
+          }
+          
+            echo '<div class="col-sm-2 col-height">';
+            echo '<div class="inside inside-full-height">';
+            echo '<div class="content">';
+            
+              echo '<h4>'.$g->name.'</h4>'; 
+              echo '<h4>'.$g->half.' ('.count($g->logs).') </h4>';
+              echo '<div class="labels">';
+              foreach ($g->logs[0]->json as $name => $path) {
+                echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
+              }
+              echo '</div>';
+              echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player"></video>';
+            
             echo '</div>';
-            echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player"></video>';
+            echo '</div>';
+            echo '</div>';
           
-          echo '</div>';
-          echo '</div>';
-          echo '</div>';
-          
+          $i++;
         }
       }
-    echo '</div>';
-    echo '</div>';
+    
+    if($i > 0) {
+      echo '</div>';
+      echo '</div>';
+    }
     
     echo '<div style=""><pre>';
     foreach ($games as $key => $g) 
