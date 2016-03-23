@@ -33,24 +33,27 @@
 
   <?php
     echo '<div class="row">';
-    foreach ($games as $key => $g) {
-      
-      if(sizeof($g->logs) > 0) 
-      {
-        echo '<div class="col-sm-2 thumbnail">';
-      
-        echo '<h4>'.$g->name.'</h4>'; 
-        echo '<h4>'.$g->half.' ('.count($g->logs).') </h4>';
-        echo '<div class="labels">';
-        foreach ($g->logs[0]->json as $name => $path) {
-          echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
-        }
-        echo '</div>';
-        echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player"></video>';
+    echo '<div class="row-height">';
+      foreach ($games as $key => $g) {
         
-        echo '</div>';
+        if(sizeof($g->logs) > 0) 
+        {
+          echo '<div class="col-sm-2 col-height">';
+          
+            echo '<h4>'.$g->name.'</h4>'; 
+            echo '<h4>'.$g->half.' ('.count($g->logs).') </h4>';
+            echo '<div class="labels">';
+            foreach ($g->logs[0]->json as $name => $path) {
+              echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
+            }
+            echo '</div>';
+            echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player"></video>';
+          
+          echo '</div>';
+          
+        }
       }
-    }
+    echo '</div>';
     echo '</div>';
     
     echo '<div style=""><pre>';
