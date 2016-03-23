@@ -33,10 +33,6 @@ body {
   background-color:none;
 }
 
-.timeline a.selected {
-  background-color:#f00;
-}
-
 .timeline a.button.turn {
   background-color:#fff;
 }
@@ -55,4 +51,8 @@ body {
 
 .timeline a.button.kick_long {
   background-color:#66a;
+}
+
+.timeline a.button.selected {
+  background-color:#f00;
 }
