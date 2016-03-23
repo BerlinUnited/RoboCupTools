@@ -39,6 +39,8 @@
         if(sizeof($g->logs) > 0) 
         {
           echo '<div class="col-sm-2 col-height">';
+          echo '<div class="inside inside-full-height">';
+          echo '<div class="content">';
           
             echo '<h4>'.$g->name.'</h4>'; 
             echo '<h4>'.$g->half.' ('.count($g->logs).') </h4>';
@@ -49,6 +51,8 @@
             echo '</div>';
             echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player"></video>';
           
+          echo '</div>';
+          echo '</div>';
           echo '</div>';
           
         }
