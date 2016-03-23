@@ -37,7 +37,7 @@
       
       if(sizeof($g->logs) > 0) 
       {
-        echo '<div class="col-sm-2" style="display:inline-block;">';
+        echo '<div class="col-sm-2 thumbnail">';
       
         echo '<h4>'.$g->name.'</h4>'; 
         echo '<h4>'.$g->half.' ('.count($g->logs).') </h4>';
