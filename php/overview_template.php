@@ -32,45 +32,28 @@
 <div class="container-fluid" ng-controller="MainController">
 
   <?php
-      $i = 0;
-      foreach ($games as $key => $g) {
-        
-        if(sizeof($g->logs) > 0) 
-        {
-          if($i % 6 == 0) {
-            if($i > 0) {
-              echo '</div>';
-              echo '</div>';
-            }
-            echo '<div class="row">';
-            echo '<div class="row-height">';
-          }
-          
-            echo '<div class="col-sm-2 col-height">';
-            echo '<div class="inside inside-full-height">';
-            echo '<div class="content">';
-            
-              echo '<h4>'.$g->name.'</h4>'; 
-              echo '<h4>'.$g->half.' ('.count($g->logs).') </h4>';
-              echo '<div class="labels">';
-              foreach ($g->logs[0]->json as $name => $path) {
-                echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
-              }
-              echo '</div>';
-              echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player'.$i.'"></video>';
-            
-            echo '</div>';
-            echo '</div>';
-            echo '</div>';
-          
-          $i++;
-        }
-      }
+    echo '<div class="row">';
+    echo '<div class="col-sm-1"></div>';
+    echo '<div class="col-sm-10">';
+    echo '<ul>';
     
-    if($i > 0) {
-      echo '</div>';
-      echo '</div>';
+    foreach ($games as $key => $g) {
+      
+      if(sizeof($g->logs) > 0) 
+      {
+        echo '<li><strong>'.$g->name.' - '.$g->half.' ('.count($g->logs).') </strong>';
+        
+        echo '<span class="labels">';
+        foreach (array_reverse($g->logs[0]->json) as $name => $path) {
+          echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
+        }
+        echo '</span></li>';
+        //echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player'.$i.'"></video>';
+      }
     }
+    echo '</ul>';
+    echo '</div>';
+    echo '</div>';
     
     echo '<div style=""><pre>';
     foreach ($games as $key => $g) 
