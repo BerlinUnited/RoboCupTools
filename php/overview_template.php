@@ -32,30 +32,38 @@
 <div class="container-fluid" ng-controller="MainController">
 
   <?php
-    echo '<div class="row">';
-    echo '<div class="col-sm-1"></div>';
-    echo '<div class="col-sm-10">';
-    echo '<ul>';
     
+    $i = 0;
     foreach ($games as $key => $g) {
       
       if(sizeof($g->logs) > 0) 
       {
-        echo '<li><strong>'.$g->name.' - '.$g->half.' ('.count($g->logs).') </strong>';
-        
-        echo '<span class="labels">';
-        foreach (array_reverse($g->logs[0]->json) as $name => $path) {
-          echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
+        if( $i % 2 == 1) {
+          echo '<div class="row" style="background-color:#EEE;">';
+        } else {
+          echo '<div class="row">';
         }
-        echo '</span></li>';
+        echo '<div class="col-sm-1"></div>';
+        
+        echo '<div class="col-sm-2">';
+          echo '<strong>'.$g->name.' - '.$g->half.' ('.count($g->logs).') </strong>';
+        echo '</div>';
+        
+        echo '<div class="col-sm-8">';
+          echo '<span class="labels">';
+          foreach (array_reverse($g->logs[0]->json) as $name => $path) {
+            echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
+          }
+          echo '</span>';
+        echo '</div>';
+        echo '</div>';
         //echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player'.$i.'"></video>';
+        $i++;
       }
     }
-    echo '</ul>';
-    echo '</div>';
-    echo '</div>';
     
-    echo '<div style=""><pre>';
+    
+    echo '<div style="margin-top:20px; position:absolute; bottom: 0px;"><pre>';
     foreach ($games as $key => $g) 
     {
       echo $g->allErrors;
