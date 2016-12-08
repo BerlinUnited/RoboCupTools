@@ -340,7 +340,12 @@
     
     <div class="col-sm-7">
       <div ng-controller="PlayerController">
-        <video src="<?php echo $g->video_path; ?>" style="width: 100%; height: 100%;" id="player"></video>
+        <video style="width: 100%; height: 100%;" id="player">
+        <?php /* src="<?php echo $g->video_path; ?>" */ ?>
+        <?php foreach ($g->video_paths as $key => $value) { ?>
+          <source src="<?php echo $value; ?>" >
+        <?php }?>
+        </video>
       </div>
     </div>
     
