@@ -32,7 +32,17 @@
 <div class="container-fluid" ng-controller="MainController">
 
   <?php
-    
+    //Header
+	echo '<div class="row" style="background-color:#003366;">';
+		echo '<div class="col-sm-1"></div>';
+		echo '<div class="col-sm-2">';
+			echo '<strong style="color:#fff;">Date-Competion-OppTeam-halftime (#Robots)</strong>';
+		echo '</div>';
+		echo '<div class="col-sm-8">';
+				echo '<strong style="color:#fff;">Label</strong>';
+		echo '</div>';
+	echo '</div>';
+	
     $i = 0;
     foreach ($games as $key => $g) {
       
