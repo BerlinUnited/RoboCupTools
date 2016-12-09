@@ -264,7 +264,7 @@
       $scope.$on('setPeriod', function(event, data) {
         //draw the robot position
         //console.log(data.pose.x, data.pose.y, data.pose.r);
-        draw(data.pose.x, data.pose.y, data.pose.r, data.ball.x, data.ball.y);
+        draw(data.pose.x/10.0, data.pose.y/10.0, data.pose.r, data.ball.x/10.0, data.ball.y/10.0);
       });
     });
     
@@ -317,7 +317,7 @@
   
 </head>
 
-<body onload="draw(0,1000,0.1, 1000, 2000);">
+<body onload="draw(0,100,0.1, 100, 200);">
 
 <div class="container-fluid" ng-controller="MainController">
 
@@ -351,7 +351,7 @@
     
     <div class="col-sm-3">
       <div ng-controller="DrawingController">
-        <canvas id="canvas" width="7400" height="10400" style="width: 100%;"></canvas>
+        <canvas id="canvas" width="740" height="1040" style="width: 100%;"></canvas>
       </div>
     </div>
   </div>
