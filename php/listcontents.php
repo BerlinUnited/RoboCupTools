@@ -84,7 +84,7 @@ function find_json($path)
         $name = substr($value, $p+1, -5);
         $result[$name] = $file_path;
       } else {
-        $result["blank"] = $file_path;
+        $result["new"] = $file_path;
       }
     }
   }
@@ -113,7 +113,7 @@ function list_logs($path, $g)
       $sync_data = $file_path . "/game.log.videoanalyzer.properties";
       
       //if(!is_file($json_path)) {
-      if(!array_key_exists("blank", $json_files)) {
+      if(!array_key_exists("new", $json_files)) {
         $errors = $errors . "ERROR: no json file in ".$file_path."\n";
         //echo "ERROR: no json file in ".$file_path."\n";
       } else if(!is_file($sync_data)) {
