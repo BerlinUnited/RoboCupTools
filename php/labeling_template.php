@@ -156,7 +156,7 @@
           //console.log(str);
           //event.target.href = 'data:text/json;charset=utf8,' + encodeURIComponent(str);
           
-          $.post( "php/save.php", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
+          $.post( "php/admin/save.php", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
            .done(function( result ) {
               console.log(result);
             });
