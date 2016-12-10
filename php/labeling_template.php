@@ -333,8 +333,7 @@
     </div>
   </div>
 
-  <div class="row">
-    
+
     <div class="col-sm-2">
       <div ng-controller="FormController"> 
         <form name="labels" sf-schema="schema" sf-form="form" sf-model="model" ng-submit="onSubmit(labels)"></form>
@@ -357,10 +356,10 @@
         <canvas id="canvas" width="740" height="1040" style="width: 100%;"></canvas>
       </div>
     </div>
-  </div>
 
-  <div class="row">
-    <div class="col-sm-12">
+
+
+    <div class="col-sm-10 pull-right">
       <?php
       //<div data-timeline data-file="log/labels.json"></div>
         foreach ($g->logs as $key => $log) {
@@ -368,12 +367,14 @@
         }
       ?>
       
+      <?php /* HACK: not used for now 
       <form>
         Name: <input type="text" name="lastname" data-ng-model="widget.title">
         <input type="button" value="Submit" ng-click="save($event)">
       </form>
+      */ ?>
     </div>
-  </div>
+
   
 </div>
 <div style="display:none;">
