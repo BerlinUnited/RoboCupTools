@@ -320,6 +320,9 @@
 <body onload="draw(0,100,0.1, 100, 200);">
 
 <div class="container-fluid" ng-controller="MainController">
+  <div class="row" style="background-color:#003366;">
+	<strong style="color:#fff; font-size: 2.5em; padding-left:20px;">Nao Team Humboldt - Annotation Interface</strong>
+  </div>
 
   <div class="row">
     <div class="col-sm-2">
