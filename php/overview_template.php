@@ -43,7 +43,7 @@
 			echo '<strong style="color:#fff;">Date-Competion-OppTeam-halftime (#Robots)</strong>';
 		echo '</div>';
 		echo '<div class="col-sm-8">';
-				echo '<strong style="color:#fff;">Label</strong>';
+				echo '<strong style="color:#fff;">Label Set</strong>';
 		echo '</div>';
 	echo '</div>';
 	
