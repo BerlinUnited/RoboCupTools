@@ -26,8 +26,8 @@ $this->beginPage();
                         <span class="icon-bar"></span>
                     </button>
                     <a class="navbar-brand" href="<?= \app\Url::home() ?>">
-                        <img alt="Brand" src="nao.png" height="100%" class="pull-left">
-                        &nbsp; VideoLogLabeling
+                        <?=(!empty(\app\Application::$app->getParam('logo'))?'<img alt="Brand" src="'.\app\Application::$app->getParam('logo').'" height="100%" class="pull-left"> &nbsp;':'')?>
+                        <?=\app\Application::$app->name?>
                     </a>
                 </div>
 

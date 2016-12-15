@@ -53,7 +53,7 @@ class SoccerGameModel {
     }
     
     public function getVideos() {
-        return glob($this->_directory.DIRECTORY_SEPARATOR.'*half*.{MP,mp}4',GLOB_BRACE);
+        return glob($this->_directory.DIRECTORY_SEPARATOR.'*half*.{MP4,mp4,webm,WEBM}',GLOB_BRACE);
     }
     
     public function getLogs() {
@@ -75,7 +75,7 @@ class SoccerGameModel {
                         $json_files = glob($file_path . DIRECTORY_SEPARATOR . '*.json', GLOB_BRACE);
                         $json_files = array_combine(array_map(function($i)use($file_path) {
                             $i = str_replace($file_path . DIRECTORY_SEPARATOR, '', $i);
-                                    return ($p = strpos($i, "-")) !== FALSE ? substr($i, $p + 1, -5) : 'blank';
+                                    return ($p = strpos($i, "-")) !== FALSE ? substr($i, $p + 1, -5) : 'new';
                                 }, $json_files), $json_files);
 //                        \app\VarDumper::dump($json_files);
 
@@ -83,7 +83,7 @@ class SoccerGameModel {
                         $sync_data = $file_path . "/game.log.videoanalyzer.properties";
 
                         //if(!is_file($json_path)) {
-                        if (!array_key_exists("blank", $json_files)) {
+                        if (!array_key_exists("new", $json_files)) {
 //                        $errors = $errors . "ERROR: no json file in " . $file_path . "\n";
                             //echo "ERROR: no json file in ".$file_path."\n";
                         } else if (!is_file($sync_data)) {

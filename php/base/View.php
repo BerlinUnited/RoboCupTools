@@ -41,7 +41,8 @@ class View extends Component {
             // TODO: resolve View starting from "root"
             VarDumper::dump($view);
         } else {
-            return $this->module()->basePath . '/' . $this->module()->viewDir .'/'. $this->module()->activeController->getId() .'/'. $view . '.php';
+            $module = Application::$app->activeController->module;
+            return $module->basePath . '/' . $module->viewDir .'/'. Application::$app->activeController->getId() .'/'. $view . '.php';
         }
     }
     

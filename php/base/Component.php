@@ -8,11 +8,7 @@ namespace app;
  */
 abstract class Component
 {
-    /** @var Module */
-    private $_parent;
-    
-    public function __construct($parent, $config = []) {
-        $this->_parent = $parent;
+    public function __construct($config = []) {
         foreach ($config as $key => $value) {
             $this->$key = $value;
         }
@@ -21,11 +17,6 @@ abstract class Component
     
     protected function init() {
     }
-    
-    protected function module() {
-        return $this->_parent;
-    }
-
 
     public function __set($name, $value) {
         $setter = 'set' . $name;

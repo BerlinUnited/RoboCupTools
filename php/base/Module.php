@@ -24,6 +24,8 @@ abstract class Module extends Component
     /** @var String */
     public $defaultAction = 'index';
     
+    /** @var Module */
+    public $module;
     /** @var Controller */
     public $activeController;
     /** @var String */
@@ -32,10 +34,19 @@ abstract class Module extends Component
     private $_view;
     
     /**
+     * 
+     * @param Module $parent
+     * @param type $config
+     */
+    public function __construct($parent, $config = array()) {
+        parent::__construct($config);
+        $this->module = $parent;
+    }
+    
+    /**
      * Gets called from the parent module.
      */
     abstract public function run();
-
 
     /**
      * 
@@ -103,7 +114,7 @@ abstract class Module extends Component
     
     public function getView() {
         if($this->_view === NULL) {
-            $this->_view = new View($this);
+            $this->_view = new View();
         }
         return $this->_view;
     }
@@ -120,6 +131,9 @@ abstract class Module extends Component
         if($name === '' || $name === NULL) {
             $name = $this->defaultController;
         }
+        
+        // TODO: controller doesn't load correctly in submodules!!!
+//        VarDumper::dump(self::__);
         
         // TODO: is this the correct logic?!?
         if($this->activeController === NULL) {
@@ -138,15 +152,35 @@ abstract class Module extends Component
      * @param String $name
      * @return Module
      */
-    public function getModule($name) {
+    public function getModule(&$name) {
+        /*
         if (($pos = strpos($name, '/')) !== FALSE) {
             // sub-module
             $module = $this->getModule(substr($name, 0, $pos));
 
             return $module === null ? null : $module->getModule(substr($name, $pos + 1));
+        }*/
+        $module = $this;
+        if($name !== '') {
+            
+            $parts = split('/', $name);
+//            VarDumper::dump($parts);
+            
+                $class = '\\modules\\' . $parts[0] . '\\' . ucfirst($parts[0]) . 'Module';
+                if(class_exists($class)) {
+                    unset($parts[0]);
+                    $name = implode('/', $parts);
+                    $module = new $class($this);
+                    $module->getModule($name);
+                }
+//                VarDumper::dump($module);
+//                VarDumper::dump($name);
+            
         }
+        
+//        $name = 'default';
         // TODO: try to create Sub-Module ...
-        return NULL;
+        return $module;
     }
     
     

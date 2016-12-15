@@ -4,13 +4,24 @@ namespace app;
 
 class Controller extends Component
 {
+    /**
+     * @var Module
+     */
+    public $module;
+    
+    public function __construct($module, $config = array()) {
+        parent::__construct($config);
+        $this->module = $module;
+        Application::$app->activeController = $this;
+    }
+    
     public function getId() {
         return strtolower(str_replace('Controller','',get_called_class()));
     }
 
     public function runAction($action) {
         if($action === '') {
-            $action = $this->module()->defaultAction;
+            $action = $this->module->defaultAction;
         }
 // TODO: check if function exists
 // TODO: use inline/extern Actions?
@@ -42,7 +53,7 @@ class Controller extends Component
      * @return View
      */
     public function getView() {
-        return $this->module()->getView();
+        return $this->module->getView();
     }
     
     /**
@@ -61,7 +72,7 @@ class Controller extends Component
      * @return String
      */
     private function resolveLayout() {
-        return $this->module()->basePath . '/' . $this->module()->viewDir .'/'. $this->module()->defaultLayoutFile;
+        return $this->module->basePath . '/' . $this->module->viewDir .'/'. $this->module->defaultLayoutFile;
     }
     
 }

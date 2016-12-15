@@ -27,6 +27,9 @@ class UrlManager extends Component {
     
     private function normalizeRoute(&$route) {
         // TODO: route normalization
+        if($route === '') {
+            $route = Application::$app->request->getRoute();
+        }
     }
     
     public function getHomeUrl() {

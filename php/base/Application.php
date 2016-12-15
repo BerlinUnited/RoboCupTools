@@ -28,6 +28,10 @@ class Application extends Module {
     
     /* @var string */
     public $routeParam = 'r';
+    /**
+     * @var string the application name.
+     */
+    public $name = 'VideoLogLabeling';
     /** @var mixed[] */
     public $params = [];
 
@@ -80,7 +84,7 @@ class Application extends Module {
      */
     public function getUrlManager() {
         if($this->_urlManager === NULL) {
-            $this->_urlManager = new UrlManager($this);
+            $this->_urlManager = new UrlManager();
         }
         return $this->_urlManager;
     }
@@ -90,7 +94,7 @@ class Application extends Module {
      */
     public function getRequest() {
         if($this->_request === NULL) {
-            $this->_request = new Request($this);
+            $this->_request = new Request();
         }
         return $this->_request;
     }
@@ -100,7 +104,7 @@ class Application extends Module {
      */
     public function getResponse() {
         if($this->_response === NULL) {
-            $this->_response = new Response($this);
+            $this->_response = new Response();
         }
         return $this->_response;
     }
@@ -114,8 +118,7 @@ class Application extends Module {
         $r = $this->getRequest()->getRoute();
         
         // TODO: resolve the correct module
-        $module = $this;
-//        $module = $this->getModule($name);
+        $module = $this->getModule($r);
         
         $action_name = '';
         if(strpos($r, '/') !== FALSE) {
@@ -143,7 +146,7 @@ class Application extends Module {
             return $result;
         }
         
-        $response = $module->getResponse();
+        $response = $this->getResponse();
         if ($result !== null) {
             $response->content = $result;
         }

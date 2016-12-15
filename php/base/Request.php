@@ -52,9 +52,9 @@ class Request extends Component
         return 'GET';
     }
     
-    public function get($name) {
+    public function get($name, $default = NULL) {
         // TODO: escape something?!? could direct access be an security issue?!
-        return isset($_GET[$name]) ? $_GET[$name] : NULL;
+        return isset($_GET[$name]) ? $_GET[$name] : $default;
     }
 
 }

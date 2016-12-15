@@ -2,7 +2,7 @@
 /* @var $this app\View */
 /* @var $game SoccerGameModel */
 
-$this->title = 'VideoLogLabeling ::: ' . \app\Application::$app->params['ownTeamName'] .' vs. '. $game->getOpponent();
+$this->title = \app\Application::$app->name . ' ::: ' . \app\Application::$app->params['ownTeamName'] .' vs. '. $game->getOpponent();
 
 $this->registerCssFile('lib/player/mediaelementplayer.css');
 $this->registerCssFile('style.css');
@@ -62,12 +62,7 @@ var app = angular.module('test', ['schemaForm']);
       $scope.model = [];
       $scope.selected = null;
     
-      $scope.widget = {title: '
-JS;
-// if($name != "blank") { echo $name; }
-$js.= ''; //$game->
-$js.=<<<'JS'
-'};
+      $scope.widget = {title: '%title%'};
     
       /*
       $scope.openFile = function(input) {
@@ -147,7 +142,7 @@ $js.=<<<'JS'
           //console.log(str);
           //event.target.href = 'data:text/json;charset=utf8,' + encodeURIComponent(str);
           
-          $.post( "php/save.php", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
+          $.post( "%save%", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
            .done(function( result ) {
               console.log(result);
             });
@@ -255,7 +250,7 @@ $js.=<<<'JS'
       $scope.$on('setPeriod', function(event, data) {
         //draw the robot position
         //console.log(data.pose.x, data.pose.y, data.pose.r);
-        draw(data.pose.x, data.pose.y, data.pose.r, data.ball.x, data.ball.y);
+        draw(data.pose.x/10.0, data.pose.y/10.0, data.pose.r, data.ball.x/10.0, data.ball.y/10.0);
       });
     });
     
@@ -303,7 +298,9 @@ $js.=<<<'JS'
       };
     });
 JS;
-$this->registerJs($js);
+$search = ['%title%', '%save%'];
+$replace = ['',\app\Url::to(['save'])];
+$this->registerJs(str_replace($search, $replace, $js));
 $this->registerJs('draw(0,1000,0.1, 1000, 2000);', app\View::POS_READY);
 $this->registerCss('
     .labels a {
@@ -332,7 +329,14 @@ $this->registerCss('
 
     <div class="col-sm-7">
         <div ng-controller="PlayerController">
-            <video src="<?=$game->getVideos()[0]?>" style="width: 100%; height: 100%;" id="player"></video>
+            <video style="width: 100%; height: 100%;" id="player">
+            <?php
+                // TODO: different resolutions should be here! (not half times)
+                foreach ($game->getVideos() as $value) {
+                    echo '<source src="'.$value.'">';
+                }
+            ?>
+            </video>
         </div>
     </div>
 
@@ -344,22 +348,23 @@ $this->registerCss('
 </div>
 
 <div class="row">
-    <div class="col-sm-12">
+    <div class="col-sm-10 col-sm-offset-2">
         <?php
         //<div data-timeline data-file="log/labels.json"></div>
 //        \app\VarDumper::dump($game->getLogs());
         // TODO: get the correct name(s)
-        $name = 'blank';
+        $name = 'new';
         foreach ($game->getLogs() as $key => $log) {
             
             echo '<div data-timeline data-file="' . $log->json[$name] . '" data-logoffset="' . $log->log_offset . '" data-videooffset="' . $log->video_offset . '"></div>';
         }
         ?>
-
+        <?php /* HACK: not used for now 
         <form>
             Name: <input type="text" name="lastname" data-ng-model="widget.title">
             <input type="button" value="Submit" ng-click="save($event)">
         </form>
+         */ ?>
     </div>
 </div>
 
