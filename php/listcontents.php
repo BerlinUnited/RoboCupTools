@@ -84,7 +84,7 @@ function find_json($path)
         $name = substr($value, $p+1, -5);
         $result[$name] = $file_path;
       } else {
-        $result["blank"] = $file_path;
+        $result["new"] = $file_path;
       }
     }
   }
@@ -113,7 +113,7 @@ function list_logs($path, $g)
       $sync_data = $file_path . "/game.log.videoanalyzer.properties";
       
       //if(!is_file($json_path)) {
-      if(!array_key_exists("blank", $json_files)) {
+      if(!array_key_exists("new", $json_files)) {
         $errors = $errors . "ERROR: no json file in ".$file_path."\n";
         //echo "ERROR: no json file in ".$file_path."\n";
       } else if(!is_file($sync_data)) {
@@ -130,12 +130,16 @@ function list_logs($path, $g)
 
 function is_video($name)
 {
-  return strlen($name) > 4 && 
-    (substr($name, -4) == ".mp4" || substr($name, -4) == ".MP4");
+  $ext = strtolower (pathinfo($name, PATHINFO_EXTENSION));
+  $video = array("mp4", "webm");
+  return in_array($ext, $video);
 }
 
 function show_game($path, $game_name, &$games) {
   $a = scandir($path);
+  
+  // store all games found in this directory (game halves)
+  $tmp_games = array();
   
   foreach ($a as $key => $value) 
   {
@@ -147,10 +151,21 @@ function show_game($path, $game_name, &$games) {
     //is a video
     if(!is_dir($file_path) && is_video($value))
     {
+      $video_name = pathinfo($value, PATHINFO_FILENAME);
+      
+      // there is already a game with this name
+      if(array_key_exists($video_name, $tmp_games)) {
+        $g = $tmp_games[$video_name];
+        array_push($g->video_paths, $file_path);
+        continue;
+      }
+      
+      // create a new game
       $g = new Game();
       $g->name = $game_name;
-      $g->half = substr($value, 0, -4);
+      $g->half = $video_name;
       $g->video_path = $file_path;
+      $g->video_paths = array($file_path); // in case there are several
       
       $log_path = $path . "/" . $g->half;
       if(is_dir($log_path)) {
@@ -160,8 +175,11 @@ function show_game($path, $game_name, &$games) {
         //echo "no logs!!!";
       }
       
-      
+      // add to the returned list
       array_push($games, $g);
+      
+      // store locally for later use in this loop
+      $tmp_games[$video_name] = $g;
       //print_r($games);
     }
   }

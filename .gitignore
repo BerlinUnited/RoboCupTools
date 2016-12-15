@@ -1,6 +1,6 @@
 #general
-log/
 nbproject/
+.htaccess
 
 #python
 *.pyc

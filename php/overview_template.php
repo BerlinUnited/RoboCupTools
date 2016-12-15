@@ -32,7 +32,21 @@
 <div class="container-fluid" ng-controller="MainController">
 
   <?php
-    
+	//
+	echo '<div class="row" style="background-color:#003366;">';
+		echo '<strong style="color:#fff; font-size: 2.5em; padding-left:20px;">Nao Team Humboldt - Annotation Interface</strong>';		
+	echo '</div>';
+    //Header
+	echo '<div class="row" style="background-color:rgba(0, 47, 108,0.7);">';
+		echo '<div class="col-sm-1"></div>';
+		echo '<div class="col-sm-2">';
+			echo '<strong style="color:#fff;">Date-Competion-OppTeam-halftime (#Robots)</strong>';
+		echo '</div>';
+		echo '<div class="col-sm-8">';
+				echo '<strong style="color:#fff;">Label Set</strong>';
+		echo '</div>';
+	echo '</div>';
+	
     $i = 0;
     foreach ($games as $key => $g) {
       
@@ -75,6 +89,8 @@
   
   
 </div>
+
+<div id="watermark"></div>
 
 </body>
 </html>

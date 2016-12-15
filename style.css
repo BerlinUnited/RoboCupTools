@@ -56,3 +56,19 @@ body {
 .timeline a.button.selected {
   background-color:#f00;
 }
+
+#watermark
+{
+ position:fixed;
+ bottom:0;
+ right:-1.5%;
+ opacity:0.1;
+ z-index:99;
+ color:white;
+ width: 70%;
+ height: 70%;
+ background:url(img/naoth-logo.png);
+ background-size: contain;
+ background-repeat: no-repeat;
+ background-position: right bottom;
+}
