@@ -1,8 +1,10 @@
 <?php
+namespace app\controller;
 
 use app\Application;
+use app\models\SoccerGameModel;
 
-class DefaultController extends app\Controller
+class DefaultController extends \app\Controller
 {
     public function actionIndex() {
         $games = [];

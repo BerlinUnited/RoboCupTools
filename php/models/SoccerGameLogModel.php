@@ -1,4 +1,5 @@
 <?php
+namespace app\models;
 
 /**
  * Description of SoccerGameLogModel

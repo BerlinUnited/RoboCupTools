@@ -133,14 +133,14 @@ abstract class Module extends Component
         }
         
         // TODO: controller doesn't load correctly in submodules!!!
-//        VarDumper::dump(self::__);
+        $name = $this->getNamespace() . '\\' . $this->getControllerDir() . '\\' . $name;
         
         // TODO: is this the correct logic?!?
         if($this->activeController === NULL) {
             if(class_exists($name)) {
                 $this->activeController = new $name($this);
             } else {
-                throw new NotFoundHttpException('Couldn\'t find controller class!');
+                throw new NotFoundHttpException('Couldn\'t find controller class ('.$name.')!'.VarDumper::dumpAsString(__NAMESPACE__));
             }
         }
         return $this->activeController;
@@ -153,35 +153,23 @@ abstract class Module extends Component
      * @return Module
      */
     public function getModule(&$name) {
-        /*
-        if (($pos = strpos($name, '/')) !== FALSE) {
-            // sub-module
-            $module = $this->getModule(substr($name, 0, $pos));
-
-            return $module === null ? null : $module->getModule(substr($name, $pos + 1));
-        }*/
         $module = $this;
-        if($name !== '') {
-            
+        if ($name !== '') {
             $parts = split('/', $name);
-//            VarDumper::dump($parts);
-            
-                $class = '\\modules\\' . $parts[0] . '\\' . ucfirst($parts[0]) . 'Module';
-                if(class_exists($class)) {
-                    unset($parts[0]);
-                    $name = implode('/', $parts);
-                    $module = new $class($this);
-                    $module->getModule($name);
-                }
-//                VarDumper::dump($module);
-//                VarDumper::dump($name);
-            
+            $class = $this->getNamespace() . '\\modules\\' . $parts[0] . '\\' . ucfirst($parts[0]) . 'Module';
+            if (class_exists($class)) {
+                unset($parts[0]);
+                $name = implode('/', $parts);
+                $module = new $class($this);
+                $module->getModule($name);
+            }
         }
-        
-//        $name = 'default';
-        // TODO: try to create Sub-Module ...
         return $module;
     }
-    
+
+    private function getNamespace() {
+        $c = get_called_class();
+        return substr($c, 0, strrpos($c, '\\'));
+    }
     
 }

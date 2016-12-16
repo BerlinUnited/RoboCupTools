@@ -25,6 +25,8 @@ class Application extends Module {
     public static $app;
     /* @var string[] */
     public static $classMap = [];
+    /* @var string[] */
+    public static $rootNamespace = [ 'app' => __DIR__ ];
     
     /* @var string */
     public $routeParam = 'r';
@@ -50,6 +52,7 @@ class Application extends Module {
     protected function init() {
         static::$app = $this;
         static::$classMap = require(__DIR__ . '/classes.php');
+        static::$rootNamespace['app'] = $this->getBasePath();
         spl_autoload_register(['app\\Application', 'autoload'], true, true);
         ErrorHandler::getInstance()->register();
     }
@@ -57,21 +60,25 @@ class Application extends Module {
     public static function autoload($className) {
         if(isset(static::$classMap[$className])) {
             $classFile = static::$classMap[$className];
-        } elseif(Helper::endsWith($className, 'Controller')) {
-            $classFile = self::$basePath . '/' . self::$controllerDir . '/' . $className . '.php';
-        } elseif(Helper::endsWith($className, 'Model')) {
-            $classFile = self::$basePath . '/' . self::$modelDir . '/' . $className . '.php';
         } else {
-            return;
+            $classFile = static::replaceRootNamespace(str_replace('\\', '/', $className)) . '.php';
         }
-//        var_dump($classFile);
-//        var_dump(file_exists($classFile));
 
         if (!file_exists($classFile)) {
             return;
         }
 
         include $classFile;
+    }
+    
+    public static function replaceRootNamespace($ns) {
+        if(($pos = strpos($ns, '/')) !== FALSE) {
+            $root = substr($ns, 0, $pos);
+            if(isset(self::$rootNamespace[$root])) {
+                return self::$rootNamespace[$root] . '/' . substr($ns, $pos+1);
+            }
+        }
+        return static::$basePath . '/' . $ns;
     }
 
     public function run() {

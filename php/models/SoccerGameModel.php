@@ -1,11 +1,12 @@
 <?php
+namespace app\models;
 /**
  * Description of SoccerGameLogModel
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-class SoccerGameModel {
-    
+class SoccerGameModel
+{
     private $_directory;
     /* @var $_date DateTimeImmutable */
     private $_date;
@@ -14,7 +15,7 @@ class SoccerGameModel {
     private $_logs;
     
     public function __construct($date, $event, $opp, $dir) {
-        $this->_date = new DateTimeImmutable($date);
+        $this->_date = new \DateTimeImmutable($date);
         $this->_event = $event;
         $this->_opponent = $opp;
         $this->_directory = $dir;

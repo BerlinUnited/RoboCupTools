@@ -1,5 +1,5 @@
 <?php
-namespace modules\admin;
+namespace app\modules\admin;
 
 /**
  * Description of AdminModule
@@ -9,7 +9,7 @@ namespace modules\admin;
 class AdminModule extends \app\Module
 {
     protected function init() {
-        \app\VarDumper::dump("test");
+//        \app\VarDumper::dump(__CLASS__."::init()");
     }
     public function run() {
         

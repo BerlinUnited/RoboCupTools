@@ -124,9 +124,11 @@ class ErrorHandler
      */
     public function clearOutput()
     {
-        for ($level = ob_get_level(); $level > 0; --$level) {
-            if (!@ob_end_clean()) {
-                ob_clean();
+        if(!APP_DEBUG) {
+            for ($level = ob_get_level(); $level > 0; --$level) {
+                if (!@ob_end_clean()) {
+                    ob_clean();
+                }
             }
         }
     }
@@ -159,10 +161,10 @@ class ErrorHandler
     public static function convertExceptionToString($exception)
     {
         if(APP_DEBUG) {
-            if($exception instanceof \ErrorException) {
-                $message = 'Error: ';
-            } else {
+            if($exception instanceof Exception) {
                 $message = "{$exception->getName()}: ";
+            } else {
+                $message = 'Error: ';
             }
             $message .= $exception->getMessage();
             $message .= " '" . get_class($exception) . "' with message '{$exception->getMessage()}' \n\nin "

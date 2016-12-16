@@ -16,7 +16,8 @@ class Controller extends Component
     }
     
     public function getId() {
-        return strtolower(str_replace('Controller','',get_called_class()));
+        $id = strtolower(str_replace('Controller','',get_called_class()));
+        return substr($id, strrpos($id, '\\')+1);
     }
 
     public function runAction($action) {
