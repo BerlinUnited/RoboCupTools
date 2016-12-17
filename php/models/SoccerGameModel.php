@@ -12,7 +12,7 @@ class SoccerGameModel
     private $_date;
     private $_event;
     private $_opponent;
-    private $_logs;
+    private $_halftimes;
     
     public function __construct($date, $event, $opp, $dir) {
         $this->_date = new \DateTimeImmutable($date);
@@ -29,7 +29,7 @@ class SoccerGameModel
     public static function checkAndCreate($file) {
         if(is_dir($file) // has to be a directory
             && preg_match('/.*\/?(\d{4}-\d{2}-\d{2})-(\w+)-(\w+)/', $file, $parts) === 1 // directory must look like "yyyy-mm-dd-event-opponent"
-            && !empty(glob($file.DIRECTORY_SEPARATOR.'*half*.{MP,mp}4',GLOB_BRACE)) // there should be at least one mp4 half video file
+            && !empty(glob($file.DIRECTORY_SEPARATOR.'*half*.{MP4,mp4,webm,WEBM}',GLOB_BRACE)) // there should be at least one mp4 half video file
             && !empty(glob($file.DIRECTORY_SEPARATOR.'*half*',GLOB_ONLYDIR)) // and a half time directory
         ) {
             return new SoccerGameModel($parts[1], $parts[2], $parts[3], $file);
@@ -53,51 +53,58 @@ class SoccerGameModel
         return $this->_directory;
     }
     
-    public function getVideos() {
-        return glob($this->_directory.DIRECTORY_SEPARATOR.'*half*.{MP4,mp4,webm,WEBM}',GLOB_BRACE);
-    }
-    
-    public function getLogs() {
-        if ($this->_logs === NULL) {
-            $this->_logs = [];
-            $dirs = glob($this->_directory . DIRECTORY_SEPARATOR . '*half*', GLOB_ONLYDIR);
-            
-            foreach ($dirs as $dir) {
-                $a = scandir($dir);
-                foreach ($a as $key => $value) {
-                    if ($value == "." || $value == "..") {
-                        continue;
-                    }
-
-                    $file_path = $dir . "/" . $value;
-                
-                    //is a log
-                    if (is_dir($file_path)) {
-                        $json_files = glob($file_path . DIRECTORY_SEPARATOR . '*.json', GLOB_BRACE);
-                        $json_files = array_combine(array_map(function($i)use($file_path) {
-                            $i = str_replace($file_path . DIRECTORY_SEPARATOR, '', $i);
-                                    return ($p = strpos($i, "-")) !== FALSE ? substr($i, $p + 1, -5) : 'new';
-                                }, $json_files), $json_files);
-//                        \app\VarDumper::dump($json_files);
-
-                        //$json_path = $file_path . "/labels.json";
-                        $sync_data = $file_path . "/game.log.videoanalyzer.properties";
-
-                        //if(!is_file($json_path)) {
-                        if (!array_key_exists("new", $json_files)) {
-//                        $errors = $errors . "ERROR: no json file in " . $file_path . "\n";
-                            //echo "ERROR: no json file in ".$file_path."\n";
-                        } else if (!is_file($sync_data)) {
-//                        $errors = $errors . "ERROR: no sync data in " . $file_path . "\n";
-                            //echo "ERROR: no sync data in ".$file_path."\n";
-                        } else {
-                            $this->_logs[] = new SoccerGameLogModel($json_files, $sync_data);
-                        }
-                    }
+    /**
+     * 
+     * @return SoccerGameHalftimeModel[]
+     */
+    public function getHalftimes() {
+        if($this->_halftimes === NULL) {
+            foreach (glob($this->_directory . DIRECTORY_SEPARATOR . 'half*', GLOB_ONLYDIR) as $dir) {
+                // ignoring directories which doesn't match the pattern
+                if(preg_match('/half(?P<id>\d+)(-(?P<comment>\S+))?$/', $dir, $half)) {
+                    $this->_halftimes[] = new SoccerGameHalftimeModel( $half['id'], $dir, isset($half['comment'])?$half['comment']:'' );
                 }
             }
         }
-        return $this->_logs;
+        return $this->_halftimes;
+    }
+    
+    public function getHalf($id) {
+        return isset($this->getHalftimes()[$id]) ? $this->getHalftimes()[$id] : NULL;
+    }
+    
+    public function getVideos() {
+        return NULL;
+    }
+    
+    public function getLogs($halftime = NULL) {
+        /*
+        if ($this->_logs === NULL) {
+            $this->_logs = [];
+            foreach (glob($this->_directory . DIRECTORY_SEPARATOR . '*half*', GLOB_ONLYDIR) as $dir) {
+                // ignoring directories which doesn't match the pattern
+                if(preg_match('/half(\d+)/', $dir, $half)) {
+                    $_halftimes[] = $half[1];
+                    $this->_logs[$half[1]] = $this->readRobotLogs($dir);
+                }
+            }
+        }
+//        \app\VarDumper::dump($this->_logs);
+//        \app\VarDumper::dump($halftime);
+        return $halftime===NULL?$this->_logs:(!isset($this->_logs[$halftime])?[]:$this->_logs[$halftime]);
+         */
+        return NULL;
+    }
+    
+    private function readRobotLogs($path) {
+        $logs = [];
+        foreach (scandir($path) as $dir) {
+            if ($dir == "." || $dir == "..") {
+                continue;
+            }
+            $logs[] = new SoccerGameLogModel($path . DIRECTORY_SEPARATOR . $dir);
+        }
+        return $logs;
     }
 
 }

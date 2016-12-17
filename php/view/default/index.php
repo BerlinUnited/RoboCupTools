@@ -1,7 +1,7 @@
 <?php
 /* @var $this app\View */
-/* @var $games[] SoccerGameModel */
-/* @var $game SoccerGameModel */
+/* @var $games[] \app\models\SoccerGameModel */
+/* @var $game \app\models\SoccerGameModel */
 
 $this->title = \app\Application::$app->name . ' ::: Overview';
 

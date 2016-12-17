@@ -8,18 +8,36 @@ namespace app\models;
  */
 class SoccerGameLogModel
 {
-    public $json = '';
+    public $errors = [];
+    public $labels = [];
     public $sync = '';
     public $video_offset = 0;
     public $log_offset = 0;
 
-    function __construct($json, $sync) {
-        $this->json = $json;
-        $this->sync = $sync;
-        $this->parse_sync();
+    function __construct($path) {
+        //is a (log) directory
+        if (is_dir($path)) {
+            // iterate over Nao directories
+            foreach (glob($path . DIRECTORY_SEPARATOR . 'labels*.json', GLOB_BRACE) as $file) {
+                if(preg_match('/labels(-(?P<id>\S+))?.json/', $file, $match)) {
+                    // sets the label json file with the id
+                    $this->labels[(isset($match['id']))?$match['id']:'new'] = $file;
+                }
+            }
+            // set error if "labels.json" is missing
+            if(!isset($this->labels['new'])) { $this->errors[] = "ERROR: no json file in " . $path; }
+            
+            // check & read sync file
+            $this->sync = $path . "/game.log.videoanalyzer.properties";
+            if (!is_file($this->sync) || !$this->parse_sync()) {
+                $this->errors[] = "ERROR: no sync data in " . $path;
+            }
+        } else {
+            $this->errors[] = "ERROR: not a directory '" . $path . "'";
+        }
     }
-
-    function parse_sync() {
+    
+    public function parse_sync() {
         // TODO: read and parse the file $this->sync
         $lines = file($this->sync);
         foreach ($lines as $line_num => $line) {
@@ -36,6 +54,15 @@ class SoccerGameLogModel
         }
         //$this->video_offset = 12.993253731;
         //$this->log_offset = 270.937;
+        // INFO: could return "FALSE" to indicate an ERROR!
+        return TRUE;
     }
 
+    public function isValid() {
+        return empty($this->errors);
+    }
+    
+    public function getLabels() {
+        return array_keys($this->labels);
+    }
 }

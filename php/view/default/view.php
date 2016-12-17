@@ -1,6 +1,7 @@
 <?php
 /* @var $this app\View */
-/* @var $game SoccerGameModel */
+/* @var $game \app\models\SoccerGameModel */
+/* @var $half \app\models\SoccerGameHalftimeModel */
 
 $this->title = \app\Application::$app->name . ' ::: ' . \app\Application::$app->params['ownTeamName'] .' vs. '. $game->getOpponent();
 
@@ -331,10 +332,9 @@ $this->registerCss('
         <div ng-controller="PlayerController">
             <video style="width: 100%; height: 100%;" id="player">
             <?php
-                // TODO: different resolutions should be here! (not half times)
-                foreach ($game->getVideos() as $value) {
-                    echo '<source src="'.$value.'">';
-                }
+                // TODO: different resolutions|formats should be here! (not half times)
+                //\app\VarDumper::dump();
+                echo '<source src="'.current($half->video->getFirstCamera()).'">';
             ?>
             </video>
         </div>
@@ -353,10 +353,9 @@ $this->registerCss('
         //<div data-timeline data-file="log/labels.json"></div>
 //        \app\VarDumper::dump($game->getLogs());
         // TODO: get the correct name(s)
-        $name = 'new';
-        foreach ($game->getLogs() as $key => $log) {
-            
-            echo '<div data-timeline data-file="' . $log->json[$name] . '" data-logoffset="' . $log->log_offset . '" data-videooffset="' . $log->video_offset . '"></div>';
+        $name = \app\Application::$app->request->get('name', 'new');
+        foreach ($half->robots as $key => $log) {
+            echo '<div data-timeline data-file="' . $log->labels[$name] . '" data-logoffset="' . $log->log_offset . '" data-videooffset="' . $log->video_offset . '"></div>';
         }
         ?>
         <?php /* HACK: not used for now 

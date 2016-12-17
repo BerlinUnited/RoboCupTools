@@ -63,7 +63,7 @@ body {
  bottom:0;
  right:-1.5%;
  opacity:0.1;
- z-index:99;
+ z-index:-99;
  color:white;
  width: 70%;
  height: 70%;

@@ -33,10 +33,17 @@ class DefaultController extends \app\Controller
     // TODO: bind action params ...
     public function actionView() {
         $game_id = \app\Application::$app->request->get('id');
+        $half_id = \app\Application::$app->request->get('half');
         if($game_id === NULL || ($game = SoccerGameModel::checkAndCreate(base64_decode($game_id))) === NULL) {
-            throw new app\NotFoundHttpException('Unknown game id!');
+            throw new \app\NotFoundHttpException('Unknown game id!');
         }
-        return $this->render('view', ['game'=>$game]);
+        if($half_id === NULL || ($half = $game->getHalf($half_id)) === NULL) {
+            throw new \app\NotFoundHttpException('Unknown halftime id!');
+        }
+        return $this->render('view', [
+            'game'=>$game,
+            'half'=>$half,
+        ]);
     }
 
 }
