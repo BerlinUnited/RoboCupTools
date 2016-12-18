@@ -1,5 +1,4 @@
 <?php
-
 namespace app;
 
 class Controller extends Component
@@ -9,17 +8,33 @@ class Controller extends Component
      */
     public $module;
     
+    /**
+     * 
+     * @param type $module
+     * @param type $config
+     */
     public function __construct($module, $config = array()) {
         parent::__construct($config);
         $this->module = $module;
         Application::$app->activeController = $this;
     }
     
+    /**
+     * 
+     * @return type
+     */
     public function getId() {
         $id = strtolower(str_replace('Controller','',get_called_class()));
         return substr($id, strrpos($id, '\\')+1);
     }
 
+    /**
+     * 
+     * @param type $action
+     * @return type
+     * @throws \Exception
+     * @throws NotFoundHttpException
+     */
     public function runAction($action) {
         if($action === '') {
             $action = $this->module->defaultAction;
@@ -45,6 +60,12 @@ class Controller extends Component
         }
     }
 
+    /**
+     * 
+     * @param type $route
+     * @param type $params
+     * @return type
+     */
     public function createRoute($route, $params) {
         // TODO: create route
         return;

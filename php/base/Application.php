@@ -16,39 +16,66 @@ defined('APP_DEBUG') or define('APP_DEBUG', FALSE);
  *
  * @property Request $request the current request
  * @property Response $response the current Response
+ * @property UrlManager $urlmanager the url manager of this application
  * 
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-class Application extends Module {
-
-    /** @var Application */
+class Application extends Module
+{
+    /**
+     * @var Application the application instance
+     */
     public static $app;
-    /* @var string[] */
+    /**
+     * @var string[] class map used by the autoloading mechanism.
+     * The array keys are the class names (without leading backslashes), and the array values
+     * are the corresponding class file paths.
+     */
     public static $classMap = [];
-    /* @var string[] */
+    /**
+     * @var string[] the registered root namespaces and their corresponding (base) path.
+     */
     public static $rootNamespace = [ 'app' => __DIR__ ];
-    
-    /* @var string */
+    /**
+     * @var string the parameter name, which is used to set and get the requested
+     * route in the request.
+     */
     public $routeParam = 'r';
     /**
      * @var string the application name.
      */
     public $name = 'VideoLogLabeling';
-    /** @var mixed[] */
+    /**
+     * @var mixed[] the parameter for this application defined as name-value parirs
+     */
     public $params = [];
 
-    /* @var UrlManager */
+    /**
+     * @var UrlManager the read-only url manager component
+     */
     private $_urlManager;
-    /* @var Request */
+    /**
+     * @var Request the read-only request component
+     */
     private $_request;
-    /* @var Response */
+    /**
+     * @var Response the read-only response component
+     */
     private $_response;
 
-    
+    /**
+     * Constructor
+     * @param String[] $config
+     */
     public function __construct($config = []) {
         parent::__construct(NULL, $config);
     }
     
+    /**
+     * Initializes the module.
+     * This method is called after the module is created and initialized with property values
+     * given in configuration.
+     */
     protected function init() {
         static::$app = $this;
         static::$classMap = require(__DIR__ . '/classes.php');
@@ -57,6 +84,17 @@ class Application extends Module {
         ErrorHandler::getInstance()->register();
     }
 
+    /**
+     * Class autoload loader.
+     * This method is invoked automatically when PHP sees an unknown class.
+     * The method will attempt to include the class file according to the following procedure:
+     *
+     * 1. Search in [[classMap]];
+     * 2. If the class is namespaced (e.g. `app\Component`), it will attempt
+     *    to include the file simply by using the namespace as path to the file.
+     * 
+     * @param String $className the fully qualified class name without a leading backslash "\"
+     */
     public static function autoload($className) {
         if(isset(static::$classMap[$className])) {
             $classFile = static::$classMap[$className];
@@ -71,6 +109,12 @@ class Application extends Module {
         include $classFile;
     }
     
+    /**
+     * Replaces the root namespace by its corresponding base path.
+     * 
+     * @param String $ns the "root" namespace which should be replaced
+     * @return String base path of the given root namespace
+     */
     public static function replaceRootNamespace($ns) {
         if(($pos = strpos($ns, '/')) !== FALSE) {
             $root = substr($ns, 0, $pos);
@@ -81,13 +125,18 @@ class Application extends Module {
         return static::$basePath . '/' . $ns;
     }
 
+    /**
+     * Runs the application.
+     * This is the main entrance of an application.
+     */
     public function run() {
         $response = $this->handleRequest();
         $response->send();
     }
 
     /**
-     * @return UrlManager
+     * Returns the URL manager for this application.
+     * @return UrlManager the url manager component
      */
     public function getUrlManager() {
         if($this->_urlManager === NULL) {
@@ -97,7 +146,8 @@ class Application extends Module {
     }
     
     /**
-     * @return Request
+     * Returns the request component.
+     * @return Request the request component
      */
     public function getRequest() {
         if($this->_request === NULL) {
@@ -107,7 +157,8 @@ class Application extends Module {
     }
     
     /**
-     * @return Response
+     * Returns the response component.
+     * @return Response the response component
      */
     public function getResponse() {
         if($this->_response === NULL) {
@@ -117,14 +168,14 @@ class Application extends Module {
     }
 
     /**
+     * Handles the specified request.
      * 
-     * @param Request $request
-     * @return \app\Response
+     * @param Request $request the request which should be handled
+     * @return \app\Response the resulting response
      */
     public function handleRequest() {
         $r = $this->getRequest()->getRoute();
         
-        // TODO: resolve the correct module
         $module = $this->getModule($r);
         
         $action_name = '';
@@ -137,7 +188,7 @@ class Application extends Module {
                 // controller takes precedence over action
                 $controller_name = $r;
             } else {
-                // route doesn't name a controler - it has to be an action!
+                // route doesn't name a controller - it has to be an action!
                 $controller_name = $module->defaultController;
                 $action_name = $r;
             }
@@ -149,10 +200,12 @@ class Application extends Module {
         $controller = $module->getController(ucfirst($controller_name) . 'Controller');
         $result = $controller->runAction($action_name);
         
+        // if we got an response object we return that ...
         if ($result instanceof Response) {
             return $result;
         }
         
+        // ... otherwise we set the returned result as response content
         $response = $this->getResponse();
         if ($result !== null) {
             $response->content = $result;
@@ -161,6 +214,15 @@ class Application extends Module {
         return $response;
     }
     
+    /**
+     * Returns the value of the named parameter or the default value if the parameter 
+     * doesn't exist.
+     * The parameter can be set via the params.php in the configuration.
+     * 
+     * @param String $key the parameter name
+     * @param mixed $default the default value, if the parameter doesn't exists
+     * @return mixed the corresponding parameter value or the default value
+     */
     public function getParam($key, $default = NULL) {
         return isset($this->params[$key]) ? $this->params[$key] : $default;
     }
