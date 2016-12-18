@@ -12,6 +12,9 @@ namespace app\models;
  */
 class SoccerGameHalftimeModel extends \app\Component
 {
+    /** 
+     * @var String halftime
+     */
     public $id;
     public $path;
     public $comment;
@@ -19,7 +22,8 @@ class SoccerGameHalftimeModel extends \app\Component
     private $_labels;
     private $_video;
     
-    public function __construct($id, $path, $comment = '') {
+    public function __construct($id, $path, $comment = '', $config = []) {
+        parent::__construct($config);
         $this->id = $id;
         $this->path = $path;
         $this->comment = $comment;
