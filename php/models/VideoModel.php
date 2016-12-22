@@ -38,9 +38,9 @@ class VideoModel extends \app\Component
         }
         
         parent::__construct($config);
-        $this->_file = $file;
+        $this->_file = [ $file ];
         $this->_info = pathinfo($file);
-        $this->_info['extension'] = [strtolower($this->_info['extension']) ];
+        $this->_info['extension'] = [ strtolower($this->_info['extension']) ];
         //[ 'dirname' => 'log/2016-01-16-MM-HTWK' 'basename' => 'half1.mp4' 'extension' => 'mp4' 'filename' => 'half1' ]
     }
     
@@ -50,7 +50,7 @@ class VideoModel extends \app\Component
      */
     public function __toString() {
         // TODO: return default format
-        return $this->_file;
+        return $this->_file[0];
     }
     
     protected function getInfo($key, $default=NULL) {
@@ -108,19 +108,30 @@ class VideoModel extends \app\Component
         return $this->hasPreview() ? $this->_info['preview'] : $this->defaultPreviewImg;
     }
     
+    /**
+     * Returns the files registered to this video.
+     * A video can consist of multiple files with different extension. Therefore
+     * the files had to be in the same directory with the same name (only different extension).
+     * 
+     * @return String[]
+     */
+    public function getFiles() {
+        return $this->_file;
+    }
+    
+    /**
+     * Merges to VideoModels if both represents the same video, but with different extensions.
+     * The path to and the name must be the same.
+     * 
+     * @param \app\models\VideoModel $other the video which should be merged with the current
+     * @return boolean returns TRUE, if both files represents the same video, FALSe otherwise
+     */
     public function addFormat(VideoModel $other) {
         if($this->getPath() === $other->getPath() && $this->getName() === $other->getName() && !empty(array_diff($this->getExtensions(), $other->getExtensions()))) {
             $this->_info['extension'] = array_merge($this->getExtensions(), $other->getExtensions());
+            $this->_file = array_merge($this->_file, $other->getFiles());
             return TRUE;
         }
         return FALSE;
-    }
-    
-    public function getFiles() {
-        $result = [];
-        foreach ($this->_info['extension'] as $ext) {
-            $result[] = $this->getPath() . DIRECTORY_SEPARATOR . $this->getName() . '.' . $ext;
-        }
-        return $result;
     }
 }

@@ -155,7 +155,7 @@ abstract class Module extends Component
     public function getModule(&$name) {
         $module = $this;
         if ($name !== '') {
-            $parts = split('/', $name);
+            $parts = explode('/', $name);
             $class = $this->getNamespace() . '\\modules\\' . $parts[0] . '\\' . ucfirst($parts[0]) . 'Module';
             if (class_exists($class)) {
                 unset($parts[0]);
