@@ -2,11 +2,11 @@
 namespace app\models;
 
 /**
- * Description of SoccerGameLogModel
+ * Description of SoccerRobotLogs
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-class SoccerGameLogModel
+class SoccerRobotLogs
 {
     public $errors = [];
     public $labels = [];

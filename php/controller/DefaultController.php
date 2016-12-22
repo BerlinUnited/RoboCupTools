@@ -2,7 +2,7 @@
 namespace app\controller;
 
 use app\Application;
-use app\models\SoccerGameModel;
+use app\models\SoccerGame;
 
 class DefaultController extends \app\Controller
 {
@@ -23,7 +23,7 @@ class DefaultController extends \app\Controller
             if ($value == "." || $value == "..") {
                 continue;
             }
-            if(($model = SoccerGameModel::checkAndCreate($path . "/" . $value)) !== NULL) {
+            if(($model = SoccerGame::checkAndCreate($path . "/" . $value)) !== NULL) {
                 $result[] = $model;
             }
         }
@@ -34,7 +34,7 @@ class DefaultController extends \app\Controller
     public function actionView() {
         $game_id = \app\Application::$app->request->get('id');
         $half_id = \app\Application::$app->request->get('half');
-        if($game_id === NULL || ($game = SoccerGameModel::checkAndCreate(base64_decode($game_id))) === NULL) {
+        if($game_id === NULL || ($game = SoccerGame::checkAndCreate(base64_decode($game_id))) === NULL) {
             throw new \app\NotFoundHttpException('Unknown game id!');
         }
         if($half_id === NULL || ($half = $game->getHalf($half_id)) === NULL) {

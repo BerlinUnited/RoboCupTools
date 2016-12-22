@@ -1,7 +1,7 @@
 <?php
 /* @var $this app\View */
-/* @var $games[] \app\models\SoccerGameModel */
-/* @var $game \app\models\SoccerGameModel */
+/* @var $games[] \app\models\SoccerGame */
+/* @var $game \app\models\SoccerGame */
 
 $this->registerCss('
     #game_overview .dl-horizontal dt { width: 80px; }

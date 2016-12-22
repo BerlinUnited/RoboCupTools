@@ -1,12 +1,15 @@
 <?php
 namespace app\models;
 /**
- * Description of SoccerGameLogModel
+ * Description of SoccerGame
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-class SoccerGameModel
+class SoccerGame
 {
+    public static $regex_folder = '/.*\/?(\d{4}-\d{2}-\d{2})-(\w+)-(\w+)/';
+    public static $regex_halftime = '/half(?P<id>\d+)(-(?P<comment>\S+))?$/';
+    
     private $_directory;
     /* @var $_date DateTimeImmutable */
     private $_date;
@@ -28,11 +31,11 @@ class SoccerGameModel
      */
     public static function checkAndCreate($file) {
         if(is_dir($file) // has to be a directory
-            && preg_match('/.*\/?(\d{4}-\d{2}-\d{2})-(\w+)-(\w+)/', $file, $parts) === 1 // directory must look like "yyyy-mm-dd-event-opponent"
-            && !empty(glob($file.DIRECTORY_SEPARATOR.'*half*.{MP4,mp4,webm,WEBM}',GLOB_BRACE)) // there should be at least one mp4 half video file
-            && !empty(glob($file.DIRECTORY_SEPARATOR.'*half*',GLOB_ONLYDIR)) // and a half time directory
+            && preg_match(static::$regex_folder, $file, $parts) === 1 // directory must look like "yyyy-mm-dd-event-opponent"
+            && !empty(glob($file.DIRECTORY_SEPARATOR.'half*.{MP4,mp4,webm,WEBM}',GLOB_BRACE)) // there should be at least one mp4 half video file
+            && !empty(glob($file.DIRECTORY_SEPARATOR.'half*',GLOB_ONLYDIR)) // and a half time directory
         ) {
-            return new SoccerGameModel($parts[1], $parts[2], $parts[3], $file);
+            return new SoccerGame($parts[1], $parts[2], $parts[3], $file);
         }
         return NULL;
     }
@@ -61,8 +64,8 @@ class SoccerGameModel
         if($this->_halftimes === NULL) {
             foreach (glob($this->_directory . DIRECTORY_SEPARATOR . 'half*', GLOB_ONLYDIR) as $dir) {
                 // ignoring directories which doesn't match the pattern
-                if(preg_match('/half(?P<id>\d+)(-(?P<comment>\S+))?$/', $dir, $half)) {
-                    $this->_halftimes[] = new SoccerGameHalftimeModel( $half['id'], $dir, isset($half['comment'])?$half['comment']:'' );
+                if(preg_match(static::$regex_halftime, $dir, $half)) {
+                    $this->_halftimes[] = new SoccerHalftime( $half['id'], $dir, isset($half['comment'])?$half['comment']:'' );
                 }
             }
         }
@@ -102,7 +105,7 @@ class SoccerGameModel
             if ($dir == "." || $dir == "..") {
                 continue;
             }
-            $logs[] = new SoccerGameLogModel($path . DIRECTORY_SEPARATOR . $dir);
+            $logs[] = new SoccerRobotLogs($path . DIRECTORY_SEPARATOR . $dir);
         }
         return $logs;
     }

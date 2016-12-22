@@ -1,8 +1,8 @@
 <?php
 /* @var $this       app\View */
-/* @var $games[]    \app\models\SoccerGameModel */
-/* @var $game       \app\models\SoccerGameModel */
-/* @var $half       app\models\SoccerGameHalftimeModel */
+/* @var $games[]    \app\models\SoccerGame */
+/* @var $game       \app\models\SoccerGame */
+/* @var $half       app\models\SoccerHalftime */
 ?>
 
 <table class="table table-striped table-hover">

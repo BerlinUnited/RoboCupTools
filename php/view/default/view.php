@@ -1,7 +1,7 @@
 <?php
 /* @var $this app\View */
-/* @var $game \app\models\SoccerGameModel */
-/* @var $half \app\models\SoccerGameHalftimeModel */
+/* @var $game \app\models\SoccerGame */
+/* @var $half \app\models\SoccerHalftime */
 
 $this->title = \app\Application::$app->name . ' ::: ' . \app\Application::$app->params['ownTeamName'] .' vs. '. $game->getOpponent();
 

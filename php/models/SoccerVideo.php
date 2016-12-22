@@ -2,13 +2,13 @@
 namespace app\models;
 
 /**
- * Description of SoccerVideoModel
+ * Description of SoccerVideo
  * 
  * @property String[] $cameras Id of available cameras (videos)
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-class SoccerVideoModel extends \app\Component
+class SoccerVideo extends \app\Component
 {
     public $files;
     

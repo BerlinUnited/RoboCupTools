@@ -2,7 +2,7 @@
 namespace app\models;
 
 /**
- * Description of SoccerGameHalftimeModel
+ * Description of SoccerHalftime
  *
  * @property SoccerGameModel[] $robots the available robots in this halftime
  * @property String[] $labels the available labels in this halftime
@@ -10,7 +10,7 @@ namespace app\models;
  * 
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-class SoccerGameHalftimeModel extends \app\Component
+class SoccerHalftime extends \app\Component
 {
     /** 
      * @var String halftime
@@ -36,7 +36,7 @@ class SoccerGameHalftimeModel extends \app\Component
     public function getVideo() {
         if($this->_video === NULL) {
             $files = glob($this->path.'/../'.DIRECTORY_SEPARATOR.'*half'.$this->id.'*.{MP4,mp4,webm,WEBM}',GLOB_BRACE);
-            $this->_video = new SoccerVideoModel($files);
+            $this->_video = new SoccerVideo($files);
         }
         return $this->_video;
     }
@@ -51,7 +51,7 @@ class SoccerGameHalftimeModel extends \app\Component
                 if ($dir == "." || $dir == "..") {
                     continue;
                 }
-                $this->_robots[$dir] = new SoccerGameLogModel($this->path . DIRECTORY_SEPARATOR . $dir);
+                $this->_robots[$dir] = new SoccerRobotLogs($this->path . DIRECTORY_SEPARATOR . $dir);
             }
         }
         return $this->_robots;
