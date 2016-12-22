@@ -57,7 +57,7 @@ $this->registerJs('
   });');
 
 $js =<<<'JS'
-var app = angular.module('test', ['schemaForm']);
+    var app = angular.module('test', ['schemaForm']);
     
     app.controller('MainController', function($rootScope, $scope, $compile) {
     
@@ -301,9 +301,9 @@ var app = angular.module('test', ['schemaForm']);
     });
 JS;
 $search = ['%title%', '%save%'];
-$replace = ['',\app\Url::to(['save'])];
+$replace = [$label,\app\Url::to(['save'])];
 $this->registerJs(str_replace($search, $replace, $js));
-$this->registerJs('draw(0,1000,0.1, 1000, 2000);', app\View::POS_READY);
+$this->registerJs('draw(0,100,0.1, 100, 200);', app\View::POS_READY);
 $this->registerCss('
     .labels a {
         margin: 5px;
@@ -318,7 +318,7 @@ $this->registerCss('
         <h3><a href="<?= \app\Url::home() ?>"><< BACK</a></h3>
     </div>
     <div class="col-sm-10">
-        <h3><?=\app\Application::$app->params['ownTeamName']?> vs. <?= $game->getOpponent()?> <small>(<?=$game->getEvent()?>, <?=$game->getDate()?>)</small></h3>
+        <h3><?=\app\Application::$app->params['ownTeamName']?> vs. <?= $game->getOpponent()?>, <?=$half->id?>. half <small>(<?=$game->getEvent()?>, <?=$game->getDate()?>)</small></h3>
     </div>
 </div>
 
@@ -343,7 +343,7 @@ $this->registerCss('
 
     <div class="col-sm-3">
         <div ng-controller="DrawingController">
-            <canvas id="canvas" width="7400" height="10400" style="width: 100%;"></canvas>
+            <canvas id="canvas" width="740" height="1040" style="width: 100%;"></canvas>
         </div>
     </div>
 </div>
