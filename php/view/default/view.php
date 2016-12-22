@@ -3,6 +3,7 @@
 /* @var $game \app\models\SoccerGame */
 /* @var $half \app\models\SoccerHalftime */
 /* @var $label String */
+/* @var $video String */
 
 $this->title = \app\Application::$app->name . ' ::: ' . \app\Application::$app->params['ownTeamName'] .' vs. '. $game->getOpponent();
 
@@ -334,11 +335,12 @@ $this->registerCss('
             <video style="width: 100%; height: 100%;" id="player">
             <?php
                 // TODO: different resolutions|formats should be here! (not half times)
-                //\app\VarDumper::dump();
-                echo '<source src="'.current($half->video->getFirstCamera()).'">';
+                $video_file = $video === NULL ? $half->getFirstVideo() : $half->getVideoById($video);
+                echo implode("\n",array_map(function($f){ return '<source src="'.$f.'">'; }, $video_file->getFiles()));
             ?>
             </video>
         </div>
+        <?=$this->render('camera_buttons', ['game'=>$game,'half'=>$half, 'label'=>$label, 'video_file'=>$video_file])?>
     </div>
 
     <div class="col-sm-3">

@@ -2,14 +2,21 @@
 namespace app\models;
 /**
  * Description of SoccerGame
+ * 
+ * @property String $id the id of this game - is the base64 encoded game directory
+ * @property String $directory the directory of this game
+ * @property String $event the location/event name of this game
+ * @property SoccerHalftime[] $halftimes available halftimes of this game
+ * @property String $opponent the opponent of this game
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-class SoccerGame
+class SoccerGame extends \app\Component
 {
     public static $regex_folder = '/.*\/?(\d{4}-\d{2}-\d{2})-(\w+)-(\w+)/';
     public static $regex_halftime = '/half(?P<id>\d+)(-(?P<comment>\S+))?$/';
     
+    private $_id;
     private $_directory;
     /* @var $_date DateTimeImmutable */
     private $_date;
@@ -22,6 +29,7 @@ class SoccerGame
         $this->_event = $event;
         $this->_opponent = $opp;
         $this->_directory = $dir;
+        $this->_id = base64_encode($this->_directory);
     }
 
     /**
@@ -38,6 +46,10 @@ class SoccerGame
             return new SoccerGame($parts[1], $parts[2], $parts[3], $file);
         }
         return NULL;
+    }
+    
+    public function getId() {
+        return $this->_id;
     }
     
     public function getDate($format = 'd.m.Y') {
@@ -58,7 +70,7 @@ class SoccerGame
     
     /**
      * 
-     * @return SoccerGameHalftimeModel[]
+     * @return SoccerHalftime[]
      */
     public function getHalftimes() {
         if($this->_halftimes === NULL) {

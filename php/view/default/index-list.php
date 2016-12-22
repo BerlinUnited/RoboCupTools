@@ -32,9 +32,9 @@
                         $labels = '';
                         foreach ($half->labels as $key => $label) {
                             if($label === 'new') {
-                                $labels = '<a href="'.\app\Url::to(['/default/view', 'id' => base64_encode($game->getDirectory()), 'half'=>$half->id, 'name'=>$label]).'">['.$label.']</a> ' . $labels;
+                                $labels = '<a href="'.\app\Url::to(['/default/view', 'id' => $game->id, 'half'=>$half->id, 'name'=>$label]).'">['.$label.']</a> ' . $labels;
                             } else {
-                                $labels .= '<a href="'.\app\Url::to(['/default/view', 'id' => base64_encode($game->getDirectory()), 'half'=>$half->id, 'name'=>$label]).'">['.$label.']</a> ';
+                                $labels .= '<a href="'.\app\Url::to(['/default/view', 'id' => $game->id, 'half'=>$half->id, 'name'=>$label]).'">['.$label.']</a> ';
                             }
                         }
                         echo $labels;

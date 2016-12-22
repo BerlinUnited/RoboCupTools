@@ -27,7 +27,7 @@ class VideoModel extends \app\Component
     /**
      * @var mixed[]
      */
-    private $_info;
+    protected $_info;
     
     /*
      * Constructor
@@ -53,12 +53,16 @@ class VideoModel extends \app\Component
         return $this->_file;
     }
     
+    protected function getInfo($key, $default=NULL) {
+        return isset($this->_info[$key])?$this->_info[$key]:$default;
+    }
+    
     /**
      * Return the path part of the video file.
      * @return String
      */
     public function getPath() {
-        return isset($this->_info['dirname'])?$this->_info['dirname']:NULL;
+        return $this->getInfo('dirname');
     }
     
     /**
@@ -66,7 +70,7 @@ class VideoModel extends \app\Component
      * @return String
      */
     public function getName() {
-        return isset($this->_info['filename'])?$this->_info['filename']:NULL;
+        return $this->getInfo('filename');
     }
     
     /**
@@ -110,5 +114,13 @@ class VideoModel extends \app\Component
             return TRUE;
         }
         return FALSE;
+    }
+    
+    public function getFiles() {
+        $result = [];
+        foreach ($this->_info['extension'] as $ext) {
+            $result[] = $this->getPath() . DIRECTORY_SEPARATOR . $this->getName() . '.' . $ext;
+        }
+        return $result;
     }
 }

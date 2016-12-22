@@ -35,6 +35,7 @@ class DefaultController extends \app\Controller
         $game_id = \app\Application::$app->request->get('id');
         $half_id = \app\Application::$app->request->get('half');
         $label = \app\Application::$app->request->get('name', 'new');
+        $video = \app\Application::$app->request->get('video');
         
         if($game_id === NULL || ($game = SoccerGame::checkAndCreate(base64_decode($game_id))) === NULL) {
             throw new \app\NotFoundHttpException('Unknown game id!');
@@ -47,6 +48,7 @@ class DefaultController extends \app\Controller
             'game'=>$game,
             'half'=>$half,
             'label'=>$label,
+            'video'=>$video,
         ]);
     }
 

@@ -27,7 +27,7 @@ class UrlManager extends Component {
     
     private function normalizeRoute(&$route) {
         // TODO: route normalization
-        if($route === '') {
+        if($route === '' || $route === NULL) {
             $route = Application::$app->request->getRoute();
         }
     }

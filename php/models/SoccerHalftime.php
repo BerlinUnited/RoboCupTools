@@ -6,7 +6,7 @@ namespace app\models;
  *
  * @property SoccerGameModel[] $robots the available robots in this halftime
  * @property String[] $labels the available labels in this halftime
- * @property SoccerVideoModel $video the available video in this halftime
+ * @property SoccerVideo $video the available video in this halftime
  * 
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
@@ -31,14 +31,31 @@ class SoccerHalftime extends \app\Component
     
     /**
      * 
-     * @return SoccerVideoModel
+     * @return SoccerVideoModel[]
      */
     public function getVideo() {
         if($this->_video === NULL) {
+            $this->_video = [];
             $files = glob($this->path.'/../'.DIRECTORY_SEPARATOR.'*half'.$this->id.'*.{MP4,mp4,webm,WEBM}',GLOB_BRACE);
-            $this->_video = new SoccerVideo($files);
+            foreach ($files as $file) {
+                $video = new SoccerVideo($file);
+                if(isset($this->_video[$video->getId()])) {
+                    $this->_video[$video->getId()]->addFormat($video);
+                } else {
+                    $this->_video[$video->getId()] = $video;
+                }
+            }
         }
         return $this->_video;
+    }
+    
+    public function getVideoById($id) {
+        $videos = $this->getVideo();
+        return isset($videos[$id]) ? $videos[$id] : NULL;
+    }
+    
+    public function getFirstVideo() {
+        return array_values($this->getVideo())[0];
     }
     
     /**
