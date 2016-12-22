@@ -313,56 +313,63 @@ $this->registerCss('
         margin-bottom:5px;
     }
 ');
+// determine video for this halftime
+$video_file = $video === NULL ? $half->getFirstVideo() : $half->getVideoById($video);
 ?>
 <div class="row">
-    <div class="col-sm-2">
-        <h3><a href="<?= \app\Url::home() ?>"><< BACK</a></h3>
+    <div class="col-xs-2">
+        <h3><a href="<?= \app\Url::home() ?>"><<&nbsp;BACK</a></h3>
     </div>
-    <div class="col-sm-10">
+    <div class="col-xs-10">
         <h3><?=\app\Application::$app->params['ownTeamName']?> vs. <?= $game->getOpponent()?>, <?=$half->id?>. half <small>(<?=$game->getEvent()?>, <?=$game->getDate()?>)</small></h3>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-sm-2">
-        <div ng-controller="FormController"> 
-            <form name="labels" sf-schema="schema" sf-form="form" sf-model="model" ng-submit="onSubmit(labels)"></form>
+    <!-- Video & Timeline -->
+    <div class="col-xs-12 col-sm-8 col-lg-7 col-lg-push-2">
+        <div class="row">
+            <div class="col-xs-12">
+                <?=$this->render('camera_buttons', ['game'=>$game,'half'=>$half, 'label'=>$label, 'video_file'=>$video_file])?>
+            </div>
+            <div class="col-xs-12">
+                <div ng-controller="PlayerController">
+                    <video style="width: 100%; height: 100%;" id="player">
+                    <?php
+                        // TODO: different resolutions|formats should be here! (not half times)
+                        echo implode("\n",array_map(function($f){ return '<source src="'.$f.'">'; }, $video_file->getFiles()));
+                    ?>
+                    </video>
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <?php
+                foreach ($half->robots as $log) {
+                    echo '<div data-timeline data-file="' . $log->getLabelFile($label) . '" data-logoffset="' . $log->log_offset . '" data-videooffset="' . $log->video_offset . '"></div>';
+                }
+                ?>
+                <?php /* HACK: not used for now 
+                <form>
+                    Name: <input type="text" name="lastname" data-ng-model="widget.title">
+                    <input type="button" value="Submit" ng-click="save($event)">
+                </form>
+                 */ ?>
+            </div>
         </div>
     </div>
-
-    <div class="col-sm-7">
-        <div ng-controller="PlayerController">
-            <video style="width: 100%; height: 100%;" id="player">
-            <?php
-                // TODO: different resolutions|formats should be here! (not half times)
-                $video_file = $video === NULL ? $half->getFirstVideo() : $half->getVideoById($video);
-                echo implode("\n",array_map(function($f){ return '<source src="'.$f.'">'; }, $video_file->getFiles()));
-            ?>
-            </video>
-        </div>
-        <?=$this->render('camera_buttons', ['game'=>$game,'half'=>$half, 'label'=>$label, 'video_file'=>$video_file])?>
-    </div>
-
-    <div class="col-sm-3">
+    
+    <!-- Soccer field -->
+    <div class="col-xs-6 col-sm-4 col-lg-3 col-lg-push-2">
         <div ng-controller="DrawingController">
             <canvas id="canvas" width="740" height="1040" style="width: 100%;"></canvas>
         </div>
     </div>
-</div>
-
-<div class="row">
-    <div class="col-sm-10 col-sm-offset-2">
-        <?php
-        foreach ($half->robots as $log) {
-            echo '<div data-timeline data-file="' . $log->getLabelFile($label) . '" data-logoffset="' . $log->log_offset . '" data-videooffset="' . $log->video_offset . '"></div>';
-        }
-        ?>
-        <?php /* HACK: not used for now 
-        <form>
-            Name: <input type="text" name="lastname" data-ng-model="widget.title">
-            <input type="button" value="Submit" ng-click="save($event)">
-        </form>
-         */ ?>
+    
+    <!-- comment & labeling -->
+    <div class="col-xs-6 col-sm-12 col-lg-2 col-lg-pull-10">
+        <div ng-controller="FormController"> 
+            <form name="labels" sf-schema="schema" sf-form="form" sf-model="model" ng-submit="onSubmit(labels)"></form>
+        </div>
     </div>
 </div>
 
