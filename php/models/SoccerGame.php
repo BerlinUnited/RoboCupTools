@@ -73,7 +73,12 @@ class SoccerGame
     }
     
     public function getHalf($id) {
-        return isset($this->getHalftimes()[$id]) ? $this->getHalftimes()[$id] : NULL;
+        foreach ($this->getHalftimes() as $half) {
+            if($half->id === $id) {
+                return $half;
+            }
+        }
+        return NULL;
     }
     
     public function getVideos() {

@@ -63,9 +63,10 @@ class SoccerHalftime extends \app\Component
      */
     public function getLabels() {
         if($this->_labels === NULL) {
-            $r = current($this->getRobots());
-            if($r !== FALSE) {
-                $this->_labels = $r->getLabels();
+            $this->_labels = [];
+            $robots = $this->getRobots();
+            foreach ($robots as $robot) {
+                $this->_labels += $robot->getLabels();
             }
         }
         return $this->_labels;

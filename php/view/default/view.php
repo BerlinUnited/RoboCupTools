@@ -2,6 +2,7 @@
 /* @var $this app\View */
 /* @var $game \app\models\SoccerGame */
 /* @var $half \app\models\SoccerHalftime */
+/* @var $label String */
 
 $this->title = \app\Application::$app->name . ' ::: ' . \app\Application::$app->params['ownTeamName'] .' vs. '. $game->getOpponent();
 
@@ -16,7 +17,7 @@ $this->registerJsFile('lib/schema-form.min.js');
 $this->registerJsFile('lib/bootstrap-decorator.js');
 $this->registerJsFile('lib/player/mediaelement-and-player.min.js');
 $this->registerJsFile('js/field.js');
-
+// TODO: move JS to own/seperate file!
 $this->registerJs('
   function PeriodicPlayer(player) 
   { 
@@ -350,12 +351,8 @@ $this->registerCss('
 <div class="row">
     <div class="col-sm-10 col-sm-offset-2">
         <?php
-        //<div data-timeline data-file="log/labels.json"></div>
-//        \app\VarDumper::dump($game->getLogs());
-        // TODO: get the correct name(s)
-        $name = \app\Application::$app->request->get('name', 'new');
-        foreach ($half->robots as $key => $log) {
-            echo '<div data-timeline data-file="' . $log->labels[$name] . '" data-logoffset="' . $log->log_offset . '" data-videooffset="' . $log->video_offset . '"></div>';
+        foreach ($half->robots as $log) {
+            echo '<div data-timeline data-file="' . $log->getLabelFile($label) . '" data-logoffset="' . $log->log_offset . '" data-videooffset="' . $log->video_offset . '"></div>';
         }
         ?>
         <?php /* HACK: not used for now 

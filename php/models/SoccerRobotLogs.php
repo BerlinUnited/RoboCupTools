@@ -8,6 +8,9 @@ namespace app\models;
  */
 class SoccerRobotLogs
 {
+    public static $regex_json = '/labels(-(?P<id>\S+))?.json/';
+    
+    public $id;
     public $errors = [];
     public $labels = [];
     public $sync = '';
@@ -17,9 +20,11 @@ class SoccerRobotLogs
     function __construct($path) {
         //is a (log) directory
         if (is_dir($path)) {
+            // using directory name as id
+            $this->id = basename($path);
             // iterate over Nao directories
             foreach (glob($path . DIRECTORY_SEPARATOR . 'labels*.json', GLOB_BRACE) as $file) {
-                if(preg_match('/labels(-(?P<id>\S+))?.json/', $file, $match)) {
+                if(preg_match(static::$regex_json, $file, $match)) {
                     // sets the label json file with the id
                     $this->labels[(isset($match['id']))?$match['id']:'new'] = $file;
                 }
@@ -64,5 +69,9 @@ class SoccerRobotLogs
     
     public function getLabels() {
         return array_keys($this->labels);
+    }
+    
+    public function getLabelFile($label) {
+        return isset($this->labels[$label]) ? $this->labels[$label] : NULL;
     }
 }

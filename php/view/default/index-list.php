@@ -29,16 +29,15 @@
                 <td>
                     <span class="labels">
                     <?php
-                            echo 'half'.$half->id.': ';
-                            $labels = $half->labels;
-                            /*
-                            if(in_array('new', $labels)) {
-                                echo '<a href="'.\app\Url::to(['/default/view', 'id' => base64_encode($game->getDirectory()), 'half'=>$half->id, 'name'=>'new']).'">[new]</a> ';
-                                array_
-                            }*/
-                            foreach ($labels as $label) {
-                                echo '<a href="'.\app\Url::to(['/default/view', 'id' => base64_encode($game->getDirectory()), 'half'=>$half->id, 'name'=>'new']).'">[new]</a> ';
+                        $labels = '';
+                        foreach ($half->labels as $key => $label) {
+                            if($label === 'new') {
+                                $labels = '<a href="'.\app\Url::to(['/default/view', 'id' => base64_encode($game->getDirectory()), 'half'=>$half->id, 'name'=>$label]).'">['.$label.']</a> ' . $labels;
+                            } else {
+                                $labels .= '<a href="'.\app\Url::to(['/default/view', 'id' => base64_encode($game->getDirectory()), 'half'=>$half->id, 'name'=>$label]).'">['.$label.']</a> ';
                             }
+                        }
+                        echo $labels;
                     ?>
                     </span>
                 </td>

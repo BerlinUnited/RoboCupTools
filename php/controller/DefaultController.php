@@ -34,15 +34,19 @@ class DefaultController extends \app\Controller
     public function actionView() {
         $game_id = \app\Application::$app->request->get('id');
         $half_id = \app\Application::$app->request->get('half');
+        $label = \app\Application::$app->request->get('name', 'new');
+        
         if($game_id === NULL || ($game = SoccerGame::checkAndCreate(base64_decode($game_id))) === NULL) {
             throw new \app\NotFoundHttpException('Unknown game id!');
         }
         if($half_id === NULL || ($half = $game->getHalf($half_id)) === NULL) {
             throw new \app\NotFoundHttpException('Unknown halftime id!');
         }
+        
         return $this->render('view', [
             'game'=>$game,
             'half'=>$half,
+            'label'=>$label,
         ]);
     }
 
