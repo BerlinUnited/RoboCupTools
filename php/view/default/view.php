@@ -134,8 +134,14 @@ $js =<<<'JS'
       $scope.save = function(event) 
       {
         if($scope.widget.title == '') {
+          $("#labelset-name").parent().addClass("has-error");
           alert("ERROR: you need to set a tag.");
+          return;
+        } else {
+          $("#labelset-name").parent().removeClass("has-error");
+          $("#labelset-name").parent().addClass("has-success");
         }
+        var error_box = $("form[name='label-form']").find(".alert");
         
         //console.log($scope.widget.title);
         for(var i = 0; i < $scope.model.length; ++i) {
@@ -148,6 +154,12 @@ $js =<<<'JS'
           $.post( "%save%", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
            .done(function( result ) {
               console.log(result);
+              if(!error_box.hasClass("hidden")) {
+                error_box.addClass("hidden");
+              }
+            }).fail(function(qXHR, textStatus, errorThrown) {
+              error_box.html("<strong>ERROR: "+qXHR.statusText+"</strong>"+qXHR.responseText);
+              error_box.removeClass("hidden");
             });
         }
         //var str = JSON.stringify($scope.model, null, '  ');
@@ -302,7 +314,7 @@ $js =<<<'JS'
     });
 JS;
 $search = ['%title%', '%save%'];
-$replace = [$label,\app\Url::to(['save'])];
+$replace = ['',\app\Url::to(['save'])];
 $this->registerJs(str_replace($search, $replace, $js));
 $this->registerJs('draw(0,100,0.1, 100, 200);', app\View::POS_READY);
 $this->registerCss('
@@ -348,12 +360,6 @@ $video_file = $video === NULL ? $half->getFirstVideo() : $half->getVideoById($vi
                     echo '<div data-timeline data-file="' . $log->getLabelFile($label) . '" data-logoffset="' . $log->log_offset . '" data-videooffset="' . $log->video_offset . '"></div>';
                 }
                 ?>
-                <?php /* HACK: not used for now 
-                <form>
-                    Name: <input type="text" name="lastname" data-ng-model="widget.title">
-                    <input type="button" value="Submit" ng-click="save($event)">
-                </form>
-                 */ ?>
             </div>
         </div>
     </div>
@@ -370,6 +376,19 @@ $video_file = $video === NULL ? $half->getFirstVideo() : $half->getVideoById($vi
         <div ng-controller="FormController"> 
             <form name="labels" sf-schema="schema" sf-form="form" sf-model="model" ng-submit="onSubmit(labels)"></form>
         </div>
+        
+        <hr>
+        
+        <form name="label-form">
+            <div class="form-group">
+                <label class="control-label" for="labelset-name">Label set:</label>
+                <input type="text" name="labelset-name" data-ng-model="widget.title" class="form-control" id="labelset-name" placeholder="Name of the new label set">
+            </div>
+            <div class="form-group">
+                <button type="button" ng-click="save($event)" class="btn btn-primary btn-block">Submit</button>
+            </div>
+            <div class="alert alert-danger hidden" role="alert">An error occurred!</div>
+        </form>
     </div>
 </div>
 
