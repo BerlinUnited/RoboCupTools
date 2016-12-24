@@ -62,6 +62,23 @@ class View extends Component {
         return ob_get_clean();
     }
     
+    public function renderAjax($view, $params) {
+        $viewFile = $this->resolveView($view);
+
+        ob_start();
+        ob_implicit_flush(false);
+
+        $this->beginPage();
+        $this->head();
+        $this->beginBody();
+        echo $this->renderPhpFile($viewFile, $params);
+        $this->endBody();
+        $this->endPage();
+
+        return ob_get_clean();
+        
+    }
+    
     public function registerJs($js, $position = self::POS_HEAD) {
         $this->js_stack[$position][] = $js;
     }

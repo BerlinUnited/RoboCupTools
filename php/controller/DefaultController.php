@@ -51,5 +51,38 @@ class DefaultController extends \app\Controller
             'video'=>$video,
         ]);
     }
+    
+    public function actionSave() {
+        // return response as JSON
+        Application::$app->response->format = \app\Response::FORMAT_JSON;
+        $result = [];
+        // only ajax & post request allowed!
+        if (Application::$app->request->isAjax && Application::$app->request->isPost) {
+            // replace whitespaces with underscore
+            $tag = preg_replace('/\s+/', '_', Application::$app->request->post('tag'));
+            $file = preg_replace('/\s+/', '_', Application::$app->request->post('file'));
+            // TODO: should we "verify" the data?!?
+            $data = Application::$app->request->post('data');
+            
+            if (empty($tag)) {
+                $result = [ 'error' => 'a tag need to be set' ];
+            } elseif (preg_match(\app\models\SoccerRobotLogs::$regex_json, $file, $match)) {
+                $path = preg_replace('/labels.*\.json$/', 'labels-'.$tag.'.json', $file);
+                $jsonFile = fopen($path, "w");
+                if ($jsonFile) {
+                    fwrite($jsonFile, $data);
+                    fclose($jsonFile);
+                    $result = [ 'success' => 'writing to ' . $path . ' -- ' . $jsonFile . ' ' . $data ];
+                } else {
+                    $result = [ 'error' => 'writing to ' . $path ];
+                }
+            } else {
+                $result = [ 'error' => 'invalid json file' ];
+            }
+        } else {
+            $result = [ 'error' => 'invalid request' ];
+        }
+        return json_encode($result);
+    }
 
 }

@@ -51,7 +51,9 @@ class Controller extends Component
 //            VarDumper::dump($this->resolveLayout());
             if(is_string($response)) {
                 // TODO: return response ??!
-                return $this->getView()->renderPhpFile($this->resolveLayout(), ['content'=>$response]);
+                return $response;
+            } elseif ($response instanceof Response) {
+                return $response;
             } else {
                 throw new \Exception('Unknown response type!');
             }
@@ -86,7 +88,21 @@ class Controller extends Component
      * @return type
      */
     public function render($view, $params = []) {
-        return $this->getView()->render($view, $params);
+        $content = $this->getView()->render($view, $params);
+        return $this->getView()->renderPhpFile($this->resolveLayout(), ['content'=>$content]);
+    }
+    
+    /**
+     * Renders a given view in response to an ajax request.
+     * 
+     * @see View::renderAjax()
+     * 
+     * @param string $view
+     * @param mixed[] $params
+     * @return string
+     */
+    public function renderAjax($view, $params = []) {
+        return $this->getView()->renderAjax($view, $params);
     }
 
     /**

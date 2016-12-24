@@ -154,6 +154,8 @@ $js =<<<'JS'
           $.post( "%save%", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
            .done(function( result ) {
               console.log(result);
+//              console.log(result["error"]);
+              // TODO: show error/success message?!
               if(!error_box.hasClass("hidden")) {
                 error_box.addClass("hidden");
               }
@@ -314,7 +316,7 @@ $js =<<<'JS'
     });
 JS;
 $search = ['%title%', '%save%'];
-$replace = ['',\app\Url::to(['save'])];
+$replace = [(empty($label)||$label==='new'?'':$label),\app\Url::to(['save'])];
 $this->registerJs(str_replace($search, $replace, $js));
 $this->registerJs('draw(0,100,0.1, 100, 200);', app\View::POS_READY);
 $this->registerCss('
