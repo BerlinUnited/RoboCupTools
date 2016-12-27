@@ -3,11 +3,11 @@ namespace app\models;
 /**
  * Description of SoccerGame
  * 
- * @property String $id the id of this game - is the base64 encoded game directory
- * @property String $directory the directory of this game
- * @property String $event the location/event name of this game
+ * @property string $id the id of this game - is the base64 encoded game directory
+ * @property string $directory the directory of this game
+ * @property string $event the location/event name of this game
  * @property SoccerHalftime[] $halftimes available halftimes of this game
- * @property String $opponent the opponent of this game
+ * @property string $opponent the opponent of this game
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
@@ -34,7 +34,7 @@ class SoccerGame extends \app\Component
 
     /**
      * 
-     * @param String $file
+     * @param string $file
      * @return \SoccerGameModel
      */
     public static function checkAndCreate($file) {

@@ -89,7 +89,11 @@ class Controller extends Component
      */
     public function render($view, $params = []) {
         $content = $this->getView()->render($view, $params);
-        return $this->getView()->renderPhpFile($this->resolveLayout(), ['content'=>$content]);
+        $layout = $this->resolveLayout();
+        if($layout !== NULL) {
+            return $this->getView()->renderPhpFile($layout, ['content'=>$content]);
+        }
+        return $content;
     }
     
     /**
@@ -110,7 +114,15 @@ class Controller extends Component
      * @return String
      */
     private function resolveLayout() {
-        return $this->module->basePath . '/' . $this->module->viewDir .'/'. $this->module->defaultLayoutFile;
+        $module = $this->module;
+        while($module !== NULL) {
+            $layout = $module->basePath . '/' . $module->viewDir .'/'. $module->defaultLayoutFile;
+            if(file_exists($layout)) {
+                return $layout;
+            }
+            $module = $module->module;
+        }
+        return NULL;
     }
     
 }

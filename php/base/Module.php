@@ -5,38 +5,45 @@ include_once 'Component.php';
 
 /**
  * Description of Module
+ * 
+ * @property string $basePath   the path where this module is located
+ * @property string $controllerDir  the directory of the modules controllers
+ * @property string $modelDir  the directory of the modules models
+ * @property string $viewDir  the directory of the modules views
+ * @property View $view  the current view object of this module
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
 abstract class Module extends Component
 {
-    /** @var String */
-    public static $basePath;
-    /** @var String */
+    /** @var string */
     public static $controllerDir = 'controller';
-    /** @var String */
+    /** @var string */
     public static $modelDir = 'model';
-    /** @var String */
+    /** @var string */
     public static $viewDir = 'view';
     
-    /** @var String */
+    /** @var string */
     public $defaultController = 'default';
-    /** @var String */
+    /** @var string */
     public $defaultAction = 'index';
     
     /** @var Module */
     public $module;
     /** @var Controller */
     public $activeController;
-    /** @var String */
+    /** @var string */
     public $defaultLayoutFile = 'layout.php';
 
+    /** @var string */
+    private $_basePath;
+    /** @var string */
     private $_view;
     
     /**
      * 
      * @param Module $parent
-     * @param type $config
+     * @param mixed[] $config
      */
     public function __construct($parent, $config = array()) {
         parent::__construct($config);
@@ -50,23 +57,27 @@ abstract class Module extends Component
 
     /**
      * 
-     * @param String $path
+     * @param string $path
      */
     public function setBasePath($path) {
-        self::$basePath = $path;
+        $this->_basePath = $path;
     }
     
     /**
      * 
-     * @return String
+     * @return string
      */
     public function getBasePath() {
-        return self::$basePath;
+        if($this->_basePath === NULL) {
+            $class = new \ReflectionClass($this);
+            $this->_basePath = dirname($class->getFileName());
+        }
+        return $this->_basePath;
     }
 
     /**
      * 
-     * @param String $path
+     * @param string $path
      */
     public function setControllerDir($path) {
         self::$controllerDir = $path;
@@ -74,7 +85,7 @@ abstract class Module extends Component
     
     /**
      * 
-     * @return String
+     * @return string
      */
     public function getControllerDir() {
         return self::$controllerDir;
@@ -82,7 +93,7 @@ abstract class Module extends Component
 
     /**
      * 
-     * @param String $path
+     * @param string $path
      */
     public function setModelDir($path) {
         self::$modelDir = $path;
@@ -90,7 +101,7 @@ abstract class Module extends Component
     
     /**
      * 
-     * @return String
+     * @return string
      */
     public function getModelDir() {
         return self::$modelDir;
@@ -98,7 +109,7 @@ abstract class Module extends Component
 
     /**
      * 
-     * @param String $path
+     * @param string $path
      */
     public function setViewDir($path) {
         self::$viewDir = $path;
@@ -106,12 +117,16 @@ abstract class Module extends Component
     
     /**
      * 
-     * @return String
+     * @return string
      */
     public function getViewDir() {
         return self::$viewDir;
     }
     
+    /**
+     * 
+     * @return View
+     */
     public function getView() {
         if($this->_view === NULL) {
             $this->_view = new View();
@@ -122,7 +137,7 @@ abstract class Module extends Component
 
     /**
      * 
-     * @param String $name of the controller
+     * @param string $name of the controller
      * @return Controller
      * @throws NotFoundHttpException
      */
@@ -149,7 +164,7 @@ abstract class Module extends Component
     /**
      * Tries to create a Module of the given $name.
      * The name could contain multiple submodules.
-     * @param String $name
+     * @param string $name
      * @return Module
      */
     public function getModule(&$name) {
@@ -167,6 +182,10 @@ abstract class Module extends Component
         return $module;
     }
 
+    /**
+     * 
+     * @return string
+     */
     private function getNamespace() {
         $c = get_called_class();
         return substr($c, 0, strrpos($c, '\\'));

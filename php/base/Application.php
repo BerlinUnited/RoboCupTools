@@ -122,7 +122,7 @@ class Application extends Module
                 return self::$rootNamespace[$root] . '/' . substr($ns, $pos+1);
             }
         }
-        return static::$basePath . '/' . $ns;
+        return __DIR__ . '/' . $ns;
     }
 
     /**
