@@ -181,7 +181,7 @@ class Application extends Module
         $action_name = '';
         if(strpos($r, '/') !== FALSE) {
             // route defines controller and action
-            list($controller_name, $action_name) = split('/', $r, 2);
+            list($controller_name, $action_name) = explode('/', $r, 2);
         } elseif ($r !== '') {
             // route contains controller xor action
             if(class_exists((ucfirst($r) . 'Controller'))) {
