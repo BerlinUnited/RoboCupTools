@@ -6,12 +6,32 @@ namespace app;
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-class View extends Component {
-    
+class View extends Component
+{
+    /**
+     * The location of the registered JavaScript code.
+     * The location is in the head part of the html document.
+     */
     const POS_HEAD = 0;
+    /**
+     * The location of the registered JavaScript code.
+     * The location is in the beginning of the body part of the html document.
+     */
     const POS_BODY = 1;
+    /**
+     * The location of the registered JavaScript code.
+     * The location is in the end of the body part of the html document.
+     */
     const POS_END = 2;
+    /**
+     * The location of the registered JavaScript code.
+     * This means the JavaScript code block will be enclosed within `jQuery(document).ready()`.
+     */
     const POS_READY = 3;
+    /**
+     * The location of the registered JavaScript code.
+     * This means the JavaScript code block will be enclosed within `jQuery(window).load()`.
+     */
     const POS_LOAD = 4;
     /**
      * This is internally used as the placeholder for receiving the content registered for the head section.
@@ -25,10 +45,21 @@ class View extends Component {
      * This is internally used as the placeholder for receiving the content registered for the end of the body section.
      */
     const BODY_END = '<![CDATA[BLOCK-BODY-END]]>';
-    
+    /**
+     * @var string[] array holding the registered JavaScript code.
+     */
     protected $js_stack = [];
+    /**
+     * @var string[] array holding the registered JavaScript files.
+     */
     protected $js_files = [];
+    /**
+     * @var string[] array holding the registered CSS code.
+     */
     protected $css_stack = [];
+    /**
+     * @var string[] array holding the registered CSS files.
+     */
     protected $css_files = [];
     
     /**
@@ -36,16 +67,35 @@ class View extends Component {
      */
     public $title = '';
 
+    /**
+     * Resolves the view to the corresponding view file.
+     * Therefore the view is searched in the current modules view directory. If
+     * it wasn't found, the parent modules view directory is searched or an 
+     * exception is thrown.
+     * 
+     * @param string $view the name of the view which should be resolved to an file
+     * @return string the corresponding view file
+     */
     private function resolveView($view) {
         if(strpos($view, '/') === 0) {
             // TODO: resolve View starting from "root"
             VarDumper::dump($view);
         } else {
+            // TODO: go through parent modules, if the view isn't found in the active module!
             $module = Application::$app->activeController->module;
             return $module->basePath . '/' . $module->viewDir .'/'. Application::$app->activeController->getId() .'/'. $view . '.php';
         }
+        // TODO: throw an exception if nothing found!
     }
     
+    /**
+     * Renders the view.
+     * 
+     * @param string $view the view which should be rendered
+     * @param mixed[] $params parameters (name-value-pairs), which are made available to the view
+     * @return string the rendering result
+     * @throws \Exception if the view cannot be resolved
+     */
     public function render($view, $params = []) {
         $file = $this->resolveView($view);
         if (!is_file($file)) {
@@ -54,14 +104,30 @@ class View extends Component {
         return $this->renderPhpFile($file, $params);
     }
 
-    public function renderPhpFile($_file_, $_params_ = []) {
+    /**
+     * Renders the view file.
+     * 
+     * @param string $file the view file which should be rendered
+     * @param mixed[] $params parameters (name-value-pairs), which are made available to the view
+     * @return string the rendering result
+     */
+    public function renderPhpFile($file, $params = []) {
         ob_start();
         ob_implicit_flush(false);
-        extract($_params_, EXTR_OVERWRITE);
-        require($_file_);
+        extract($params, EXTR_OVERWRITE);
+        require($file);
         return ob_get_clean();
     }
     
+    /**
+     * Renders a view in response of an ajax request.
+     * Therefore the content is rendered and the registered JavaScript and CSS
+     * code/files are applied, but not the layout.
+     * 
+     * @param string $view the view which should be rendered
+     * @param mixed[] $params parameters (name-value-pairs), which are made available to the view
+     * @return string the rendering result
+     */
     public function renderAjax($view, $params) {
         $viewFile = $this->resolveView($view);
 

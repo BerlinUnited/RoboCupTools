@@ -46,7 +46,7 @@ class Application extends Module
      */
     public $name = 'VideoLogLabeling';
     /**
-     * @var mixed[] the parameter for this application defined as name-value parirs
+     * @var mixed[] the parameter for this application defined as name-value pairs
      */
     public $params = [];
 

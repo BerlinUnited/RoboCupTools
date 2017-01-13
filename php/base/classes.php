@@ -1,4 +1,8 @@
 <?php
+/**
+ * The class map used to autoload the base classes.
+ * New base classes should be added here!
+ */
 return [
     'app\Component' => APP_PATH . '/Component.php',
     'app\Module' => APP_PATH . '/Module.php',
