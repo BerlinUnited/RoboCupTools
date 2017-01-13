@@ -29,37 +29,28 @@ class VideoConverter:
         self.todo = {}
 
     def analyze(self):
-        config = []
-        for c in self.config:
-            if config:
-                temp = []
-                for a in self.config[c]:
-                    for v in config:
-                        temp.append( str(v) + '|' + str(a))
-                config = temp
-            else:
-                config = self.config[c]
-        print config
-        #print [ t for t in self.config  ] #self.config
-        
-        
-        if 'format' in self.config:
-            self.todo['format'] = list(set(self.config['format']) - self.video.getExtensions())
-            # remove empty todos
-            if not self.todo['format']:
-                del self.todo['format']
-        if 'height' in self.config:
-            maxH = self.video.getMaxHeight()
-            self.todo['height'] = [ h for h in (set(self.config['height']) - self.video.getHeights()) if h <= maxH ]
-            # remove empty todos
-            if not self.todo['height']:
-                del self.todo['height']
-        # TODO: i want all height (and others) configs for all formats!?!?!!
+        for conf in self.config:
+            for f in self.video.files:
+                hasAllAttributes = True
+                for attr in conf:
+                    hasAllAttributes = hasAllAttributes and attr in f and (conf[attr] == f[attr] if not isinstance(f[attr], list) else conf[attr] in f[attr])
+                if hasAllAttributes:
+                    conf['todo'] = False
+                    break
+            if 'todo' not in conf:
+                conf['todo'] = True
+        self.todo = [ i for i in self.config if i['todo'] ]
         return self.todo
     
     def getTodo(self):
         return self.todo if self.todo else self.analyze()
     
+    def __str__(self):
+        result = self.video.getKey()
+        for todo in self.getTodo():
+            result += '\n\t* ' + str(todo)
+        #print self.getTodo()
+        return result
     
 class VideoLocator:
     def search(self, path):
@@ -222,25 +213,59 @@ if __name__ == "__main__":
     # setup ffmpeg wrapper class
     ffmpeg = FFMpeg()
     
+    formats = [ { 'format': 'mp4',  'height': 144 },
+                { 'format': 'webm', 'height': 144 },
+                { 'format': 'mp4',  'height': 240 },
+                { 'format': 'webm', 'height': 240 },
+                { 'format': 'mp4',  'height': 360 },
+                { 'format': 'webm', 'height': 360 },
+                { 'format': 'mp4',  'height': 480 },
+                { 'format': 'webm', 'height': 480 },
+                { 'format': 'mp4',  'height': 720 },
+                { 'format': 'webm', 'height': 720 }, ]
+                
+    todo_list = []
+    
     if args.file is not None:
         # TODO: process file
-        pass
+        assert os.path.isfile(args.file), 'Not a file!'
+        files = VideoLocator().search(os.path.dirname(args.file))
+        for f in files:
+            if args.file.startswith(f):
+                files[f].analyze()
+                converter = VideoConverter(files[f], formats)
+                todo_list.append(converter)
     elif args.directory is not None:
         # TODO: process log directory
         try:
             files = VideoLocator().search(args.directory)
             for key in files:
                 files[key].analyze()
-                files[key].getConfigs()
-                print files[key]
-                #converter = VideoConverter(files[key], { 'format': ['mp4','webm'], 'height': [144,240,360,480,720,1080,1440,2160] })
+                #files[key].getConfigs()
+                #print files[key]
+                converter = VideoConverter(files[key], formats)
+                todo_list.append(converter)
                 #print converter.getTodo()
                 #print files[key].getKey(), files[key].getExtensions(), files[key].getHeights()
         except Exception as e:
             getLogger().error(e)
     else:
         getArguments().print_help()
-        
+        exit()
+
+    print 'The following would be converted:'
+    for i in todo_list:
+        print '  - ', i
+    
+    choice = raw_input("\nHow to continue? (cancel [C], convert all [A], ask every file [F], ask every format configuration [M]\n-> ")
+    while choice.lower() not in ['c','a','f','m']:
+        choice = raw_input("[C,A,F,M]-> ")
+    
+    if choice.lower() == 'c':
+        exit()
+    else:
+        print 'do something'
+        pass
     
     #print ffmpeg.getMediaInfo('/mnt/Daten/Development/NaoTH/VideoLogLabeling/log/2016-07-01-outdoor-NTU/half2.mp4')
     #print ffmpeg.getMediaInfo('/mnt/Daten/Development/NaoTH/VideoLogLabeling/log/2016-07-01-outdoor-NTU/half2.webm')
@@ -251,4 +276,8 @@ if __name__ == "__main__":
     #'/mnt/Daten/Development/NaoTH/VideoLogLabeling/log/2016-07-01-outdoor-NTU/half2_1.mp4', 
     #'/mnt/Daten/Development/NaoTH/VideoLogLabeling/log/2016-07-01-outdoor-NTU/half2_1.webm'
     #ffprobe -v error -show_entries format=size,duration, -of flat /mnt/Daten/Development/NaoTH/VideoLogLabeling/log/2016-07-01-outdoor-NTU/half2.webm
+    
+    
+    #py/VideoConverter.py -d "/mnt/Daten/Development/NaoTH/VideoLogLabeling/log"
+    #py/VideoConverter.py -f /mnt/Daten/Development/NaoTH/VideoLogLabeling/log/2016-07-01-outdoor-NTU/video/half1.mp4
     
