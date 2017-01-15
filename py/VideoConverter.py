@@ -13,11 +13,7 @@ import signal
 
 '''
     TODO:
-        * search for video files
-        * determine which files are missing (thumbnail, format, quality)
-        * start converting files (ask before?)
-        * show progress
-        * implement ability to get progress from extern (eg. php)
+        * creating thumbnail?!
     INFO:
         * https://github.com/senko/python-video-converter/blob/master/converter/ffmpeg.py
 '''
@@ -104,7 +100,30 @@ class VideoConverter:
                 # proceed (and overwrite) if answer is 'yes'
                 if overwrite.lower() == 'y':
                     # convert the source file with the configuration to the outputfile
-                    ffmpeg.convert(self.video.source, outfile, do)
+                    ffmpeg.convert(self.video.source, outfile, self._config2ffmpeg(do))
+    
+    def _config2ffmpeg(self, config):
+        """Translates the given configuration to ffmpeg arguments."""
+        result = []
+        # TODO: translation of the config to ffmpeg arguments
+        if 'format' in config:
+            if config['format'] == 'webm':
+                #result.extend(['-vcodec','libvpx'])
+                result.extend(['-vcodec','libvpx-vp9'])
+                result.extend(['-preset','veryfast'])
+                result.extend(['-threads','4'])
+            elif config['format'] == 'mp4':
+                result.extend(['-c:v','libx264'])
+                result.extend(['-preset','veryfast'])
+            #-vcodec libvpx -crf 10 -preset veryfast -b:v 1M -acodec libvorbis "${name}".webm;
+            #ffmpeg -i half1.mp4 -filter:v scale="trunc(oh*a/2)*2:144" -an half1.144p.an.mp4
+        if 'height' in config:
+            result.extend(['-filter:v','scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
+        
+        # always mute the converted videos
+        result.append('-an')
+        
+        return result
 
 class VideoFile:
     """Class representing one video.
@@ -198,9 +217,10 @@ class VideoFile:
         
 
 class FFMpeg:
-    '''Wrapper class for executing FFMpeg.'''
+    """Wrapper class for executing FFMpeg."""
     
     def __init__(self, ffmpeg_path='ffmpeg', ffprobe_path='ffprobe'):
+        """Initizialzes FFMpeg class and searches for the ffmpeg/ffprobe exceutables."""
         # check 'ffmpeg'
         ffmpeg_path = self.which(ffmpeg_path) if '/' not in ffmpeg_path else ffmpeg_path
         try:
@@ -221,20 +241,30 @@ class FFMpeg:
             self.ffprobe_path = None
 
     def which(self, name):
+        """Tries to locate the named executable.
+        
+        Therefore the 'which' program is used (on unix systems), otherwise the 
+        environment PATH is checked if the executable can be found there.
+        """
         try:
+            # try to use 'which' program (on unix systems) ...
             return subprocess.check_output(['which', name]).strip()
         except:
+            # ... if it fails, search envirnment PATH for the executable
             path = os.environ.get('PATH', os.defpath)
             for d in path.split(':'):
                 fpath = os.path.join(d, name)
                 if os.path.exists(fpath) and os.access(fpath, os.X_OK):
                     return fpath
+        # if nothing was found, return the given executable name, maybe there's an alias defined and so still callable!?
         return name
     
     def isValid(self):
+        """Returns 'True' if both paths (ffmpeg/ffprobe) are set, 'False' otherwise."""
         return self.ffmpeg_path is not None and self.ffprobe_path is not None
     
     def getMediaInfo(self, file):
+        """Retrieves some infos of the given (media/video) file and returns it in a defined format."""
         info = {}
         try:
             # loading media info with ffprobe as json
@@ -248,6 +278,7 @@ class FFMpeg:
             info['bitrate'] = int(js['format']['bit_rate'])
             info['format'] = js['format']['format_name'].split(',')
             for stream in js['streams']:
+                # only interessted in video streams
                 if stream['codec_type'] == 'video':
                     # log multiple video streams
                     if 'width' in info:
@@ -258,19 +289,33 @@ class FFMpeg:
             getLogger().error('An error occurred parsing file info (%s): %s', file, e)
         return info
     
-    def _spawn(self, cmds):
-        getLogger().debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
-        return subprocess.Popen(cmds, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
-    
     def convert(self, infile, outfile, params, timeout=10):
+        """Converts the given input file 'infile' into the ouput file 'outfile' with the given configuration 'params'.
+        
+        The ffmpeg command is created with the given configuration and executed in its own subprocess. This script 
+        reads the ffmpeg output and displays the progress. If ffmpeg doesn't send any data for 'timeout' seconds, it is
+        assumed 'ready' and the progess loop is quited. At the end the return code of ffmpeg is check in order to 
+        report any errors.
+        
+        infile  - the video file which should be converted
+        outfile - the name of the converted file
+        params  - the configuration, a list with valid ffmpeg options
+        timeout - the max. time (in seconds) before ffmpeg assumed 'dead' or not accessible
+        """
+        # make sure the file exists
         if not os.path.exists(infile):
             getLogger().error('File doesn\'t exists!')
+            return False
         
+        # prepare ffmpeg command and arguments
         cmds = [self.ffmpeg_path, '-i', infile]
-        cmds.extend(self._config2ffmpeg(params))
+        cmds.extend(params)
         cmds.extend(['-y', outfile])
         
         def on_sigint(*_):
+            """Internal function handler for the SIGINT signal.
+            Used for cleanup and shutdown gracefully.
+            """
             if p is not None:
                 # send SIGTERM to ffmpeg
                 p.terminate()
@@ -278,7 +323,7 @@ class FFMpeg:
                 signal.alarm(0)
                 # unregister handler for alarm signal
                 signal.signal(signal.SIGALRM, signal.SIG_DFL)
-                #
+                # show info
                 getLogger().error('Waiting for ffmpeg to exit ...')
                 # wait 'till ffmpeg exits
                 p.communicate()
@@ -290,6 +335,9 @@ class FFMpeg:
         # timeout needs to be positive
         if timeout:
             def on_sigalrm(*_):
+                """Internal function handler for the ALARM signal.
+                If ffmpeg doesn't respond after 'timeout' secends, an exception is raised.
+                """
                 # after calling the singal, reset alarm signal -> unregister handler
                 signal.signal(signal.SIGALRM, signal.SIG_DFL)
                 raise Exception('timed out while waiting for ffmpeg')
@@ -297,7 +345,9 @@ class FFMpeg:
             signal.signal(signal.SIGALRM, on_sigalrm)
         
         try:
-            p = self._spawn(cmds)
+            # start ffmpeg subprocess
+            getLogger().debug('Spawning ffmpeg with command: ' + ' '.join(cmds))
+            p = subprocess.Popen(cmds, shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
         except OSError:
             raise Exception('Error while calling ffmpeg binary')
         
@@ -322,8 +372,12 @@ class FFMpeg:
             
             if '\r' in buffer:
                 line, buffer = buffer.split('\r', 1)
+                # only interested in the progress
                 if 'frame' == line[0:5]:
+                    # show progress ...
                     print "\r%s"%line,
+                    # the 'flush' is needed, otherwise the output buffer would be never or randomly flushed
+                    # 'cause the previous data is always deleted '\r'!
                     sys.stdout.flush()
         
         if timeout:
@@ -333,53 +387,41 @@ class FFMpeg:
         # wait for ffmpeg to exit
         p.communicate()
         
+        # check return code
         if p.returncode != 0:
             # TODO: use logger or throw exception?!
             print 'Exited with code %d' % p.returncode
             print buffer
-            
-    def _config2ffmpeg(self, config):
-        result = []
-        if 'format' in config:
-            if config['format'] == 'webm':
-                #result.extend(['-vcodec','libvpx'])
-                result.extend(['-vcodec','libvpx-vp9'])
-                result.extend(['-preset','veryfast'])
-                result.extend(['-threads','4'])
-            elif config['format'] == 'mp4':
-                result.extend(['-c:v','libx264'])
-                result.extend(['-preset','veryfast'])
-            #-vcodec libvpx -crf 10 -preset veryfast -b:v 1M -acodec libvorbis "${name}".webm;
-            #ffmpeg -i half1.mp4 -filter:v scale="trunc(oh*a/2)*2:144" -an half1.144p.an.mp4
-        if 'height' in config:
-            result.extend(['-filter:v','scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
-        
-        result.append('-an')
-        
-        return result
-        
-    
+
+
 # TODO: add "pre-configuration" flag -> don't ask any questions!
 def getArguments():
-	parser = argparse.ArgumentParser(description='TODO ...') # TODO ...
-	parser.add_argument('-f', '--file', 	action='store', help='video file which should be converted.')
-        parser.add_argument('-d', '--directory',action='store', help='log directory where the video files should be searched.')
-        parser.add_argument('-v' ,'--verbose', 	action='store_true', help='print everything')
-	return parser
-
+    """Parses the given script arguments."""
+    parser = argparse.ArgumentParser(description='TODO ...') # TODO ...
+    parser.add_argument('-f', '--file', 	action='store', help='video file which should be converted.')
+    parser.add_argument('-d', '--directory',action='store', help='log directory where the video files should be searched.')
+    # TODO: add verbosity level
+    parser.add_argument('-v' ,'--verbose', 	action='store_true', help='print everything')
+    return parser
 
 def getLogger(suffix=None):
+    """Helper function for retrieving the logger instance."""
     return logging.getLogger(os.path.splitext(os.path.basename(__file__))[0]+('.'+suffix if suffix is not None else ''))
 
 def question(string, short, options):
+    """User interaction function for asking questions with a defined set of answers."""
     choice = raw_input(string)
+    # ask again, if answer was 'incorrect'
     while choice.lower() not in options:
         choice = raw_input(short)
+    # return answer
     return choice
 
-def searchVideoFiles(self, path):
+def searchVideoFiles(path):
+    """Searches a given path recursively for video files."""
     assert os.path.isdir(path), 'Not a directoy!'
     result = {}
+    # only interested in videos
     filter = re.compile('video/.*')
     mimetypes.init() # do we need this?!
     for dirpath, dirnames, filenames in os.walk(path):
@@ -387,13 +429,21 @@ def searchVideoFiles(self, path):
             f = os.path.join(dirpath, filename)
             # filter video files
             if mimetypes.guess_type(f)[0] is not None and filter.match(mimetypes.guess_type(f)[0]):
+                # create VideoFile object
                 video = VideoFile(f)
+                # check if we already got this video
                 if video.getKey() in result:
+                    # add the 'new' file to the existing VideoFile object
                     result[video.getKey()].add(video)
                 else:
+                    # this is new
                     result[video.getKey()] = video
+    # return the found VideoFiles
     return result
+
+
 if __name__ == "__main__":
+    # parse arguments
     args = getArguments().parse_args()
     
     # setup logger
