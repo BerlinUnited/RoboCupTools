@@ -10,6 +10,7 @@ import re
 import subprocess
 import json
 import signal
+import copy
 
 '''
     TODO:
@@ -42,8 +43,9 @@ class VideoConverter:
                     break
             # if there's no file matching the configuration, the VideoFile should be converted.
             if 'todo' not in conf:
-                # TODO: 'unconvertable' heights should be ignored here!
-                conf['todo'] = True
+                # before finally set the 'todo' flag, check if this configuration makes 'sense' (eg. upscaling is ignored)!
+                conf['todo'] = self._checkConfigMeaningfulness(conf)
+                conf['outfile'] = self._outputFileName(conf)
         # only set&return the configuration which needs to be converted
         self.todo = filter(lambda i: i['todo'] ,self.config)
         return self.todo
@@ -74,6 +76,21 @@ class VideoConverter:
         # seperate each configuration attribute by a dot - makes it easier to parse it later
         return '.'.join(result)
     
+    def _checkConfigMeaningfulness(self, config):
+        """Checks if all configuration options makes 'sense' for this video (eg. upscaling is ignored)."""
+        # it makes no sense to upscale video.
+        if 'height' in config and self.video.getSourceInfo()['height'] < config['height']:
+            return False
+        # INFO: other options can be added here ...
+        return True
+    
+    def _outputFileName(self, config):
+        """Creates the name of the output file based on the given configuration."""
+        # determine file format, if nothing was set via configuration use the format of the source file
+        extension = config['format'] if 'format' in config else self.video.getSourceExtension()
+        # return the output file ...
+        return self.video.getKey() + '.' + self._makeConfigString(config) + '.' + extension
+    
     def convert(self, todo = None):
         """Converts the VideoFile with the given or pending configuration."""
         if todo is None:
@@ -84,23 +101,16 @@ class VideoConverter:
             todo = [todo]
         # iterate over pending conversions
         for do in todo:
-            # it makes no sense to scale video UP.
-            if 'height' in do and self.video.getSourceInfo()['height'] < do['height']:
-                getLogger().debug('Skipping height configuration.')
-            else:
-                # determine file format, if nothing was set via configuration use the format of the source file
-                extension = do['format'] if 'format' in do else self.video.getSourceExtension()
-                # the output file ...
-                outfile = self.video.getKey() + '.' + self._makeConfigString(do) + '.' + extension
-                # by default the output file gets overwritten
-                overwrite = 'y'
-                # ask the user
-                if os.path.exists(outfile):
-                    overwrite = question('Output file already exits ('+outfile+'). Overwrite? [Y]es/[N]o: ', '[Y|N]: ', ['y','n'])
-                # proceed (and overwrite) if answer is 'yes'
-                if overwrite.lower() == 'y':
-                    # convert the source file with the configuration to the outputfile
-                    ffmpeg.convert(self.video.source, outfile, self._config2ffmpeg(do))
+            outfile = do['outfile'] if 'outfile' in do else self._outputFileName(do)
+            # by default the output file gets overwritten
+            overwrite = 'y'
+            # ask the user
+            if os.path.exists(outfile):
+                overwrite = question('Output file already exits ('+outfile+'). Overwrite? [Y]es/[N]o: ', '[Y|N]: ', ['y','n'])
+            # proceed (and overwrite) if answer is 'yes'
+            if overwrite.lower() == 'y':
+                # convert the source file with the configuration to the outputfile
+                ffmpeg.convert(self.video.source, outfile, self._config2ffmpeg(do))
     
     def _config2ffmpeg(self, config):
         """Translates the given configuration to ffmpeg arguments."""
@@ -324,9 +334,15 @@ class FFMpeg:
                 # unregister handler for alarm signal
                 signal.signal(signal.SIGALRM, signal.SIG_DFL)
                 # show info
-                getLogger().error('Waiting for ffmpeg to exit ...')
+                getLogger().error('\nWaiting for ffmpeg to exit ...')
                 # wait 'till ffmpeg exits
                 p.communicate()
+                # try to remove incomplete output file
+                if os.path.exists(outfile) and os.path.isfile(outfile):
+                    try:
+                        os.remove(outfile)
+                    except Exception as e:
+                        pass
             raise Exception('interrupted!')
         
         # register SIGINT handler
@@ -387,6 +403,9 @@ class FFMpeg:
         # wait for ffmpeg to exit
         p.communicate()
         
+        # unregister SIGINT signal handler
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        
         # check return code
         if p.returncode != 0:
             # TODO: use logger or throw exception?!
@@ -441,6 +460,29 @@ def searchVideoFiles(path):
     # return the found VideoFiles
     return result
 
+def createTodoList(path, formats, prefix=None):
+    """Creates a list with VideoConverter objects, which needs something to convert."""
+    todo = []
+    try:
+        # search files
+        files = searchVideoFiles(path)
+        # filter VideoFiles not matching given prefix
+        if prefix is not None:
+            files = {k: v for k, v in files.iteritems() if k==prefix}
+        # iterate over VideoFiles and collect converting todos
+        for f in files:
+            # analyze video files
+            files[f].analyze()
+            # setup converter, every converter needs its own format configuration!
+            converter = VideoConverter(files[f], copy.deepcopy(formats))
+            # something todo?
+            if converter.getTodo():
+                todo.append(converter)
+    except Exception as e:
+        getLogger().error(e)
+    
+    return todo
+
 
 if __name__ == "__main__":
     # parse arguments
@@ -469,28 +511,23 @@ if __name__ == "__main__":
     todo_list = []
     
     if args.file is not None:
-        # TODO: process file
+        # make sure file exists
         assert os.path.isfile(args.file), 'Not a file!'
-        files = searchVideoFiles(os.path.dirname(args.file))
-        for f in files:
-            if args.file.startswith(f):
-                files[f].analyze()
-                converter = VideoConverter(files[f], formats)
-                todo_list.append(converter)
+        # we need to search the whole directory to find all files of this video!
+        todo_list = createTodoList(os.path.dirname(args.file), formats, os.path.splitext(args.file)[0])
     elif args.directory is not None:
-        # TODO: process log directory
-        try:
-            files = VideoLocator().search(args.directory)
-            for key in files:
-                files[key].analyze()
-                converter = VideoConverter(files[key], formats)
-                todo_list.append(converter)
-        except Exception as e:
-            getLogger().error(e)
+        # make sure its a directory
+        assert os.path.isdir(args.directory), 'Not a directory!'
+        # find converting todos
+        todo_list = createTodoList(args.directory, formats)
     else:
         getArguments().print_help()
-        exit()
+        exit(0)
 
+    if not todo_list:
+        print 'Nothing to do!'
+        exit(0)
+    
     print 'The following would be converted:'
     for i in todo_list:
         print '  - ', i
@@ -517,5 +554,6 @@ if __name__ == "__main__":
                     elif config_choice.lower() == 'f':
                         break
                     elif config_choice.lower() == 'c':
-                        exit()
+                        exit(0)
+                print '\nprocess config ', todo
                 video.convert(todo)
