@@ -15,6 +15,7 @@ import copy
 '''
     TODO:
         * creating thumbnail?!
+        * using logger ?!
     INFO:
         * https://github.com/senko/python-video-converter/blob/master/converter/ffmpeg.py
 '''
@@ -415,13 +416,32 @@ class FFMpeg:
 
 # TODO: add "pre-configuration" flag -> don't ask any questions!
 def getArguments():
+    # retrieve script arguments
+    args = sys.argv[1:]
+    # create namespace for argument parser
+    ns = argparse.Namespace()
+    # helper function for setting verbosity level
+    def setVerboseLevel(name):
+        """Helper function for handling verbosity level."""
+        try:
+            # if the following argument is an integer, use it as verbosity level
+            level=int(args[args.index(name) + 1])
+            # ... and remove it, otherwise argparse throws an exception/error
+            args.pop(args.index(name) + 1)
+        except ValueError:
+            # cannot parse verbosity level - nothing was set, use default!
+            level = 30  #logging.WARNING
+        setattr(ns, 'level', level)
+    # if 'verbose' is set, try to get level
+    if '-v' in args or '--verbose' in args:
+        setVerboseLevel('-v' if '-v' in args else '--verbose')
+    
     """Parses the given script arguments."""
     parser = argparse.ArgumentParser(description='TODO ...') # TODO ...
-    parser.add_argument('-f', '--file', 	action='store', help='video file which should be converted.')
-    parser.add_argument('-d', '--directory',action='store', help='log directory where the video files should be searched.')
-    # TODO: add verbosity level
-    parser.add_argument('-v' ,'--verbose', 	action='store_true', help='print everything')
-    return parser
+    parser.add_argument('-v' ,'--verbose', 	action='store_true', help='sets the verbosity level to "WARNING". An optional verbosity level could be set, to explicitly define the verbosity level. Higher number means only displaying higher severity. Example: "-v 10" is the DEBUG level and "-v 50" is CRITICAL')
+    parser.add_argument('source', action='store', help='video file or directory with video files, which should be converted.')
+    
+    return parser.parse_args(args, ns)
 
 def getLogger(suffix=None):
     """Helper function for retrieving the logger instance."""
@@ -486,17 +506,17 @@ def createTodoList(path, formats, prefix=None):
 
 if __name__ == "__main__":
     # parse arguments
-    args = getArguments().parse_args()
+    args = getArguments()
     
     # setup logger
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO )
+    logging.basicConfig(level=args.level if args.verbose else logging.ERROR )
     
     # setup ffmpeg wrapper class
     ffmpeg = FFMpeg()
     if not ffmpeg.isValid():
         exit(1)
     
-    # TODO: add muted config
+    # TODO: add muted config, see VideoConverter::_makeCOnfigString()
     formats = [ { 'format': 'mp4',  'height': 144 },
                 { 'format': 'webm', 'height': 144 },
                 { 'format': 'mp4',  'height': 240 },
@@ -510,18 +530,16 @@ if __name__ == "__main__":
                 
     todo_list = []
     
-    if args.file is not None:
-        # make sure file exists
-        assert os.path.isfile(args.file), 'Not a file!'
+    if os.path.isfile(args.source):
+        getLogger().info('Analyzing file')
         # we need to search the whole directory to find all files of this video!
-        todo_list = createTodoList(os.path.dirname(args.file), formats, os.path.splitext(args.file)[0])
-    elif args.directory is not None:
-        # make sure its a directory
-        assert os.path.isdir(args.directory), 'Not a directory!'
+        todo_list = createTodoList(os.path.dirname(args.source), formats, os.path.splitext(args.source)[0])
+    elif os.path.isdir(args.source):
+        getLogger().info('Analyzing directory')
         # find converting todos
-        todo_list = createTodoList(args.directory, formats)
+        todo_list = createTodoList(args.source, formats)
     else:
-        getArguments().print_help()
+        getLogger().error('Source is neither file nor directory ("%s").', args.source)
         exit(0)
 
     if not todo_list:
