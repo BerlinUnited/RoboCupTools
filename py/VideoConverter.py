@@ -16,6 +16,7 @@ import copy
     TODO:
         * creating thumbnail?!
         * using logger ?!
+        * show warning, if the config string doesn't match the "file content" (example: muted)
     INFO:
         * https://github.com/senko/python-video-converter/blob/master/converter/ffmpeg.py
 '''
@@ -62,7 +63,31 @@ class VideoConverter:
         for todo in self.getTodo():
             result += '\n\t* ' + str(todo)
         return result
-    
+        
+    def _config2ffmpeg(self, config):
+        """Translates the given configuration to ffmpeg arguments."""
+        result = []
+        # TODO: translation of the config to ffmpeg arguments
+        if 'format' in config:
+            if config['format'] == 'webm':
+                #result.extend(['-vcodec','libvpx'])
+                result.extend(['-vcodec','libvpx-vp9'])
+                result.extend(['-preset','veryfast'])
+                result.extend(['-threads','4'])
+            elif config['format'] == 'mp4':
+                result.extend(['-c:v','libx264'])
+                result.extend(['-preset','veryfast'])
+            #-vcodec libvpx -crf 10 -preset veryfast -b:v 1M -acodec libvorbis "${name}".webm;
+            #ffmpeg -i half1.mp4 -filter:v scale="trunc(oh*a/2)*2:144" -an half1.144p.an.mp4
+        if 'height' in config:
+            result.extend(['-filter:v','scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
+        if 'muted' in config:
+            # mute the converted videos
+            if config['muted']:
+                result.append('-an')
+        
+        return result
+
     def _makeConfigString(self, config):
         """Creates a string representing the configuration."""
         result = []
@@ -82,7 +107,7 @@ class VideoConverter:
         # it makes no sense to upscale video.
         if 'height' in config and self.video.getSourceInfo()['height'] < config['height']:
             return False
-        # INFO: other options can be added here ...
+        # INFO: other options can be added here ... (like max. bitrate)
         return True
     
     def _outputFileName(self, config):
@@ -112,29 +137,6 @@ class VideoConverter:
             if overwrite.lower() == 'y':
                 # convert the source file with the configuration to the outputfile
                 ffmpeg.convert(self.video.source, outfile, self._config2ffmpeg(do))
-    
-    def _config2ffmpeg(self, config):
-        """Translates the given configuration to ffmpeg arguments."""
-        result = []
-        # TODO: translation of the config to ffmpeg arguments
-        if 'format' in config:
-            if config['format'] == 'webm':
-                #result.extend(['-vcodec','libvpx'])
-                result.extend(['-vcodec','libvpx-vp9'])
-                result.extend(['-preset','veryfast'])
-                result.extend(['-threads','4'])
-            elif config['format'] == 'mp4':
-                result.extend(['-c:v','libx264'])
-                result.extend(['-preset','veryfast'])
-            #-vcodec libvpx -crf 10 -preset veryfast -b:v 1M -acodec libvorbis "${name}".webm;
-            #ffmpeg -i half1.mp4 -filter:v scale="trunc(oh*a/2)*2:144" -an half1.144p.an.mp4
-        if 'height' in config:
-            result.extend(['-filter:v','scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
-        
-        # always mute the converted videos
-        result.append('-an')
-        
-        return result
 
 class VideoFile:
     """Class representing one video.
@@ -296,6 +298,11 @@ class FFMpeg:
                         getLogger().debug('There seems to more than one video stream in the file (%s)', file)
                     info['width'] = stream['width']
                     info['height'] = stream['height']
+                elif stream['codec_type'] == 'audio':
+                    info['muted'] = False
+            # set muted, if the file doesn't contain an audio stream
+            if 'muted' not in info:
+                info['muted'] = True
         except Exception, e:
             getLogger().error('An error occurred parsing file info (%s): %s', file, e)
         return info
@@ -516,17 +523,16 @@ if __name__ == "__main__":
     if not ffmpeg.isValid():
         exit(1)
     
-    # TODO: add muted config, see VideoConverter::_makeCOnfigString()
-    formats = [ { 'format': 'mp4',  'height': 144 },
-                { 'format': 'webm', 'height': 144 },
-                { 'format': 'mp4',  'height': 240 },
-                { 'format': 'webm', 'height': 240 },
-                { 'format': 'mp4',  'height': 360 },
-                { 'format': 'webm', 'height': 360 },
-                { 'format': 'mp4',  'height': 480 },
-                { 'format': 'webm', 'height': 480 },
-                { 'format': 'mp4',  'height': 720 },
-                { 'format': 'webm', 'height': 720 }, ]
+    formats = [ { 'format': 'mp4',  'height': 144, 'muted':True },
+                { 'format': 'webm', 'height': 144, 'muted':True },
+                { 'format': 'mp4',  'height': 240, 'muted':True },
+                { 'format': 'webm', 'height': 240, 'muted':True },
+                { 'format': 'mp4',  'height': 360, 'muted':True },
+                { 'format': 'webm', 'height': 360, 'muted':True },
+                { 'format': 'mp4',  'height': 480, 'muted':True },
+                { 'format': 'webm', 'height': 480, 'muted':True },
+                { 'format': 'mp4',  'height': 720, 'muted':True },
+                { 'format': 'webm', 'height': 720, 'muted':True }, ]
                 
     todo_list = []
     
@@ -566,7 +572,7 @@ if __name__ == "__main__":
                     break
             for todo in video.getTodo():
                 if choice.lower() == 'm':
-                    config_choice = question("\nContinue with configuration: "+str(todo)+"? [Y]es, [S]kip config, skip [F]ile, [C]ancel all -> ", "[Y,S,F,C]-> ", ['y','s','f','c'])
+                    config_choice = question("\nContinue with configuration: "+str(todo)+"?\n[Y]es, [S]kip config, skip [F]ile, [C]ancel all -> ", "[Y,S,F,C]-> ", ['y','s','f','c'])
                     if config_choice.lower() == 's':
                         continue
                     elif config_choice.lower() == 'f':
