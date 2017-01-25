@@ -26,7 +26,7 @@ class VideoConverter:
 
     def __init__(self, video, config):
         self.video = video
-        self.config = config
+        self.config = [ conf for conf in config if 'format' not in conf or conf['format'] in ['mp4','webm'] ]
         self.todo = {}
 
     def analyze(self):
@@ -137,6 +137,20 @@ class VideoConverter:
             if overwrite.lower() == 'y':
                 # convert the source file with the configuration to the outputfile
                 ffmpeg.convert(self.video.source, outfile, self._config2ffmpeg(do))
+
+class ThumbnailConverter:
+    def __init__(self, video, config):
+        self.video = video
+        self.config = [ conf for conf in config if 'format' in conf and conf['format'] in ['jpg','png'] ]
+        self.todo = []
+    
+    def getTodo(self):
+        pass
+        print self.config
+        return self.todo
+    
+    def convert(self, todo = None):
+        pass
 
 class VideoFile:
     """Class representing one video.
@@ -490,23 +504,23 @@ def searchVideoFiles(path):
 def createTodoList(path, formats, prefix=None):
     """Creates a list with VideoConverter objects, which needs something to convert."""
     todo = []
-    try:
-        # search files
-        files = searchVideoFiles(path)
-        # filter VideoFiles not matching given prefix
-        if prefix is not None:
-            files = {k: v for k, v in files.iteritems() if k==prefix}
-        # iterate over VideoFiles and collect converting todos
-        for f in files:
-            # analyze video files
-            files[f].analyze()
-            # setup converter, every converter needs its own format configuration!
-            converter = VideoConverter(files[f], copy.deepcopy(formats))
-            # something todo?
-            if converter.getTodo():
-                todo.append(converter)
-    except Exception as e:
-        getLogger().error(e)
+    # search files
+    files = searchVideoFiles(path)
+    # filter VideoFiles not matching given prefix
+    if prefix is not None:
+        files = {k: v for k, v in files.iteritems() if k==prefix}
+    # iterate over VideoFiles and collect converting todos
+    for f in files:
+        # analyze video files
+        files[f].analyze()
+        # setup converter, every converter needs its own format configuration!
+        converter = VideoConverter(files[f], copy.deepcopy(formats))
+        thm_converter = ThumbnailConverter(files[f], copy.deepcopy(formats))
+        # something todo?
+        if converter.getTodo():
+            todo.append(converter)
+        if thm_converter.getTodo():
+            todo.append(thm_converter)
     
     return todo
 
@@ -532,7 +546,8 @@ if __name__ == "__main__":
                 { 'format': 'mp4',  'height': 480, 'muted':True },
                 { 'format': 'webm', 'height': 480, 'muted':True },
                 { 'format': 'mp4',  'height': 720, 'muted':True },
-                { 'format': 'webm', 'height': 720, 'muted':True }, ]
+                { 'format': 'webm', 'height': 720, 'muted':True },
+                { 'format': 'jpg', 'height': 500}, ]
                 
     todo_list = []
     
