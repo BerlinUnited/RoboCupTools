@@ -3,6 +3,7 @@
 
 import sys
 import os
+import glob
 import argparse
 import logging
 import mimetypes
@@ -21,19 +22,30 @@ import copy
         * https://github.com/senko/python-video-converter/blob/master/converter/ffmpeg.py
 '''
 
-class VideoConverter:
-    """Class for converting VideoFile's."""
-
+class Converter:
     def __init__(self, video, config):
         self.video = video
-        self.config = [ conf for conf in config if 'format' not in conf or conf['format'] in ['mp4','webm'] ]
-        self.todo = {}
+        self.config = self._filterConfig(config)
+        self.todo = []
 
+    def _filterConfig(self, config):
+        raise NotImplementedError("Not implemented: _filterConfig()")
+        return []
+
+    def getTodo(self):
+        """Returns the configuration which should be converted."""
+        # anaylzes the VideoFile if it wasn't analyzed before
+        return self.todo if self.todo else self.analyze()
+    
+    def _prepareAnalyze(self):
+        raise NotImplementedError("Not implemented: analyze()")
+    
     def analyze(self):
         """Analyzes the given VideoFile if it met all requested configurations."""
+        files = self._prepareAnalyze()
         for conf in self.config:
             # iterate over files of this video and ...
-            for f in self.video.files:
+            for f in files:
                 hasAllAttributes = True
                 # ... check if the given configuration applies to one file ...
                 for attr in conf:
@@ -51,19 +63,77 @@ class VideoConverter:
         # only set&return the configuration which needs to be converted
         self.todo = filter(lambda i: i['todo'] ,self.config)
         return self.todo
+
+    def _config2ffmpeg(self, config):
+        raise NotImplementedError("Not implemented: _config2ffmpeg()")
+
+    def _outputFileName(self, config):
+        """Creates the name of the output file based on the given configuration."""
+        # determine file format, if nothing was set via configuration use the format of the source file
+        extension = config['format'] if 'format' in config else self.video.getSourceExtension()
+        # return the output file ...
+        return self.video.getKey() + '.' + self._makeConfigString(config) + '.' + extension
     
-    def getTodo(self):
-        """Returns the configuration which should be converted."""
-        # anaylzes the VideoFile if it wasn't analyzed before
-        return self.todo if self.todo else self.analyze()
+    def _makeConfigString(self, config):
+        """Creates a string representing the configuration."""
+        result = []
+        for i in config:
+            # ignoring 'internal' todo-configuration and the format (should be used as extension)
+            if i == 'todo' or i == 'format':
+                continue
+            elif i == 'height':
+                result.append(str(config[i]) + 'p')
+            elif i == 'muted' and config[i]:
+                result.append('m')
+        # seperate each configuration attribute by a dot - makes it easier to parse it later
+        return '.'.join(result)
     
+    def _checkConfigMeaningfulness(self, config):
+        """Checks if all configuration options makes 'sense' for this video (eg. upscaling is ignored)."""
+        # it makes no sense to upscale video.
+        if 'height' in config and self.video.getSourceInfo()['height'] < config['height']:
+            return False
+        # INFO: other options can be added here ... (like max. bitrate)
+        return True
+
     def __str__(self):
         """"String representation of the required conversion."""
         result = self.video.source
         for todo in self.getTodo():
             result += '\n\t* ' + str(todo)
         return result
-        
+
+    def convert(self, todo = None):
+        """Converts the VideoFile with the given or pending configuration."""
+        if todo is None:
+            todo = self.getTodo()
+        # assuming todo as list
+        if not isinstance(todo, list):
+            # ... make it one
+            todo = [todo]
+        # iterate over pending conversions
+        for do in todo:
+            outfile = do['outfile'] if 'outfile' in do else self._outputFileName(do)
+            # by default the output file gets overwritten
+            overwrite = 'y'
+            # ask the user
+            if os.path.exists(outfile):
+                overwrite = question('Output file already exits ('+outfile+'). Overwrite? [Y]es/[N]o: ', '[Y|N]: ', ['y','n'])
+            # proceed (and overwrite) if answer is 'yes'
+            if overwrite.lower() == 'y':
+                # convert the source file with the configuration to the outputfile
+                ffmpeg.convert(self.video.source, outfile, self._config2ffmpeg(do))
+
+
+class VideoConverter(Converter):
+    """Class for converting VideoFile's."""
+
+    def _filterConfig(self, config):
+        return [ conf for conf in config if 'format' not in conf or conf['format'] in ['mp4','webm'] ]
+
+    def _prepareAnalyze(self):
+        return self.video.files
+
     def _config2ffmpeg(self, config):
         """Translates the given configuration to ffmpeg arguments."""
         result = []
@@ -88,69 +158,45 @@ class VideoConverter:
         
         return result
 
-    def _makeConfigString(self, config):
-        """Creates a string representing the configuration."""
-        result = []
-        for i in config:
-            # ignoring 'internal' todo-configuration and the format (should be used as extension)
-            if i == 'todo' or i == 'format':
-                continue
-            elif i == 'height':
-                result.append(str(config[i]) + 'p')
-            elif i == 'muted' and config[i]:
-                result.append('m')
-        # seperate each configuration attribute by a dot - makes it easier to parse it later
-        return '.'.join(result)
-    
-    def _checkConfigMeaningfulness(self, config):
-        """Checks if all configuration options makes 'sense' for this video (eg. upscaling is ignored)."""
-        # it makes no sense to upscale video.
-        if 'height' in config and self.video.getSourceInfo()['height'] < config['height']:
-            return False
-        # INFO: other options can be added here ... (like max. bitrate)
-        return True
-    
-    def _outputFileName(self, config):
-        """Creates the name of the output file based on the given configuration."""
-        # determine file format, if nothing was set via configuration use the format of the source file
-        extension = config['format'] if 'format' in config else self.video.getSourceExtension()
-        # return the output file ...
-        return self.video.getKey() + '.' + self._makeConfigString(config) + '.' + extension
-    
-    def convert(self, todo = None):
-        """Converts the VideoFile with the given or pending configuration."""
-        if todo is None:
-            todo = self.getTodo()
-        # assuming todo as list
-        if not isinstance(todo, list):
-            # ... make it one
-            todo = [todo]
-        # iterate over pending conversions
-        for do in todo:
-            outfile = do['outfile'] if 'outfile' in do else self._outputFileName(do)
-            # by default the output file gets overwritten
-            overwrite = 'y'
-            # ask the user
-            if os.path.exists(outfile):
-                overwrite = question('Output file already exits ('+outfile+'). Overwrite? [Y]es/[N]o: ', '[Y|N]: ', ['y','n'])
-            # proceed (and overwrite) if answer is 'yes'
-            if overwrite.lower() == 'y':
-                # convert the source file with the configuration to the outputfile
-                ffmpeg.convert(self.video.source, outfile, self._config2ffmpeg(do))
+class ThumbnailConverter(Converter):
 
-class ThumbnailConverter:
-    def __init__(self, video, config):
-        self.video = video
-        self.config = [ conf for conf in config if 'format' in conf and conf['format'] in ['jpg','png'] ]
-        self.todo = []
+    def _filterConfig(self, config):
+        return [ conf for conf in config if 'format' in conf and conf['format'] in ['jpg','png'] ]
     
-    def getTodo(self):
-        pass
-        print self.config
-        return self.todo
-    
-    def convert(self, todo = None):
-        pass
+    def _prepareAnalyze(self):
+        formats = set([ f['format'] for f in self.config ])
+        files = []
+        for fmt in formats:
+            for f in glob.glob(self.video.getKey() + '*.' + fmt):
+                info = ffmpeg.getMediaInfo(f)
+                if 'format' not in info or fmt not in info['format']:
+                    info['format'].append(fmt)
+                files.append(info)
+        return files
+
+    def _config2ffmpeg(self, config):
+        """Translates the given configuration to ffmpeg arguments."""
+        result = []
+        '''
+        # TODO: translation of the config to ffmpeg arguments
+        if 'format' in config:
+            if config['format'] == 'webm':
+                #result.extend(['-vcodec','libvpx'])
+                result.extend(['-vcodec','libvpx-vp9'])
+                result.extend(['-preset','veryfast'])
+                result.extend(['-threads','4'])
+            elif config['format'] == 'mp4':
+                result.extend(['-c:v','libx264'])
+                result.extend(['-preset','veryfast'])
+            #-vcodec libvpx -crf 10 -preset veryfast -b:v 1M -acodec libvorbis "${name}".webm;
+            #ffmpeg -i half1.mp4 -filter:v scale="trunc(oh*a/2)*2:144" -an half1.144p.an.mp4
+        if 'height' in config:
+            result.extend(['-filter:v','scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
+        '''
+        # TODO: ...
+        raise NotImplementedError("Not implemented: _config2ffmpeg()")
+        return result
+
 
 class VideoFile:
     """Class representing one video.
