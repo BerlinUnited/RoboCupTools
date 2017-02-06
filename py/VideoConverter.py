@@ -79,12 +79,16 @@ class Converter:
         result = []
         for i in config:
             # ignoring 'internal' todo-configuration and the format (should be used as extension)
-            if i == 'todo' or i == 'format':
+            if i == 'todo' or i == 'format' or ('height' in config and 'width' in config):
                 continue
             elif i == 'height':
                 result.append(str(config[i]) + 'p')
+            elif i == 'width':
+                result.append(str(config[i]) + 'w')
             elif i == 'muted' and config[i]:
                 result.append('m')
+        if 'height' in config and 'width' in config:
+            result.append(str(config['width']) + 'x' + str(config['height']))
         # seperate each configuration attribute by a dot - makes it easier to parse it later
         return '.'.join(result)
     
@@ -92,6 +96,8 @@ class Converter:
         """Checks if all configuration options makes 'sense' for this video (eg. upscaling is ignored)."""
         # it makes no sense to upscale video.
         if 'height' in config and self.video.getSourceInfo()['height'] < config['height']:
+            return False
+        if 'width' in config and self.video.getSourceInfo()['width'] < config['width']:
             return False
         # INFO: other options can be added here ... (like max. bitrate)
         return True
@@ -143,7 +149,16 @@ class VideoConverter(Converter):
                 #result.extend(['-vcodec','libvpx'])
                 result.extend(['-vcodec','libvpx-vp9'])
                 result.extend(['-preset','veryfast'])
+                #result.extend(['-quality','good'])
+                #result.extend(['-speed','4'])
                 result.extend(['-threads','4'])
+                # variable bitrate (on average, higher value -> better quality): -b:v 1M
+                # constant quality (value from 4-63, lower -> better quality): -crf 10
+                # constant bitrate (all values must be the same): -minrate 1M -maxrate 1M -b:v 1M
+                # --best
+                # --good
+                # --rt
+                # --cpu-used
             elif config['format'] == 'mp4':
                 result.extend(['-c:v','libx264'])
                 result.extend(['-preset','veryfast'])
@@ -169,14 +184,17 @@ class ThumbnailConverter(Converter):
         for fmt in formats:
             for f in glob.glob(self.video.getKey() + '*.' + fmt):
                 info = ffmpeg.getMediaInfo(f)
-                if 'format' not in info or fmt not in info['format']:
+                if 'format' not in info:
+                    info['format'] = []
+                if fmt not in info['format']:
                     info['format'].append(fmt)
                 files.append(info)
         return files
 
     def _config2ffmpeg(self, config):
         """Translates the given configuration to ffmpeg arguments."""
-        result = []
+        result = ['-vframes', '1']
+        # height, width, quality
         '''
         # TODO: translation of the config to ffmpeg arguments
         if 'format' in config:
@@ -193,8 +211,14 @@ class ThumbnailConverter(Converter):
         if 'height' in config:
             result.extend(['-filter:v','scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
         '''
+        if 'height' in config and 'width' not in config:
+            result.extend(['-filter:v','scale=-1:'+str(config['height'])+''])
+        elif 'width' in config and 'height' not in config:
+            result.extend(['-filter:v','scale='+str(config['width'])+':-1'])
+        elif 'height' in config and 'width' in config:
+            result.extend(['-filter:v','scale='+str(config['width'])+':'+str(config['height'])+''])
         # TODO: ...
-        raise NotImplementedError("Not implemented: _config2ffmpeg()")
+        #raise NotImplementedError("Not implemented: _config2ffmpeg()")
         return result
 
 
@@ -298,8 +322,9 @@ class FFMpeg:
         ffmpeg_path = self.which(ffmpeg_path) if '/' not in ffmpeg_path else ffmpeg_path
         try:
             # try to execute ffmpeg and catch exceptions if it doesn't work!
-            subprocess.check_output([ffmpeg_path, '-version'], stderr=subprocess.STDOUT)
+            version = subprocess.check_output([ffmpeg_path, '-version'], stderr=subprocess.STDOUT)
             self.ffmpeg_path = ffmpeg_path
+            getLogger().info('Using ffmpeg:%s', ffmpeg_path)
         except Exception as e:
             getLogger().error('Couldn\'t find ffmpeg!')
             self.ffmpeg_path = None
@@ -307,8 +332,9 @@ class FFMpeg:
         ffprobe_path = self.which(ffprobe_path) if '/' not in ffprobe_path else ffprobe_path
         try:
             # try to execute ffprobe and catch exceptions if it doesn't work!
-            subprocess.check_output([ffprobe_path, '-version'], stderr=subprocess.STDOUT)
+            version = subprocess.check_output([ffprobe_path, '-version'], stderr=subprocess.STDOUT)
             self.ffprobe_path = ffprobe_path
+            getLogger().info('Using ffprobe:%s', ffprobe_path)
         except Exception as e:
             getLogger().error('Couldn\'t find ffprobe!')
             self.ffprobe_path = None
@@ -319,6 +345,7 @@ class FFMpeg:
         Therefore the 'which' program is used (on unix systems), otherwise the 
         environment PATH is checked if the executable can be found there.
         """
+        getLogger().info('Searching for %s executable', name)
         try:
             # try to use 'which' program (on unix systems) ...
             return subprocess.check_output(['which', name]).strip()
@@ -347,8 +374,8 @@ class FFMpeg:
             # set the infos
             info['filename'] = js['format']['filename']
             info['size'] = int(js['format']['size'])
-            info['duration'] = float(js['format']['duration'])
-            info['bitrate'] = int(js['format']['bit_rate'])
+            info['duration'] = float(0 if 'duration' not in js['format'] else js['format']['duration'])
+            info['bitrate'] = int(0 if 'bit_rate' not in js['format'] else js['format']['bit_rate'])
             info['format'] = js['format']['format_name'].split(',')
             for stream in js['streams']:
                 # only interessted in video streams
@@ -506,6 +533,8 @@ def getArguments():
     """Parses the given script arguments."""
     parser = argparse.ArgumentParser(description='TODO ...') # TODO ...
     parser.add_argument('-v' ,'--verbose', 	action='store_true', help='sets the verbosity level to "WARNING". An optional verbosity level could be set, to explicitly define the verbosity level. Higher number means only displaying higher severity. Example: "-v 10" is the DEBUG level and "-v 50" is CRITICAL')
+    parser.add_argument('--ffmpeg', action='store', default='ffmpeg', help='set the path to the ffmpeg executable.')
+    parser.add_argument('--ffprobe', action='store', default='ffprobe', help='set the path to the ffprobe executable.')
     parser.add_argument('source', action='store', help='video file or directory with video files, which should be converted.')
     
     return parser.parse_args(args, ns)
@@ -549,6 +578,7 @@ def searchVideoFiles(path):
 
 def createTodoList(path, formats, prefix=None):
     """Creates a list with VideoConverter objects, which needs something to convert."""
+    path = os.path.abspath(path)  # make sure we got abs. path
     todo = []
     # search files
     files = searchVideoFiles(path)
@@ -579,7 +609,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=args.level if args.verbose else logging.ERROR )
     
     # setup ffmpeg wrapper class
-    ffmpeg = FFMpeg()
+    ffmpeg = FFMpeg(args.ffmpeg, args.ffprobe)
     if not ffmpeg.isValid():
         exit(1)
     
@@ -593,14 +623,18 @@ if __name__ == "__main__":
                 { 'format': 'webm', 'height': 480, 'muted':True },
                 { 'format': 'mp4',  'height': 720, 'muted':True },
                 { 'format': 'webm', 'height': 720, 'muted':True },
-                { 'format': 'jpg', 'height': 500}, ]
+                { 'format': 'jpg', 'height': 500},
+                { 'format': 'jpg', 'width': 500, 'height': 300},
+                { 'format': 'jpg', 'width': 500},
+                { 'format': 'png', 'height': 400, },]
                 
     todo_list = []
     
     if os.path.isfile(args.source):
         getLogger().info('Analyzing file')
         # we need to search the whole directory to find all files of this video!
-        todo_list = createTodoList(os.path.dirname(args.source), formats, os.path.splitext(args.source)[0])
+        f = os.path.abspath(args.source)  # needing abs. path
+        todo_list = createTodoList(os.path.dirname(f), formats, os.path.splitext(f)[0])
     elif os.path.isdir(args.source):
         getLogger().info('Analyzing directory')
         # find converting todos
