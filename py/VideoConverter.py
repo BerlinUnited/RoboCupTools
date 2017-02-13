@@ -22,9 +22,10 @@ import copy
         * https://github.com/senko/python-video-converter/blob/master/converter/ffmpeg.py
 '''
 
+
 class Converter:
-    def __init__(self, video, config):
-        self.video = video
+    def __init__(self, video_file, config):
+        self.video = video_file
         self.config = self._filterConfig(config)
         self.todo = []
 
@@ -61,7 +62,7 @@ class Converter:
                 conf['todo'] = self._checkConfigMeaningfulness(conf)
                 conf['outfile'] = self._outputFileName(conf)
         # only set&return the configuration which needs to be converted
-        self.todo = filter(lambda i: i['todo'] ,self.config)
+        self.todo = filter(lambda i: i['todo'], self.config)
         return self.todo
 
     def _config2ffmpeg(self, config):
@@ -74,7 +75,8 @@ class Converter:
         # return the output file ...
         return self.video.getKey() + '.' + self._makeConfigString(config) + '.' + extension
     
-    def _makeConfigString(self, config):
+    @staticmethod
+    def _makeConfigString(config):
         """Creates a string representing the configuration."""
         result = []
         for i in config:
@@ -109,7 +111,7 @@ class Converter:
             result += '\n\t* ' + str(todo)
         return result
 
-    def convert(self, todo = None):
+    def convert(self, todo=None):
         """Converts the VideoFile with the given or pending configuration."""
         if todo is None:
             todo = self.getTodo()
@@ -124,7 +126,7 @@ class Converter:
             overwrite = 'y'
             # ask the user
             if os.path.exists(outfile):
-                overwrite = question('Output file already exits ('+outfile+'). Overwrite? [Y]es/[N]o: ', '[Y|N]: ', ['y','n'])
+                overwrite = question('Output file already exits ('+outfile+'). Overwrite? [Y]es/[N]o: ', '[Y|N]: ', ['y', 'n'])
             # proceed (and overwrite) if answer is 'yes'
             if overwrite.lower() == 'y':
                 # convert the source file with the configuration to the outputfile
@@ -135,7 +137,7 @@ class VideoConverter(Converter):
     """Class for converting VideoFile's."""
 
     def _filterConfig(self, config):
-        return [ conf for conf in config if 'format' not in conf or conf['format'] in ['mp4','webm'] ]
+        return [conf for conf in config if 'format' not in conf or conf['format'] in ['mp4', 'webm']]
 
     def _prepareAnalyze(self):
         return self.video.files
@@ -146,12 +148,12 @@ class VideoConverter(Converter):
         # TODO: translation of the config to ffmpeg arguments
         if 'format' in config:
             if config['format'] == 'webm':
-                #result.extend(['-vcodec','libvpx'])
-                result.extend(['-vcodec','libvpx-vp9'])
-                result.extend(['-preset','veryfast'])
-                #result.extend(['-quality','good'])
-                #result.extend(['-speed','4'])
-                result.extend(['-threads','4'])
+                #result.extend(['-vcodec', 'libvpx'])
+                result.extend(['-vcodec', 'libvpx-vp9'])
+                result.extend(['-preset', 'veryfast'])
+                #result.extend(['-quality', 'good'])
+                #result.extend(['-speed', '4'])
+                result.extend(['-threads', '4'])
                 # variable bitrate (on average, higher value -> better quality): -b:v 1M
                 # constant quality (value from 4-63, lower -> better quality): -crf 10
                 # constant bitrate (all values must be the same): -minrate 1M -maxrate 1M -b:v 1M
@@ -160,12 +162,12 @@ class VideoConverter(Converter):
                 # --rt
                 # --cpu-used
             elif config['format'] == 'mp4':
-                result.extend(['-c:v','libx264'])
-                result.extend(['-preset','veryfast'])
+                result.extend(['-c:v', 'libx264'])
+                result.extend(['-preset', 'veryfast'])
             #-vcodec libvpx -crf 10 -preset veryfast -b:v 1M -acodec libvorbis "${name}".webm;
             #ffmpeg -i half1.mp4 -filter:v scale="trunc(oh*a/2)*2:144" -an half1.144p.an.mp4
         if 'height' in config:
-            result.extend(['-filter:v','scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
+            result.extend(['-filter:v', 'scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
         if 'muted' in config:
             # mute the converted videos
             if config['muted']:
@@ -173,16 +175,17 @@ class VideoConverter(Converter):
         
         return result
 
+
 class ThumbnailConverter(Converter):
 
     def _filterConfig(self, config):
-        return [ conf for conf in config if 'format' in conf and conf['format'] in ['jpg','png'] ]
+        return [conf for conf in config if 'format' in conf and conf['format'] in ['jpg', 'png']]
     
     def _prepareAnalyze(self):
-        formats = set([ f['format'] for f in self.config ])
+        formats = set([f['format'] for f in self.config])
         files = []
         for fmt in formats:
-            for f in glob.glob(self.video.getKey() + '*.' + fmt):
+            for f in glob.glob(self.video.getKey() + '.*.' + fmt):
                 info = ffmpeg.getMediaInfo(f)
                 if 'format' not in info:
                     info['format'] = []
@@ -194,31 +197,12 @@ class ThumbnailConverter(Converter):
     def _config2ffmpeg(self, config):
         """Translates the given configuration to ffmpeg arguments."""
         result = ['-vframes', '1']
-        # height, width, quality
-        '''
-        # TODO: translation of the config to ffmpeg arguments
-        if 'format' in config:
-            if config['format'] == 'webm':
-                #result.extend(['-vcodec','libvpx'])
-                result.extend(['-vcodec','libvpx-vp9'])
-                result.extend(['-preset','veryfast'])
-                result.extend(['-threads','4'])
-            elif config['format'] == 'mp4':
-                result.extend(['-c:v','libx264'])
-                result.extend(['-preset','veryfast'])
-            #-vcodec libvpx -crf 10 -preset veryfast -b:v 1M -acodec libvorbis "${name}".webm;
-            #ffmpeg -i half1.mp4 -filter:v scale="trunc(oh*a/2)*2:144" -an half1.144p.an.mp4
-        if 'height' in config:
-            result.extend(['-filter:v','scale=trunc(oh*a/2)*2:'+str(config['height'])+''])
-        '''
         if 'height' in config and 'width' not in config:
-            result.extend(['-filter:v','scale=-1:'+str(config['height'])+''])
+            result.extend(['-filter:v', 'scale=-1:'+str(config['height'])+''])
         elif 'width' in config and 'height' not in config:
-            result.extend(['-filter:v','scale='+str(config['width'])+':-1'])
+            result.extend(['-filter:v', 'scale='+str(config['width'])+':-1'])
         elif 'height' in config and 'width' in config:
-            result.extend(['-filter:v','scale='+str(config['width'])+':'+str(config['height'])+''])
-        # TODO: ...
-        #raise NotImplementedError("Not implemented: _config2ffmpeg()")
+            result.extend(['-filter:v', 'scale='+str(config['width'])+':'+str(config['height'])+''])
         return result
 
 
@@ -238,11 +222,11 @@ class VideoFile:
         # all additional files have the same directory path and file name (only different file name suffixes)
         self.path = os.path.dirname(file)
         self.name = m.group('name')
-        self.files = [ {
+        self.files = [{
             'filename': file,
             'extension': m.group('ext').lower(),
             'config': self._parseConfig(m.group('config'))
-        } ]
+        }]
     
     def add(self, video):
         """Adds another file to this video."""
@@ -274,7 +258,8 @@ class VideoFile:
         for file in self.files:
             file.update(ffmpeg.getMediaInfo(file['filename']))
     
-    def _parseConfig(self, string):
+    @staticmethod
+    def _parseConfig(string):
         """Parses the configuration part of the file name and returns it as dict."""
         if string is None:
             return None
@@ -289,11 +274,11 @@ class VideoFile:
 
     def getExtensions(self):
         """Returns the available extensions in this VideoFile."""
-        return set([ f['extension'] for f in self.files if 'extension' in f ])
+        return set([f['extension'] for f in self.files if 'extension' in f])
     
     def getHeights(self):
         """Returns the available resolutions (heights) in this VideoFile."""
-        return set([ f['height'] for f in self.files if 'height' in f ])
+        return set([f['height'] for f in self.files if 'height' in f])
     
     def getMaxHeight(self):
         """Returns the max. resolution (height) in this VideoFile."""
@@ -339,7 +324,8 @@ class FFMpeg:
             getLogger().error('Couldn\'t find ffprobe!')
             self.ffprobe_path = None
 
-    def which(self, name):
+    @staticmethod
+    def which(name):
         """Tries to locate the named executable.
         
         Therefore the 'which' program is used (on unix systems), otherwise the 
@@ -436,7 +422,7 @@ class FFMpeg:
                 if os.path.exists(outfile) and os.path.isfile(outfile):
                     try:
                         os.remove(outfile)
-                    except Exception as e:
+                    except Exception:
                         pass
             raise Exception('interrupted!')
         
@@ -486,7 +472,7 @@ class FFMpeg:
                 # only interested in the progress
                 if 'frame' == line[0:5]:
                     # show progress ...
-                    print "\r%s"%line,
+                    print "\r%s" % line,
                     # the 'flush' is needed, otherwise the output buffer would be never or randomly flushed
                     # 'cause the previous data is always deleted '\r'!
                     sys.stdout.flush()
@@ -514,6 +500,7 @@ def getArguments():
     args = sys.argv[1:]
     # create namespace for argument parser
     ns = argparse.Namespace()
+
     # helper function for setting verbosity level
     def setVerboseLevel(name):
         """Helper function for handling verbosity level."""
@@ -532,7 +519,7 @@ def getArguments():
     
     """Parses the given script arguments."""
     parser = argparse.ArgumentParser(description='TODO ...') # TODO ...
-    parser.add_argument('-v' ,'--verbose', 	action='store_true', help='sets the verbosity level to "WARNING". An optional verbosity level could be set, to explicitly define the verbosity level. Higher number means only displaying higher severity. Example: "-v 10" is the DEBUG level and "-v 50" is CRITICAL')
+    parser.add_argument('-v', '--verbose', 	action='store_true', help='sets the verbosity level to "WARNING". An optional verbosity level could be set, to explicitly define the verbosity level. Higher number means only displaying higher severity. Example: "-v 10" is the DEBUG level and "-v 50" is CRITICAL')
     parser.add_argument('--ffmpeg', action='store', default='ffmpeg', help='set the path to the ffmpeg executable.')
     parser.add_argument('--ffprobe', action='store', default='ffprobe', help='set the path to the ffprobe executable.')
     parser.add_argument('source', action='store', help='video file or directory with video files, which should be converted.')
@@ -613,20 +600,20 @@ if __name__ == "__main__":
     if not ffmpeg.isValid():
         exit(1)
     
-    formats = [ { 'format': 'mp4',  'height': 144, 'muted':True },
-                { 'format': 'webm', 'height': 144, 'muted':True },
-                { 'format': 'mp4',  'height': 240, 'muted':True },
-                { 'format': 'webm', 'height': 240, 'muted':True },
-                { 'format': 'mp4',  'height': 360, 'muted':True },
-                { 'format': 'webm', 'height': 360, 'muted':True },
-                { 'format': 'mp4',  'height': 480, 'muted':True },
-                { 'format': 'webm', 'height': 480, 'muted':True },
-                { 'format': 'mp4',  'height': 720, 'muted':True },
-                { 'format': 'webm', 'height': 720, 'muted':True },
-                { 'format': 'jpg', 'height': 500},
-                { 'format': 'jpg', 'width': 500, 'height': 300},
-                { 'format': 'jpg', 'width': 500},
-                { 'format': 'png', 'height': 400, },]
+    formats = [ {'format': 'mp4',  'height': 144, 'muted':True},
+                {'format': 'webm', 'height': 144, 'muted':True},
+                {'format': 'mp4',  'height': 240, 'muted':True},
+                {'format': 'webm', 'height': 240, 'muted':True},
+                {'format': 'mp4',  'height': 360, 'muted':True},
+                {'format': 'webm', 'height': 360, 'muted':True},
+                {'format': 'mp4',  'height': 480, 'muted':True},
+                {'format': 'webm', 'height': 480, 'muted':True},
+                {'format': 'mp4',  'height': 720, 'muted':True},
+                {'format': 'webm', 'height': 720, 'muted':True},
+                {'format': 'jpg', 'height': 500},
+                {'format': 'jpg', 'width': 500, 'height': 300},
+                {'format': 'jpg', 'width': 500},
+                {'format': 'png', 'height': 400,},]
                 
     todo_list = []
     
@@ -658,7 +645,7 @@ if __name__ == "__main__":
     else:
         # TODO: catch exceptions!
         for video in todo_list:
-            print '\n',video.video.source
+            print '\n', video.video.source
             if choice.lower() == 'f':
                 file_choice = question("\nProceed converting? [Y]es, [S]kip, [C]ancel -> ", "[Y,S,C]-> ", ['c','s','y'])
                 if file_choice.lower() == 's':
