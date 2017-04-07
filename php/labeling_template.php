@@ -5,7 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
     
-  <script src="lib/player/jquery.js"></script>
+  <script src="lib/jquery-3.2.0.js"></script>
   
   <script src="lib/angular.min.js"></script>
   <script src="lib/angular-sanitize.min.js"></script>
