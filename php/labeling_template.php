@@ -56,7 +56,7 @@
     
     <div class="col-sm-7">
       <div ng-controller="PlayerController">
-        <video style="width: 100%; height: 100%;" id="player" preload="metadata">
+        <video class="video-player" id="player" preload="metadata">
         <?php /* src="<?php echo $g->video_path; ?>" */ ?>
         <?php foreach ($g->video_paths as $key => $value) { ?>
           <source src="<?php echo $value; ?>" >
@@ -67,7 +67,7 @@
     
     <div class="col-sm-3">
       <div ng-controller="DrawingController">
-        <canvas id="canvas" width="740" height="1040" style="width: 100%;"></canvas>
+        <canvas id="canvas" width="740" height="1040" class="field-drawing"></canvas>
       </div>
     </div>
 

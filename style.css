@@ -76,8 +76,14 @@ body {
  background-position: right bottom;
 }
 
+.video-player {
+  width: 100%; 
+  height: 100%;
+}
 
-
+.field-drawing {
+  width: 100%;
+}
 
 .labels a {
   margin: 5px;
