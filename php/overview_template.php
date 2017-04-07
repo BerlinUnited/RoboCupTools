@@ -18,32 +18,23 @@
 
 </head>
 
-<style>
-.labels a {
-  margin: 5px;
-}
-.labels {
-  margin-bottom:5px;
-}
-</style>
-
 <body>
 
 <div class="container-fluid" ng-controller="MainController">
 
   <?php
 	//
-	echo '<div class="row" style="background-color:#003366;">';
-		echo '<strong style="color:#fff; font-size: 2.5em; padding-left:20px;">Nao Team Humboldt - Annotation Interface</strong>';		
+	echo '<div class="row title">';
+		echo '<span>Nao Team Humboldt - Annotation Interface</span>';		
 	echo '</div>';
     //Header
-	echo '<div class="row" style="background-color:rgba(0, 47, 108,0.7);">';
+	echo '<div class="row table-head">';
 		echo '<div class="col-sm-1"></div>';
 		echo '<div class="col-sm-2">';
-			echo '<strong style="color:#fff;">Date-Competion-OppTeam-halftime (#Robots)</strong>';
+			echo '<span>Date-Competion-OppTeam-halftime (#Robots)</span>';
 		echo '</div>';
 		echo '<div class="col-sm-8">';
-				echo '<strong style="color:#fff;">Label Set</strong>';
+				echo '<span>Label Set</span>';
 		echo '</div>';
 	echo '</div>';
 	
@@ -53,7 +44,7 @@
       if(sizeof($g->logs) > 0) 
       {
         if( $i % 2 == 1) {
-          echo '<div class="row" style="background-color:#EEE;">';
+          echo '<div class="row table-row">';
         } else {
           echo '<div class="row">';
         }
@@ -77,7 +68,7 @@
     }
     
     
-    echo '<div style="margin-top:20px; position:absolute; bottom: 0px;"><pre>';
+    echo '<div class="errors"><pre>';
     foreach ($games as $key => $g) 
     {
       echo $g->allErrors;
