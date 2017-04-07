@@ -2,5 +2,5 @@
 
 git checkout .
 git pull
-chmod -R 0755 .
-chmod -R 0777 ./log
+chmod -R 0750 .
+chmod -R 0750 ./log
