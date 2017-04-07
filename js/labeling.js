@@ -10,10 +10,10 @@ function PeriodicPlayer(player)
       this.player.media.removeEventListener("timeupdate", this.currentStopListener, false);
     }
     
-    this.currentStopListener = function() {
-     if (this.currentTime > end) {
+    this.currentStopListener = function(event) {
+     if (player.node.currentTime > end) {
           player.setCurrentTime(start);
-          this.pause();
+          player.pause();
       }
     };
     

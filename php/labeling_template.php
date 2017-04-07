@@ -15,20 +15,20 @@
   <script src="lib/schema-form.min.js"></script>
   <script src="lib/bootstrap-decorator.js"></script>
   
-  <script src="lib/player/mediaelement-and-player.min.js"></script>
-  <link rel="stylesheet" href="lib/player/mediaelementplayer.css" />
+  <!--<script src="lib/player/mediaelement-and-player.min.js"></script>-->
+  <!--<link rel="stylesheet" href="lib/player/mediaelementplayer.css" />-->
+  <!--<script src="lib/player/renderers/vimeo.min.js"></script>-->
+  <!--<link rel="stylesheet" href="lib/player/mediaelementplayer.min.css">-->
+  
+  <script src="lib/player/mediaelement-and-player.js"></script>
+  <link rel="stylesheet" href="lib/player/mediaelementplayer.min.css">
   
   <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css" />
   <script src="lib/bootstrap/js/bootstrap.min.js"></script>
   
   <link rel="stylesheet" href="style.css" />
-  
-  
-  <script src="js/field.js"></script>
-  <script src="js/labeling.js"></script>
-
-  </code>
-  
+ 
+ 
 </head>
 
 <body onload="draw(0,100,0.1, 100, 200);">
@@ -56,7 +56,7 @@
     
     <div class="col-sm-7">
       <div ng-controller="PlayerController">
-        <video style="width: 100%; height: 100%;" id="player">
+        <video style="width: 100%; height: 100%;" id="player" preload="metadata">
         <?php /* src="<?php echo $g->video_path; ?>" */ ?>
         <?php foreach ($g->video_paths as $key => $value) { ?>
           <source src="<?php echo $value; ?>" >
@@ -95,5 +95,8 @@
   <img id="nao" src="nao.png" />
 </div>
 
+
+  <script src="js/field.js"></script>
+  <script src="js/labeling.js"></script>
 </body>
 </html>
