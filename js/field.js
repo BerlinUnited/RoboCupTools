@@ -181,3 +181,13 @@ function draw(x,y,rot, bx, by)
 
   }//end if  
 }//end draw
+
+/*
+// jquery version
+$( document ).ready(function() {
+  draw(0,100,0.1, 100, 200);
+});
+*/
+document.addEventListener('DOMContentLoaded', function () {
+  draw(0,100,0.1, 100, 200);
+});

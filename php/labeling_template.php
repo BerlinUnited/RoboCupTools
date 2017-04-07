@@ -31,7 +31,7 @@
  
 </head>
 
-<body onload="draw(0,100,0.1, 100, 200);">
+<body>
 
 <div class="container-fluid" ng-controller="MainController">
   <div class="row title">
