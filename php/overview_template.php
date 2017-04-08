@@ -14,7 +14,6 @@
   <script src="lib/bootstrap/js/bootstrap.min.js"></script>
   
   <link rel="stylesheet" href="style.css" />
-  <script src="js/field.js"></script>
 
 </head>
 
