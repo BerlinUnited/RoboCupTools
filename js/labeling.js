@@ -93,9 +93,12 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
     
     var c = data.type == 'none'?'blank':'button';
     
-    var str = '<a href="#" class="'+c+' '+data.type+'" style="width:'+width+'%" data-toggle="tooltip" title="'+data.type+'"></a>';
+    var str = '<a href="#" class="'+c+' '+data.type+'" data-toggle="tooltip" title="'+data.type+'"></a>';
     var o = $compile(str)($scope);
+    // style="width:'+width+'%"
 
+    
+    
     o[0].onclick = function() {
       $rootScope.$broadcast('setPeriod', data, offset);
       o.addClass("selected");
