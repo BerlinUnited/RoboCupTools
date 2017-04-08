@@ -25,6 +25,7 @@ function PeriodicPlayer(player)
 var playerGlobal;
 $( document ).ready(function() {
   $('#player').mediaelementplayer({
+    stretching: 'responsive',
     success: function(media, node, player) {
       $('#' + node.id + '-mode').html('mode: ' + player.pluginType);
       

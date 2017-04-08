@@ -9,6 +9,7 @@
   
   <script src="lib/angular.min.js"></script>
   <script src="lib/angular-sanitize.min.js"></script>
+  
   <script src="lib/tv4.min.js"></script>
   <script src="lib/ObjectPath.js"></script>
   
@@ -64,7 +65,6 @@
         <canvas id="canvas" width="740" height="1040" class="field-drawing"></canvas>
       </div>
     </div>
-
 
 
     <div class="col-sm-10 pull-right">
