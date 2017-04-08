@@ -95,7 +95,7 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
     
     var str = '<a href="#" class="'+c+' '+data.type+'" data-toggle="tooltip" title="'+data.type+'"></a>';
     var o = $compile(str)($scope);
-    // style="width:'+width+'%"
+    $(o).css( "width", "" + width + "%");
 
     
     
