@@ -57,6 +57,9 @@ body {
   background-color:#f00;
 }
 
+.hide {
+  display: none;
+}
 
 /* overview page */
 

@@ -15,11 +15,6 @@
   <script src="lib/schema-form.min.js"></script>
   <script src="lib/bootstrap-decorator.js"></script>
   
-  <!--<script src="lib/player/mediaelement-and-player.min.js"></script>-->
-  <!--<link rel="stylesheet" href="lib/player/mediaelementplayer.css" />-->
-  <!--<script src="lib/player/renderers/vimeo.min.js"></script>-->
-  <!--<link rel="stylesheet" href="lib/player/mediaelementplayer.min.css">-->
-  
   <script src="lib/player/mediaelement-and-player.js"></script>
   <link rel="stylesheet" href="lib/player/mediaelementplayer.min.css">
   
@@ -27,7 +22,6 @@
   <script src="lib/bootstrap/js/bootstrap.min.js"></script>
   
   <link rel="stylesheet" href="style.css" />
- 
  
 </head>
 
@@ -92,9 +86,9 @@
   
 </div>
 
-<div style="display:none;">
-  <img id="nao" src="nao.png" />
-</div>
+  <div class="hide">
+    <img id="nao" src="nao.png" />
+  </div>
 
 
   <script src="js/field.js"></script>
