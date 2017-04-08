@@ -77,7 +77,7 @@
       <?php
       //<div data-timeline data-file="log/labels.json"></div>
         foreach ($g->logs as $key => $log) {
-          echo '<div data-timeline data-file="'.$log->json[$name].'" data-logoffset="'.$log->log_offset.'" data-videooffset="'.$log->video_offset.'"></div>';
+          echo '<div class="timeline" data-timeline data-file="'.$log->json[$name].'" data-logoffset="'.$log->log_offset.'" data-videooffset="'.$log->video_offset.'"></div>';
         }
       ?>
       
@@ -91,6 +91,7 @@
 
   
 </div>
+
 <div style="display:none;">
   <img id="nao" src="nao.png" />
 </div>

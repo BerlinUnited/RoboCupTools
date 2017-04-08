@@ -186,7 +186,6 @@ app.controller('FormController', function($scope) {
     });
   
   
-  
   $scope.schema = {
     "type" : "object", 
     "properties": properties
@@ -213,17 +212,14 @@ app.controller('FormController', function($scope) {
       $scope.model = data.labels;
       $scope.$apply();
   });
-
 });
 
 
 app.controller('PlayerController', function($scope) {
   $scope.$on('setPeriod', function(event, data, offset) {
-    
     var t_begin = data.begin + offset;
     var t_end = data.end + offset + (data.type == 'none'?0.0:3.0);
     playerGlobal.setPeriod(t_begin, t_end);
-
   });
 });
 
@@ -236,11 +232,12 @@ app.controller('DrawingController', function($scope) {
 });
 
 
+
 app.directive('timeline', function($compile) {
   return {
-    restrict: 'AE',
-    replace: true,
-    template: '<div id="timeline" class="timeline"></div>',
+    //restrict: 'AE',
+    //replace: true,
+    //template: '<div class="timeline"></div>',
     link: function(scope, element, attrs) {
 
       $.getJSON( attrs.file, function( data ) {
