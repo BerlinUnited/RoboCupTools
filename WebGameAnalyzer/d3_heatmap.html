@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    
+    <title>Heatmap</title>
+    
+    <style>
+      body, html {
+        margin:0; padding:0;
+      }
+      #heatmapContainerWrapper {
+        width:1040px;
+        height:740px;
+        
+        background:rgba(0,0,0,.1);
+      }
+      #heatmapContainer { width:100%; height:100%;}
+     svg { position:absolute; z-index:1; top:0; } 
+     #heatmapContainerWrapper { position:relative; } 
+     #heatmapContainer { z-index:100; }
+     #scatterplot { position: relative; margin-top: 1em; }
+     table { border: 1px dashed silver; }
+     table td { padding: 1em; margin-right: 1em; }
+     table td.odd { background: lightgrey; }
+     table td.even {}
+    </style>
+    
+    <script src="js/d3.min.js"></script>
+    <script src="js/heatmap.min.js"></script>
+    <script src="js/d3-soccerfield.js"></script>
+    <script src="https://cdn.rawgit.com/fabid/d3-rectbin/master/rectbin.js"></script>
+    <script src="js/spin.min.js"></script>
+    <script src="js/functions.js"></script>
+  </head>
+  <body>
+
+
+    <h1>Heatmap</h1>
+    <table>
+      <tr>
+      </tr>
+    </table>
+    <div id="heatmapContainerWrapper">  
+      <div id="heatmapContainer">
+     </div>
+    </div>
+
+    <table id="scatterplot_table"><tr></tr></table>
+    <div id="scatterplot"></div>
+ <script>
+var field =   d3.soccerfield();
+
+d3.select('div').call(field);
+d3.select('div#scatterplot').call(field);
+
+/* ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+
+var binSize = 10;
+var binFn = d3.rectbin().dx(binSize).dy(binSize);
+var position_data = {};
+var position_adjustment = { 'x': field.scale() * (field.margin()+field.width()/2) , 'y': field.scale() * (field.margin()+field.height()/2) };
+var gameStates = [ 'INITAL', 'READY', 'SET', 'PLAYING', 'FINISHED' ];
+
+var heatmap = h337.create({
+  container: document.getElementById('heatmapContainer'),
+  radius: 33,                                               // change radius as required
+  blur: .95,                                                // blur [0,1]
+//  gradient: { 0.25: "rgb(0,0,255)", 0.55: "rgb(0,255,0)", 0.85: "yellow", 1.0: "rgb(255,0,0)"}, // default
+//  gradient: { 0.25: "rgb(0,0,255)", 0.55: "rgb(0,255,255)", 0.85: "yellow", 1.0: "rgb(255,0,0)"},
+//  gradient: { '.5': 'blue', '.8': 'red', '.95': 'white' },
+//  gradient: { .1: 'rgba(0,0,0,0)', 0.25: "rgba(0,0,90, .6)", .6: "blue", .9: "cyan", .95: 'rgba(255,255,255,.4)'},
+});
+
+var config = new Config();
+loadJson(config.get('file', ''), filterMessages);
+
+function filterMessages(messages) {
+  for(var msg of messages) {
+    var _ip     = msg.address || "";
+    var _time   = msg.timestamp || 0;
+    var _team   = msg.teamNum || 0;
+    var _player = msg.playerNum || 0;
+    var _pos    = { 'x':msg.pose[0], 'y':msg.pose[1] };
+    var _state  = msg.gameState;
+
+    // add team if not exists
+    if (!position_data.hasOwnProperty(_team)) {
+      position_data[_team] = {};
+    }
+    // add player of team if not exists
+    if (!position_data[_team].hasOwnProperty(_player)) {
+        position_data[_team][_player] = [];
+    }
+
+    // DEBUG-G-ING
+    //if(_team == 4 && _pos.x == 0 && _pos.y == 0) { console.log(_player, _ip); }
+    //if(_team == 4 && _pos.y >= 3000) { console.log(_player, _ip, _pos.x, _pos.y, msToTime(_time)); }
+
+    position_data[_team][_player].push({ 'gameState': _state, 'position': [ field.scale() * _pos.x, field.scale() * _pos.y ] });
+  }
+
+  addTeamButtons();
+  changeHeatmap();
+}
+
+function addTeamButtons() {
+  var html = '';
+  Object.keys(position_data).forEach(function(team, i) {
+    var html_player = '';
+    for (var player in position_data[team]) {
+      html_player += '<label><input type="checkbox" name="team_'+team+'_player_'+player+'" class="team_'+team+' player player_'+player+'" checked="checked" value="'+player+'" onclick="changeHeatmap()" />#'+player+'</label>';
+    }
+    var html_gstates = '';
+    for (var j = 0; j < gameStates.length; j++) {
+      html_gstates += '<label><input type="checkbox" name="team_'+team+'_gstate_'+j+'" class="team_'+team+' gstate gstate_'+j+'" checked="checked" value="'+j+'" onclick="changeHeatmap()" />#'+gameStates[j]+'</label>';
+    }
+    if (html_player.length > 0) {
+      html += '<td class="'+(i%2==0?'even':'odd')+'">'
+            + '<label><input type="checkbox" name="team_'+team+'" class="team team_'+team+'" checked="checked" value="'+team+'" onclick="changeHeatmap()" /> Team #'+team+'</label>'
+            + ' <select class="team_'+team+' side" onclick="changeHeatmap()"><option value="left"'+(i%2==0?'':' selected="selected"')+'>left</option><option value="right"'+(i%2==0?'':' selected="selected"')+'>right</option></select>'
+            + ' <input type="color" value="'+(i%2==0?'#0000cc':'#cc0000')+'" class="colorpicker team_'+team+'" onchange="updateStyle()">'
+            + ' <input type="range" min="0" max="1" step="0.01" value="0.25" class="opacity team_'+team+'" onchange="updateStyle()">'
+            + '<br>'
+            + html_player
+            + '<br>'
+            + html_gstates
+            + '</td>';
+    }
+  });
+  d3.select('table tr').html(html);
+}
+
+function updateStyle() {
+  d3.selectAll('.team:checked').each(function(v,i){
+    //console.log(this.value);
+    d3.selectAll('.robot.team_'+this.value)
+      .style('fill',d3.select('.colorpicker.team_'+this.value).property('value'))
+      .style('fill-opacity',d3.select('.opacity.team_'+this.value).property('value'))
+    ;
+  });
+}
+
+function changeHeatmap() {
+  var config = {};
+  d3.selectAll('.team:checked').each(function(v,i) {
+    //console.log(v,i,this.value);
+    if(!config.hasOwnProperty(this.value)) {
+      config[this.value] = {
+        'player': d3.selectAll('.team_'+this.value+'.player:checked').nodes().map(function(e){ return e.value; }),
+        'side': d3.select('.team_'+this.value+'.side option:checked').property('value') == 'right'? 'right' : 'left',
+        'gstates': d3.selectAll('.team_'+this.value+'.gstate:checked').nodes().map(function(e){ return parseInt(e.value); }),
+      };
+    }
+  });
+  updateHeatmap(config);
+  drawScatterplot(config);
+  updateStyle();
+}
+
+/**
+  * @params config
+  */
+function updateHeatmap(config) {
+  // do we have position data ?
+  if (Object.keys(position_data).length) {
+    // init config if not set yet
+    config = config || {};
+    // extract positions of the given teams-players
+    var positions = [];
+    for (const team in config) {
+      if (position_data.hasOwnProperty(team)) {
+        for (const player of config[team].player) {
+          if (position_data[team].hasOwnProperty(player)) {
+            if(config[team].side == 'right') {
+              // mirror coordinates
+              positions.push(
+                position_data[team][player]
+                  .filter(function(v){ return config[team].gstates.indexOf(v.gameState) != -1; })
+                  .map(function(v){ return [-1 * v.position[0], -1 * v.position[1]]; })
+              );
+            } else {
+              // left side is default
+              positions.push(
+                position_data[team][player]
+                  .filter(function(v){ return config[team].gstates.indexOf(v.gameState) != -1; })
+                  .map(function(v){ return [v.position[0], v.position[1]]; }));
+            }
+          }
+        } 
+      }
+    }
+    // cluster positions
+    var binnedPositions = binFn(d3.merge(positions));
+    // create datastructure for heatmap from clustered data
+    var heatdata = [];
+    var heatmax = 0;
+    binnedPositions.map(function(v){ if(v.length>0){
+      heatmax = Math.max(heatmax, v.length);
+      heatdata.push({ x: v.x + position_adjustment.x, y: -(v.y - position_adjustment.y), value: v.length });
+    } });
+    // update heatmap
+    heatmap.setData({ max: heatmax, min: 0, data: heatdata });
+  }
+}
+
+function drawScatterplot(config) {
+  // do we have position data ?
+  if (Object.keys(position_data).length) {
+    // init config if not set yet
+    config = config || {};
+    // extract positions of the given teams-players
+      var positions = [];
+      for (const team in config) {
+        if (position_data.hasOwnProperty(team)) {
+          for (const player of config[team].player) {
+            if (position_data[team].hasOwnProperty(player)) {
+              if(config[team].side == 'right') {
+                // mirror coordinates
+                positions.push(
+                  position_data[team][player]
+                    .filter(function(v){ return config[team].gstates ? config[team].gstates.indexOf(v.gameState) != -1 : true; })
+                    .map(function(v){ return [-1 * v.position[0], -1 * v.position[1], team]; })
+                );
+              } else {
+                // left side is default
+                positions.push(
+                  position_data[team][player]
+                    .filter(function(v){ return config[team].gstates ? config[team].gstates.indexOf(v.gameState) != -1 : true; })
+                    .map(function(v){ return [v.position[0], v.position[1], team]; }));
+              }
+            }
+          } 
+        }
+      }
+      // remove 
+      d3.selectAll('div#scatterplot svg .robot').remove();
+
+    d3.select('div#scatterplot svg').selectAll(".robot")
+        .data(d3.merge(positions))
+        .enter().append("circle")
+        .attr("cx", function(d) { return d[0] + position_adjustment.x; })
+        .attr("cy", function(d) { return -(d[1] - position_adjustment.y); }) 
+        .attr("r", 2.5)
+        .attr("class", function(d) { return "robot team_"+d[2]; });
+  }
+}
+    </script>
+  </body>
+</html>

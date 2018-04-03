@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Ball position slider</title>
+    <script src="js/d3.min.js"></script>
+    <script src="js/d3-soccerfield.js"></script>
+    <script src="js/spin.min.js"></script>
+    <script src="js/functions.js"></script>
+    <style>
+      body, html {
+        margin:0; padding:0;
+      }
+      .soccerball { fill: grey; }
+      .soccerball.team_90 { fill: blue; }
+      .soccerball.team_91 { fill: red; }
+
+      .soccerball.team_4 { fill: blue; }
+      .soccerball.team_39 { fill: red; }
+    </style>
+  </head>
+  <body>
+
+  	<div id="soccerfield"></div>
+
+<script type="text/javascript">
+
+  const $ = query => document.querySelector(query);
+  var field =   d3.soccerfield().scale(0.1);
+  d3.select('div#soccerfield').call(field);
+
+  var config = new Config();
+  loadJson(config.get('file', ''), filterMessages);
+
+  var position_data = {};
+  var position_adjustment = { 'x': field.scale() * (field.margin()+field.width()/2) , 'y': field.scale() * (field.margin()+field.height()/2) };
+  var min_max = [ Infinity, -Infinity ];
+  var sliderWrapperSelector = 'div#sliderwrapper',
+      sliderLabelSelector = 'div#sliderwrapper span',
+      sliderSelector = 'div#sliderwrapper input[type="range"]',
+      maxBallInputSelector = 'div#sliderwrapper input[type="number"]',
+      soccerfieldSelector = 'div#soccerfield svg';
+
+function filterMessages(messages) {
+  console.log(messages);
+  for(var msg of messages) {
+    var _ip       = msg.address || "";
+    var _time     = msg.timestamp || 0;
+    var _team     = msg.teamNum || 0;
+    var _player   = msg.playerNum || 0;
+    var _pos      = { 'x':msg.pose[0], 'y':msg.pose[1], 'r':msg.pose[2] };
+    var _ball     = { 'x':msg.ball[0], 'y':msg.ball[1] };
+    var _ballAge  = msg.ballAge;
+    var _ballSeen = _ballAge >= 0 /*&& _ballAge <= config.get('maxBallAge', 1)*/;
+    var _state    = msg.gameState;
+
+    // add team if not exists
+    if (!position_data.hasOwnProperty(_team)) {
+      position_data[_team] = {};
+    }
+    // add player of team if not exists
+    if (!position_data[_team].hasOwnProperty(_player)) {
+        position_data[_team][_player] = { 't':[], 'd':[] };
+    }
+
+    // DEBUG-G-ING
+    //if(_team == 4 && _pos.x == 0 && _pos.y == 0) { console.log(_player, _ip); }
+    //if(_team == 4 && _pos.y >= 3000) { console.log(_player, _ip, _pos.x, _pos.y, msToTime(_time)); }
+
+    // Ball seen and playing game state
+    if(_ballSeen && _state == 3) {
+      // retrieve min/max time value
+      min_max[0] = Math.min(min_max[0], _time);
+      min_max[1] = Math.max(min_max[1], _time);
+      // ball is in local coordinates!
+      var sinR = Math.sin(_pos.r), cosR = Math.cos(_pos.r);
+      var x = _ball.x * cosR - _ball.y * sinR + _pos.x, y = _ball.x * sinR + _ball.y * cosR + _pos.y;
+
+      position_data[_team][_player]['t'].push(_time);
+      position_data[_team][_player]['d'][_time] = { 'position': [ field.scale() * x, field.scale() * y ], 'age':_ballAge, 'team':_team, 'player':_player, 'time':_time };
+    }
+  }
+  //console.log(min_max);
+  //console.log(position_data);
+
+  updateSlider(min_max[0], min_max[1]);
+  sortTimes();
+};
+
+function updateSlider(min, max) {
+  var sliderWrapper = d3.select(sliderWrapperSelector),
+      sliderLabel = d3.select(sliderLabelSelector),
+      slider = d3.select(sliderSelector),
+      maxBall = d3.select(maxBallInputSelector);
+  // create slider if not available: <input type="range" name="slider">
+  if (sliderWrapper.empty()) {
+    sliderWrapper = d3.select('body').append('div').attr('id', 'sliderwrapper');
+    slider = sliderWrapper.append('input')
+              .attr('type', 'range')
+              .attr('name', 'slider')
+              .on('input', sliderChanged);
+    sliderLabel = sliderWrapper.append('span').style('float', 'right');
+    maxBall = sliderWrapper.append('input').attr('type', 'number').attr('id', 'maxball').attr('value',config.get('maxBallAge', -1)).style('float', 'left').on('input', sliderChanged);
+    sliderWrapper.append('div').style('clear', 'both');
+  }
+
+  var ticks = d3.select('datalist');
+  // create slider if not available: <input type="range" name="slider">
+  if (ticks.empty()) {
+    ticks = sliderWrapper.append('datalist').attr('id', 'tickmarks');
+  } else {
+    // remove previous ticks?
+  }
+
+  var field_width = $(soccerfieldSelector).width.baseVal.value,
+      steps = (max - min) / (field_width/100);
+  for (var i = 0; i <= max - min; i+=steps) {
+    ticks.append('option').attr('value', Math.round(min + i)).attr('label', Math.round(min + i))
+  }
+
+  sliderWrapper.style('width', field_width + "px");
+
+  // set the sliders min/max/value and adjusts its size to the field width
+  slider.attr('min', min)
+        .attr('max', max)
+        .attr('value', min)
+        .attr('list', 'tickmarks')
+        .attr('title', (min/1000)+"s")
+        .style('width', field_width + "px");
+  sliderLabel.text(min);
+}
+
+function sliderChanged() {
+  var v = d3.select(sliderSelector).node().value,
+      r = getPlayerInfos(v),
+      q = r.map(function(e){ return [e.position[0], e.position[1], e.team, e.player, e.bage]; });
+
+  console.log(v);
+
+  var slider = d3.select(sliderSelector);
+  if(!slider.empty()){ slider.attr('title', (v/1000)+"s"); }
+  var sliderLabel = d3.select(sliderLabelSelector);
+  if(!sliderLabel.empty()){ sliderLabel.text(v); }
+
+  // remove 
+  d3.selectAll(soccerfieldSelector+' .soccerball').remove();
+
+  var elem = d3.select(soccerfieldSelector).selectAll(".soccerball").data(q);
+  /*Create and place the "blocks" containing the circle and the text */  
+  var elemEnter = elem.enter()
+      .append("g")
+      .attr("transform", function(d){return "translate("+(d[0] + position_adjustment.x)+","+(-(d[1] - position_adjustment.y))+")"})
+      .attr("class", function(d) { return "soccerball team_"+d[2]; });
+
+    /*Create the circle for each block */
+    elemEnter.append("circle")
+      //.attr("cx", function(d) { return d[0] + position_adjustment.x; })
+      //.attr("cy", function(d) { return -(d[1] - position_adjustment.y); }) 
+      .attr("r", 2.5);
+      
+
+    /* Create the text for each block */
+    elemEnter.append("text")
+        .attr("dx", function(d){return -20})
+        .text(function(d){return d[2]})
+
+    /* Create the text for each block */
+    elemEnter.append("text")
+        .attr("dx", function(d){return 10})
+        .text(function(d){return d[3]})
+
+    /* Create the text for each block */
+    elemEnter.append("text")
+        .attr("dx", function(d){return 10})
+        .attr("dy", function(d){return 10})
+        .text(function(d){return d[4]})
+/*
+    d3.select('div svg').selectAll(".soccerball")
+      .data(q)
+      .enter().append("circle")
+      .attr("cx", function(d) { return d[0] + position_adjustment.x; })
+      .attr("cy", function(d) { return -(d[1] - position_adjustment.y); }) 
+      .attr("r", 2.5)
+      .attr("class", function(d) { return "soccerball team_"+d[2]; });
+*/
+//  console.log(position_data[e.target.value]);
+}
+
+function getMaxBall() {
+  var val = parseInt($(maxBallInputSelector).value);
+  return val == NaN || val < 0 ? Infinity : val;
+}
+
+function sortTimes() {
+  for (var team in position_data) {
+    for (var player in position_data[team]) {
+      position_data[team][player]['t'].sort()
+    }
+  }
+}
+
+function getPlayerInfos(time) {
+  var result = [];
+  for (var team in position_data) {
+    for (var player in position_data[team]) {
+      var idx = position_data[team][player]['t'].find(function(e,i,a){
+        return e<=time&&(i+1==a.length||a[i+1]>time);
+      });
+      if(idx !== undefined) {
+        var p = position_data[team][player]['d'][idx];
+        p['bage'] = (time - p.time)/1000 + p.age;
+        if(p['bage'] <= getMaxBall()) {
+          result.push(p);
+        }
+      }
+    }
+  }
+  //console.log(time, result);
+  return result;
+}
+
+
+
+  	</script>
+  </body>
+</html>

@@ -1,0 +1,155 @@
+<html>
+  <head>
+    <title>Timeline (Fallen, Ballseen)</title>
+    <script src="js/d3.js"></script>
+    <script src="js/d3-timeline.js"></script>
+    <script src="js/spin.min.js"></script>
+    <script src="js/functions.js"></script>
+    <style type="text/css">
+      .axis path,
+      .axis line {
+        fill: none;
+        stroke: black;
+        shape-rendering: crispEdges;
+      }
+
+      .axis text {
+        font-family: sans-serif;
+        font-size: 10px;
+      }
+
+      .timeline-label {
+        font-family: sans-serif;
+        font-size: 12px;
+      }
+
+      #timeline2 .axis {
+        transform: translate(0px,40px);
+        -ms-transform: translate(0px,40px); /* IE 9 */
+        -webkit-transform: translate(0px,40px); /* Safari and Chrome */
+        -o-transform: translate(0px,40px); /* Opera */
+        -moz-transform: translate(0px,40px); /* Firefox */
+      }
+      
+      .coloredDiv {
+        height:20px; width:20px; float:left;
+      }
+
+      .timelineSeries_team {
+      	fill: red !important;
+      }
+    </style>
+  </head>
+
+  <body>
+<script type="text/javascript">
+var chart = d3.timeline()
+              //.relativeTime()
+              .beginning(-0.1) // if '0' beginning is computed!
+              .ending(600000)
+              .fullLengthBackgrounds(true)
+              //.showTimeAxisTick() // toggles tick marks
+              .stack() // toggles graph stacking
+              .margin({left:70, right:30, top:0, bottom:0})
+              .background('#f2f2f2')
+              //.showBorderLine(true)
+              .click(function(d,i,datum){
+                var format = d3.timeFormat("%M:%S");
+                var duration = Math.round((d["ending_time"] - d["starting_time"])/1000);
+                console.log(msToTime(d["starting_time"]) + "-" + msToTime(d["ending_time"]), "duration="+duration+"s", datum);
+              })
+              .tickFormat({
+                format: function(d) { return d3.timeFormat("%M:%S")(d) },
+                tickTime: d3.timeSecond,
+                tickInterval: 60,
+                tickSize: 15,
+              });
+
+function drawCharts(messages) {
+  console.log(messages);
+  var teams = {};
+
+  for(var msg of messages) {
+    var _ip     = msg['address'];
+    var _time   = msg['timestamp'];
+    var _team   = msg['teamNum'];
+    var _player = msg['playerNum'];
+    var _fallen = msg['fallen'];
+    var _ballSeen= msg['ballAge'] >= 0 && msg['ballAge'] <= (config.maxBallAge || 1);
+
+    // add team if not exists
+    if (!teams.hasOwnProperty(_team)) {
+      teams[_team] = { };
+    }
+
+    // add player of team if not exists
+    if (!teams[_team].hasOwnProperty(_player)) {
+        teams[_team][_player] = {
+        "ip":_ip,
+        "number":_player,
+        "fallen": { "last": 0, "is": 0, "times": [] } ,
+        "ball":   { "last": 0, "see": false, "times": [] } ,
+        };
+    }
+
+    // track 'fallen' changes
+    if (teams[_team][_player]['fallen']["is"] != _fallen) {
+      //
+      if (_fallen == 0) {
+        teams[_team][_player]['fallen']['times'].push({"starting_time": teams[_team][_player]['fallen']['last'], "ending_time": _time});
+      }
+      teams[_team][_player]['fallen']['last'] = _time;
+      teams[_team][_player]['fallen']["is"] = _fallen;
+    }
+
+    // track 'ball' changes
+    if (teams[_team][_player]['ball']["see"] != _ballSeen) {
+      //
+      if (!_ballSeen) {
+        teams[_team][_player]['ball']['times'].push({"starting_time": teams[_team][_player]['ball']['last'], "ending_time": _time});
+      }
+      teams[_team][_player]['ball']['last'] = _time;
+      teams[_team][_player]['ball']["see"] = _ballSeen;
+    }
+  }
+
+  for(var team in teams) {
+    var fallen_states = [], fallen_states_team = [];
+    var ball_seen = [], ball_seen_team = [];
+    for(var player in teams[team]) {
+
+      // add dummy value if no timeframe is available
+      if(teams[team][player]["fallen"]['times'].length == 0) {
+        teams[team][player]["fallen"]['times'].push({"starting_time": 0, "ending_time": 0});
+      }
+      fallen_states.push({"label":player, "ip":teams[team][player]["ip"], "number":teams[team][player]["number"], "times":teams[team][player]["fallen"]['times']});
+      fallen_states_team = fallen_states_team.concat(teams[team][player]["fallen"]['times']);
+
+      // if we have an "open" timeframe, close it
+      if (teams[team][player]["ball"]["see"]) {
+        teams[team][player]["ball"]['times'].push({"starting_time": teams[team][player]["ball"]['last'], "ending_time": messages[messages.length-1]["timestamp"]});
+      }
+      ball_seen.push({"label":player, "ip":teams[team][player]["ip"], "number":teams[team][player]["number"], "times":teams[team][player]["ball"]['times']});
+      ball_seen_team = ball_seen_team.concat(teams[team][player]["ball"]['times']);
+    }
+    fallen_states.push({"label":"Team", "times":fallen_states_team, "class":"team"});
+    ball_seen.push({"label":"Team","times":ball_seen_team, "class":"team"});
+
+    d3.select('body').append('h1').text("Team #"+team);
+    d3.select('body').append('h2').text("Fallen states");
+    //var svg = d3.select("#naoth_fallen_states").append("svg").attr("width", 1000).datum(fallen_states).call(chart);
+    d3.select('body').append('div').classed("team team_"+team+" fallen", true).append("svg").attr("width", 1000).datum(fallen_states).call(chart);
+    chart.height(null); // reuse same chart obj -> must reset height!
+    d3.select('body').append('h2').text("Ball seen");
+    d3.select('body').append('div').classed("team team_"+team+" ball_seen", true).append("svg").attr("width", 1000).datum(ball_seen).call(chart);
+    chart.height(null); // reuse same chart obj -> must reset height!
+  }
+  console.log(teams);
+}
+
+var config = new Config();
+loadJson(config.get('file', ''), drawCharts);
+
+    </script>
+  </body>
+</html>
