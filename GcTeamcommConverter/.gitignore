@@ -1,10 +1,11 @@
 #general
 build/
 dist/
-nbproject/
+nbproject/*
 
 #java project files
-
 build-impl.xml
 genfiles.properties
 manifest.mf
+!nbproject/project.properties
+!nbproject/project.xml
