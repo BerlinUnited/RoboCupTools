@@ -22,9 +22,8 @@ function loadJson(json, callback) {
 		, position: 'fixed' // Element positioning
 	};
 
-	var spinner = new Spinner(opts).spin(document.getElementsByTagName("body")[0]);
-
 	if (window.location.protocol !== 'file:') {
+		var spinner = new Spinner(opts).spin(document.getElementsByTagName("body")[0]);
 		d3.request(json)
 	      	.mimeType("application/json")
 	    	.response(function(xhr) { return eval(xhr.responseText); })
@@ -33,9 +32,12 @@ function loadJson(json, callback) {
 	        	callback(messages);
 	        });
     } else {
-    	alert("Doesn't work in local filesystem.");
-    	spinner.stop();
-    	callback([]);
+    	let form = document.createElement("form");
+    	form.innerHTML = '<fieldset><h2>Select local Json LogFile</h2><input type="file" id="fileinput"><input type="button" id="btnLoad" value="Load"></fieldset>';
+    	form.querySelector("#btnLoad").onclick = function() {
+    		loadFile(callback);
+    	};
+    	document.body.insertBefore(form, document.body.firstChild);
     }
 }
 
@@ -63,3 +65,59 @@ class Config {
 		return this._c[key] || def;
 	}
 }
+
+function loadFile(callback) {
+    var input, file, fr;
+	var opts = {
+		  lines: 13 // The number of lines to draw
+		, length: 28 // The length of each line
+		, width: 14 // The line thickness
+		, radius: 42 // The radius of the inner circle
+		, scale: 1 // Scales overall size of the spinner
+		, corners: 1 // Corner roundness (0..1)
+		, color: '#000' // #rgb or #rrggbb or array of colors
+		, opacity: 0.25 // Opacity of the lines
+		, rotate: 0 // The rotation offset
+		, direction: 1 // 1: clockwise, -1: counterclockwise
+		, speed: 1 // Rounds per second
+		, trail: 60 // Afterglow percentage
+		, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
+		, zIndex: 2e9 // The z-index (defaults to 2000000000)
+		, className: 'spinner' // The CSS class to assign to the spinner
+		, top: '50%' // Top position relative to parent
+		, left: '50%' // Left position relative to parent
+		, shadow: true // Whether to render a shadow
+		, hwaccel: false // Whether to use hardware acceleration
+		, position: 'fixed' // Element positioning
+	};
+
+    if (typeof window.FileReader !== 'function') {
+      alert("The file API isn't supported on this browser yet.");
+      return;
+    }
+
+    input = document.getElementById('fileinput');
+    if (!input) {
+      alert("Um, couldn't find the fileinput element.");
+    }
+    else if (!input.files) {
+      alert("This browser doesn't seem to support the `files` property of file inputs.");
+    }
+    else if (!input.files[0]) {
+      alert("Please select a file before clicking 'Load'");
+    }
+    else {
+	var spinner = new Spinner(opts).spin(document.getElementsByTagName("body")[0]);
+      file = input.files[0];
+      fr = new FileReader();
+      fr.onload = receivedText;
+      fr.readAsText(file);
+    }
+
+    function receivedText(e) {
+      lines = e.target.result;
+      var newArr = eval(lines); 
+	  spinner.stop();
+      callback(newArr);
+    }
+  }
