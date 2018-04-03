@@ -24,13 +24,19 @@ function loadJson(json, callback) {
 
 	var spinner = new Spinner(opts).spin(document.getElementsByTagName("body")[0]);
 
-	d3.request(json)
-      	.mimeType("application/json")
-    	.response(function(xhr) { return eval(xhr.responseText); })
-        .get(function(messages) {
-        	spinner.stop();
-        	callback(messages);
-        });
+	if (window.location.protocol !== 'file:') {
+		d3.request(json)
+	      	.mimeType("application/json")
+	    	.response(function(xhr) { return eval(xhr.responseText); })
+	        .get(function(messages) {
+	        	spinner.stop();
+	        	callback(messages);
+	        });
+    } else {
+    	alert("Doesn't work in local filesystem.");
+    	spinner.stop();
+    	callback([]);
+    }
 }
 
 function msToTime(s) {
