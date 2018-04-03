@@ -33,10 +33,10 @@ function loadJson(json, callback) {
 	        });
     } else {
     	let form = document.createElement("form");
-    	form.innerHTML = '<fieldset><h2>Select local Json LogFile</h2><input type="file" id="fileinput"><input type="button" id="btnLoad" value="Load"></fieldset>';
-    	form.querySelector("#btnLoad").onclick = function() {
-    		loadFile(callback);
-    	};
+    	form.innerHTML = '<fieldset><h2>Select local Json LogFile</h2><input type="file" id="fileinput" accept=".json"></fieldset>';
+      form.querySelector("#fileinput").onchange = function(e) {
+        loadFile(callback);
+      };
     	document.body.insertBefore(form, document.body.firstChild);
     }
 }
@@ -67,7 +67,7 @@ class Config {
 }
 
 function loadFile(callback) {
-    var input, file, fr;
+  var input, file, fr;
 	var opts = {
 		  lines: 13 // The number of lines to draw
 		, length: 28 // The length of each line
