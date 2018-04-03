@@ -1,0 +1,10 @@
+#general
+build/
+dist/
+nbproject/
+
+#java project files
+
+build-impl.xml
+genfiles.properties
+manifest.mf
