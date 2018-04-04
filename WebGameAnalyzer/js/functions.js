@@ -72,12 +72,35 @@ function addLocalFileSelector(parent) {
 		let fNode = document.createElement("form");
 		fNode.innerHTML = '<fieldset><h2>Select local Json LogFile</h2><input type="file" id="fileinput" accept=".json"></fieldset>';
 		fNode.querySelector("#fileinput").onchange = function(e) {
-
 			if (this.files && this.files.length > 0) {
 				loadFile(this.files[0]);
 			}
 		};
 		pNode.insertBefore(fNode, pNode.firstChild);
+
+		// prevent browser loading the dragged file
+		fNode.firstChild.addEventListener("dragover", function(e){ e.preventDefault(); }, false);
+		// highlight border to indicate drop area
+		fNode.firstChild.addEventListener("dragenter", function(e){
+			if(e.path.indexOf(this) !== -1 && this.style.borderColor.length === 0) {
+				this.style.borderColor = "red";
+			}
+		}, false);
+		// revert highlighting when leaving drop area
+		fNode.firstChild.addEventListener("dragleave", function(e){
+			if(this.style.borderColor.length !== 0 && !(e.relatedTarget === this || e.relatedTarget.parentElement === this)) {
+				this.style.borderColor = "";
+			}
+		}, false);
+		// handle drop
+		fNode.firstChild.addEventListener("drop", function(e){
+		 	e.stopPropagation();
+			e.preventDefault();
+			this.style.borderColor = "";
+			if(e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+				loadFile(e.dataTransfer.files[0])
+			}
+		}, false);
 	} else {
 		console.log("The file API isn't supported on this browser!");
 	}
