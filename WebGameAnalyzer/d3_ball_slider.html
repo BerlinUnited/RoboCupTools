@@ -30,7 +30,11 @@
   d3.select('div#soccerfield').call(field);
 
   var config = new Config();
-  loadJson(config.get('file', ''), filterMessages);
+  addLocalFileSelector(document.body);
+  registerNewLogFileEventHandler(filterMessages);
+  if (config.get('file', '') !== '') {
+    loadJson(config.get('file', ''));
+  }
 
   var position_data = {};
   var position_adjustment = { 'x': field.scale() * (field.margin()+field.width()/2) , 'y': field.scale() * (field.margin()+field.height()/2) };

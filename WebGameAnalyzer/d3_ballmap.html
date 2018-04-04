@@ -29,7 +29,7 @@
     <script src="js/d3.min.js"></script>
     <script src="js/heatmap.min.js"></script>
     <script src="js/d3-soccerfield.js"></script>
-    <script src="https://cdn.rawgit.com/fabid/d3-rectbin/master/rectbin.js"></script>
+    <script src="js/d3-rectbin.js"></script>
     <script src="js/spin.min.js"></script>
     <script src="js/functions.js"></script>
   </head>
@@ -69,7 +69,11 @@ var heatmap = h337.create({
 });
 
 var config = new Config();
-loadJson(config.get('file', ''), filterMessages);
+addLocalFileSelector(document.body);
+registerNewLogFileEventHandler(filterMessages);
+if (config.get('file', '') !== '') {
+  loadJson(config.get('file', ''));
+}
 
 function filterMessages(messages) {
       console.log(messages);

@@ -1,5 +1,5 @@
-function loadJson(json, callback) {
-	var opts = {
+/**/
+var spinner = new Spinner({
 		  lines: 13 // The number of lines to draw
 		, length: 28 // The length of each line
 		, width: 14 // The line thickness
@@ -20,32 +20,7 @@ function loadJson(json, callback) {
 		, shadow: true // Whether to render a shadow
 		, hwaccel: false // Whether to use hardware acceleration
 		, position: 'fixed' // Element positioning
-	};
-
-	if (window.location.protocol !== 'file:') {
-		var spinner = new Spinner(opts).spin(document.getElementsByTagName("body")[0]);
-		d3.request(json)
-	      	.mimeType("application/json")
-	    	.response(function(xhr) { return eval(xhr.responseText); })
-	        .get(function(messages) {
-	        	spinner.stop();
-	        	callback(messages);
-	        });
-    } else {
-    	let form = document.createElement("form");
-    	form.innerHTML = '<fieldset><h2>Select local Json LogFile</h2><input type="file" id="fileinput" accept=".json"></fieldset>';
-      form.querySelector("#fileinput").onchange = function(e) {
-        loadFile(callback);
-      };
-    	document.body.insertBefore(form, document.body.firstChild);
-    }
-}
-
-function msToTime(s) {
-  // Pad to 2 or 3 digits, default is 2
-  var pad = (n, z = 2) => ('00' + n).slice(-z);
-  return pad(s/3.6e6|0) + ':' + pad((s%3.6e6)/6e4 | 0) + ':' + pad((s%6e4)/1000|0) + '.' + pad(s%1000, 3);
-}
+});
 
 class Config {
 	constructor(){
@@ -66,58 +41,54 @@ class Config {
 	}
 }
 
-function loadFile(callback) {
-  var input, file, fr;
-	var opts = {
-		  lines: 13 // The number of lines to draw
-		, length: 28 // The length of each line
-		, width: 14 // The line thickness
-		, radius: 42 // The radius of the inner circle
-		, scale: 1 // Scales overall size of the spinner
-		, corners: 1 // Corner roundness (0..1)
-		, color: '#000' // #rgb or #rrggbb or array of colors
-		, opacity: 0.25 // Opacity of the lines
-		, rotate: 0 // The rotation offset
-		, direction: 1 // 1: clockwise, -1: counterclockwise
-		, speed: 1 // Rounds per second
-		, trail: 60 // Afterglow percentage
-		, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
-		, zIndex: 2e9 // The z-index (defaults to 2000000000)
-		, className: 'spinner' // The CSS class to assign to the spinner
-		, top: '50%' // Top position relative to parent
-		, left: '50%' // Left position relative to parent
-		, shadow: true // Whether to render a shadow
-		, hwaccel: false // Whether to use hardware acceleration
-		, position: 'fixed' // Element positioning
-	};
+function loadJson(file) {
+	// can only load files via ajax when not local
+	if (window.location.protocol !== 'file:') {
+		let xhr = new XMLHttpRequest();
+		if (xhr) {
+			xhr.onloadstart = function(e){ spinner.spin(document.body); };
+			xhr.onloadend   = function(e){ spinner.stop(); };
+			xhr.onload      = function(e){ document.dispatchEvent(new CustomEvent('newLogFile', { detail: eval(e.target.responseText), })); };
+			xhr.open('GET', file);
+			xhr.send();
+		}
+    }
+}
 
-    if (typeof window.FileReader !== 'function') {
-      alert("The file API isn't supported on this browser yet.");
-      return;
-    }
+function loadFile(file) {
+	// make sure we can load files
+    if (typeof window.FileReader === 'function') {
+		let r = new FileReader();
+		r.onloadstart = function(e){ spinner.spin(document.body); };
+		r.onloadend   = function(e){ spinner.stop(); };
+		r.onload      = function(e){ document.dispatchEvent(new CustomEvent('newLogFile', { detail: eval(e.target.result), })); };
+		r.readAsText(file);
+	}
+}
 
-    input = document.getElementById('fileinput');
-    if (!input) {
-      alert("Um, couldn't find the fileinput element.");
-    }
-    else if (!input.files) {
-      alert("This browser doesn't seem to support the `files` property of file inputs.");
-    }
-    else if (!input.files[0]) {
-      alert("Please select a file before clicking 'Load'");
-    }
-    else {
-	var spinner = new Spinner(opts).spin(document.getElementsByTagName("body")[0]);
-      file = input.files[0];
-      fr = new FileReader();
-      fr.onload = receivedText;
-      fr.readAsText(file);
-    }
+function addLocalFileSelector(parent) {
+	if (typeof window.FileReader === 'function') {
+		let pNode = (typeof parent === 'string' || parent instanceof String) ? document.querySelector(parent) : parent;
+		let fNode = document.createElement("form");
+		fNode.innerHTML = '<fieldset><h2>Select local Json LogFile</h2><input type="file" id="fileinput" accept=".json"></fieldset>';
+		fNode.querySelector("#fileinput").onchange = function(e) {
 
-    function receivedText(e) {
-      lines = e.target.result;
-      var newArr = eval(lines); 
-	  spinner.stop();
-      callback(newArr);
-    }
-  }
+			if (this.files && this.files.length > 0) {
+				loadFile(this.files[0]);
+			}
+		};
+		pNode.insertBefore(fNode, pNode.firstChild);
+	} else {
+		console.log("The file API isn't supported on this browser!");
+	}
+}
+
+function registerNewLogFileEventHandler(handler) {
+	document.addEventListener('newLogFile', function(d){ handler(d.detail); });
+}
+
+function msToTime(s) {
+	// Pad to 2 or 3 digits, default is 2
+	var pad = (n, z = 2) => ('00' + n).slice(-z);
+	return pad(s/3.6e6|0) + ':' + pad((s%3.6e6)/6e4 | 0) + ':' + pad((s%6e4)/1000|0) + '.' + pad(s%1000, 3);
+}

@@ -148,7 +148,11 @@ function drawCharts(messages) {
 }
 
 var config = new Config();
-loadJson(config.get('file', ''), drawCharts);
+addLocalFileSelector(document.body);
+registerNewLogFileEventHandler(drawCharts);
+if (config.get('file', '') !== '') {
+  loadJson(config.get('file', ''));
+}
 
     </script>
   </body>
