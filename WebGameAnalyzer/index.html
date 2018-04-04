@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>INDEX</title>
+  </head>
+  <body>
+    <h2>Settings</h2>
+    <p>
+      <label for="maxBallAge">max ball age:</label>
+      <input type="number" name="maxBallAge" min="0">
+    </p>
+    <h2><a href="d3_timeline.html" class="useMaxBallAge">Timelines (fallen, ballseen)</a></h2>
+    <ul id="d3_timeline" class="view usesMaxBallAge">
+    </ul>
+
+    <h2><a href="d3_heatmap.html">Positions Heatmap</a></h2>
+    <ul id="d3_heatmap" class="view">
+    </ul>
+
+    <h2><a href="d3_ballmap.html" class="useMaxBallAge">Ball Heatmap</a></h2>
+    <ul id="d3_ballmap" class="view usesMaxBallAge">
+    </ul>
+
+    <h2><a href="d3_ball_slider.html" class="useMaxBallAge">Ball Position Slider</a></h2>
+    <ul id="d3_ball_slider" class="view usesMaxBallAge">
+    </ul>
+
+    <script type="text/javascript">
+      // retrieving log files from server
+      (function() {
+        let xhr = new XMLHttpRequest();
+        if (xhr) {
+          xhr.onreadystatechange = function(){
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+              if (xhr.status === 200) {
+                createLogList(JSON.parse(xhr.responseText));
+              } else {
+                console.log('There was a problem with the request.');
+              }
+            }
+          };
+          xhr.open('GET', 'php/list_log_files.php');
+          xhr.send();
+        }
+      })();
+
+      // creates a html list of log files
+      function createLogList(logs) {
+        let lists = document.getElementsByClassName("view");
+        for(const list of lists) {
+          let usesMaxBallAge = list.classList.contains('usesMaxBallAge');
+          let html = '';
+          for(const log of logs) {
+            html += '<li><a href="'+list.id+'.html?file='+encodeURIComponent(log)+'"'+(usesMaxBallAge?' class="useMaxBallAge"':'')+'>'+log+'</a></li>';
+          }
+          list.innerHTML = html;
+        }
+        addMaxBallAgeEventHandler();
+      }
+
+      // adds the event handler
+      function addMaxBallAgeEventHandler() {
+        Array.from(document.getElementsByClassName("useMaxBallAge")).forEach(function(element) {
+          element.addEventListener('click', appendMaxBallAgeParam);
+        });
+      }
+
+      // appends the 'maxBallAge' parameter to the respective url
+      function appendMaxBallAgeParam(){
+        let maxBallAge = parseFloat(document.getElementsByName("maxBallAge")[0].value);
+        if(maxBallAge) {
+          this.href = this.href + (this.href.indexOf("?")===-1?"?":"&") + "maxBallAge="+maxBallAge
+        }
+      }
+
+      addMaxBallAgeEventHandler();
+    </script>
+  </body>
+</html>
