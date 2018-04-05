@@ -3,18 +3,18 @@ package gcteamcommconverter.FileConverter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonWriter;
-import gcteamcommconverter.GcTeamcommConverter;
 import gcteamcommconverter.data.GameControlData;
 import gcteamcommconverter.data.GameControlDataConverter;
 import gcteamcommconverter.data.SplMessage;
 import gcteamcommconverter.data.SplMessageConverter;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -164,7 +164,6 @@ public abstract class FileConverter
             new FileWriter(output).close(); // trigger exception (if couldn't write)
         } catch (IOException ex) {
             System.err.println("Cannot write output file! (access rights?)");
-            //Logger.getLogger(GcTeamcommConverter.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
         return true;
@@ -189,9 +188,15 @@ public abstract class FileConverter
 
         System.out.println("convert '" + file.getAbsolutePath() + "' to '" + getOutputFile() + "'");
 
-        readFile();
-        selectTeams();
-        writeFile();
+        ByteArrayInputStream buf = readFile();
+        ClassLoader loader = determineClassLoader(buf);
+        if(loader != null) {
+            parseData(buf, loader);
+            selectTeams();
+            writeFile();
+        } else {
+            System.err.println("No suitable GameController available!");
+        }
             
         System.out.println("Message statistics: \n" 
                 + "\tparsing, ok = " + counter_ok + "\n"
@@ -216,13 +221,16 @@ public abstract class FileConverter
                     } catch (NumberFormatException e) { /* ignore */ }
                 }
             } catch (IOException ex) {
-                Logger.getLogger(GcTeamcommConverter.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(FileConverter.class.getName()).log(Level.SEVERE, null, ex);
             }
             teams.retainAll(result);
             System.out.println("Selection: " + teams);
         }
     }
     
+    /**
+     * Writes the converted data as json to the output file.
+     */
     protected void writeFile() {
         // use JsonWriter to write the enclosing Json-Array ...
         // configure & create GsonBuilder
@@ -256,18 +264,34 @@ public abstract class FileConverter
             // write post info to json output file
             jw.endArray();
         } catch (IOException ex) {
-            Logger.getLogger(GcTeamcommConverter.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(FileConverter.class.getName()).log(Level.SEVERE, null, ex);
         }
     } // END writeFile()
     
-    protected void readFile() {
-        try(GamecontrollerInputStream stream = new GamecontrollerInputStream(new FileInputStream(this.file))) {
-            stream.setGameControllers(gamecontrollers);
+    /**
+     * 
+     * @return 
+     */
+    protected ByteArrayInputStream readFile() {
+        try {
+            return new ByteArrayInputStream(Files.readAllBytes(file.toPath()));
+        } catch (IOException ex) {
+            System.out.println(ex);
+        }
+        return null;
+    } // END readFile()
+    
+    /**
+     * 
+     * @param input
+     * @param loader 
+     */
+    protected void parseData(ByteArrayInputStream input, ClassLoader loader) {
+        try(GamecontrollerInputStream stream = new GamecontrollerInputStream(input, loader)) {
             while (stream != null) {
                 // read "prefix"
                 final long time = stream.readLong();
-                boolean b = stream.readBoolean();
-                if (b) {
+                if (stream.readBoolean()) {
                     try {
                         Object o = stream.readObject();
                         if (o.getClass().getName().equals("teamcomm.net.SPLStandardMessagePackage")) {
@@ -293,8 +317,46 @@ public abstract class FileConverter
         } catch (IOException ex) {
             Logger.getLogger(FileConverter.class.getName()).log(Level.SEVERE, null, ex);
         }
-    } // END readFile()
+    } // END parseData()
+    
+    /**
+     * 
+     * @param input
+     * @return 
+     */
+    private ClassLoader determineClassLoader(ByteArrayInputStream input) {
+        for (ClassLoader gamecontroller : gamecontrollers) {
+            try(GamecontrollerInputStream stream = new GamecontrollerInputStream(input, gamecontroller)) {
+                stream.setRequiredClass("data.AdvancedData");
+                while (stream != null) {
+                    stream.readLong();
+                    if (stream.readBoolean()) {
+                        try {
+                            stream.readObject();
+                            if(stream.isRequiredSatisfied()) {
+                                input.reset();
+                                return gamecontroller;
+                            }
+                        } catch (ClassNotFoundException ex) {
+                        }
+                    }
+                }
+            } catch (EOFException ex) {
+            /* ignore EOF and proceed */
+            } catch (Exception ex) {
+                Logger.getLogger(FileConverter.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            input.reset();
+        }
+        return null;
+    } // END determineClassLoader()
   
+    /**
+     * 
+     * @param t
+     * @param o
+     * @return 
+     */
     abstract protected Object convertAndFilter(long t, Object o);
     // TODO: error during converting??
     

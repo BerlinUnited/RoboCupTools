@@ -4,8 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -13,52 +17,68 @@ import java.util.List;
  */
 public class GamecontrollerInputStream extends ObjectInputStream
 {
-    List<ClassLoader> loaders = new ArrayList<>();
-    ClassLoader usedLoader = null;
+    private final ClassLoader loader;
+    private String requiredClass;
+    private Set<String> requiredClassFields;
+    private boolean requiredSatisfied = false;
 
-    public GamecontrollerInputStream(InputStream in) throws IOException {
+    /**
+     * 
+     * @param in
+     * @param gc
+     * @throws IOException 
+     */
+    public GamecontrollerInputStream(InputStream in, ClassLoader gc) throws IOException {
         super(in);
+        loader = gc;
     }
     
-    public void setGameControllers(List<ClassLoader> gc) {
-        loaders = gc;
-    }
-    
-    @Override
-    protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-        Class<?> c = null;
-        if(usedLoader == null) {
-            c = findLoaderFor(desc.getName());
-        } else {
-            c = loadWith(usedLoader, desc.getName());
-        }
-        
-        if(c != null) {
-            return c;
-        }
-        
-        // non of "our" loaders
-        usedLoader = null;
-        
-        // try to use default loader(s)
-        return super.resolveClass(desc);
-    }
-    
-    private Class<?> findLoaderFor(String name) {
-        for (ClassLoader loader : loaders) {
-            Class<?> c = loadWith(loader, name);
-            if(c != null) {
-                usedLoader = loader;
-                return c;
+    /**
+     * 
+     * @param clz
+     * @throws ClassNotFoundException 
+     */
+    public void setRequiredClass(String clz) throws ClassNotFoundException {
+        //
+        Class<?> c = Class.forName(clz, false, loader);
+        Set<String> fields = new HashSet<>();
+        for (Field field : c.getFields()) {
+            // only public non-static fields are serialized
+            if(field.getDeclaringClass().getName().equals(clz)
+                    && Modifier.isPublic(field.getModifiers()) 
+                    && !Modifier.isStatic(field.getModifiers())) {
+                fields.add(field.getName());
             }
         }
-        return null;
+        requiredClassFields = fields;
+        requiredClass = clz;
+    }
+
+    /**
+     * 
+     * @return 
+     */
+    public boolean isRequiredSatisfied() {
+        return requiredSatisfied;
     }
     
-    private Class<?> loadWith(ClassLoader l, String n) {
-        try {
-            return Class.forName(n, false, l);
-        } catch (ClassNotFoundException ex) { /* ignore */ }
-        return null;
+    /**
+     * 
+     * @param desc
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException 
+     */
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+        // only if set, check required
+        if(requiredClass != null) {
+            Set<String> s = Arrays.stream(desc.getFields()).map((t) -> { return t.getName(); }).collect(Collectors.toSet());
+            if(s.containsAll(requiredClassFields)) {
+                requiredSatisfied = true;
+            }
+        }
+        
+        return Class.forName(desc.getName(), false, loader);
     }
 }
