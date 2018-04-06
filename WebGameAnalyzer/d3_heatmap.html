@@ -79,7 +79,13 @@ if (config.get('file', '') !== '') {
   loadJson(config.get('file', ''));
 }
 
+function reset() {
+  position_data = {};
+  d3.select('table tr').html("");
+}
+
 function filterMessages(messages) {
+  reset();
   for(var msg of messages) {
     var _ip     = msg.address || "";
     var _time   = msg.timestamp || 0;

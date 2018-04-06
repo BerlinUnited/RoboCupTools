@@ -48,7 +48,10 @@ function loadJson(file) {
 		if (xhr) {
 			xhr.onloadstart = function(e){ spinner.spin(document.body); };
 			xhr.onloadend   = function(e){ spinner.stop(); };
-			xhr.onload      = function(e){ document.dispatchEvent(new CustomEvent('newLogFile', { detail: eval(e.target.responseText), })); };
+			xhr.onload      = function(e){
+				document.dispatchEvent(new CustomEvent('newLogFile', { detail: eval(e.target.responseText), }));
+				document.querySelector('code').innerHTML = file.name;
+			};
 			xhr.open('GET', file);
 			xhr.send();
 		}
@@ -61,7 +64,10 @@ function loadFile(file) {
 		let r = new FileReader();
 		r.onloadstart = function(e){ spinner.spin(document.body); };
 		r.onloadend   = function(e){ spinner.stop(); };
-		r.onload      = function(e){ document.dispatchEvent(new CustomEvent('newLogFile', { detail: eval(e.target.result), })); };
+		r.onload      = function(e){
+			document.dispatchEvent(new CustomEvent('newLogFile', { detail: eval(e.target.result), }));
+			document.querySelector('code').innerHTML = file.name;
+		};
 		r.readAsText(file);
 	}
 }
@@ -70,7 +76,7 @@ function addLocalFileSelector(parent) {
 	if (typeof window.FileReader === 'function') {
 		let pNode = (typeof parent === 'string' || parent instanceof String) ? document.querySelector(parent) : parent;
 		let fNode = document.createElement("form");
-		fNode.innerHTML = '<fieldset><h2>Select local Json LogFile</h2><input type="file" id="fileinput" accept=".json"></fieldset>';
+		fNode.innerHTML = '<fieldset><h2>Select local Json LogFile</h2><input type="file" id="fileinput" accept=".json"><code style="display:block"></code></fieldset>';
 		fNode.querySelector("#fileinput").onchange = function(e) {
 			if (this.files && this.files.length > 0) {
 				loadFile(this.files[0]);

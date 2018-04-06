@@ -45,8 +45,14 @@
       maxBallInputSelector = 'div#sliderwrapper input[type="number"]',
       soccerfieldSelector = 'div#soccerfield svg';
 
+function reset() {
+  position_data = {};
+  d3.select(sliderWrapperSelector).remove();
+}
+
 function filterMessages(messages) {
-  console.log(messages);
+  reset();
+  //console.log(messages);
   for(var msg of messages) {
     var _ip       = msg.address || "";
     var _time     = msg.timestamp || 0;

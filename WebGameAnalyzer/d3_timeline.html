@@ -66,7 +66,9 @@ var chart = d3.timeline()
               });
 
 function drawCharts(messages) {
-  console.log(messages);
+  // remove remaining charts, before loading new data
+  d3.selectAll('.charts_wrapper').remove();
+  //console.log(messages);
   var teams = {};
 
   for(var msg of messages) {
@@ -135,13 +137,14 @@ function drawCharts(messages) {
     fallen_states.push({"label":"Team", "times":fallen_states_team, "class":"team"});
     ball_seen.push({"label":"Team","times":ball_seen_team, "class":"team"});
 
-    d3.select('body').append('h1').text("Team #"+team);
-    d3.select('body').append('h2').text("Fallen states");
+    let charts_wrapper = d3.select('body').append('div').classed('charts_wrapper', true);
+    charts_wrapper.append('h1').text("Team #"+team);
+    charts_wrapper.append('h2').text("Fallen states");
     //var svg = d3.select("#naoth_fallen_states").append("svg").attr("width", 1000).datum(fallen_states).call(chart);
-    d3.select('body').append('div').classed("team team_"+team+" fallen", true).append("svg").attr("width", 1000).datum(fallen_states).call(chart);
+    charts_wrapper.append('div').classed("team team_"+team+" fallen", true).append("svg").attr("width", 1000).datum(fallen_states).call(chart);
     chart.height(null); // reuse same chart obj -> must reset height!
-    d3.select('body').append('h2').text("Ball seen");
-    d3.select('body').append('div').classed("team team_"+team+" ball_seen", true).append("svg").attr("width", 1000).datum(ball_seen).call(chart);
+    charts_wrapper.append('h2').text("Ball seen");
+    charts_wrapper.append('div').classed("team team_"+team+" ball_seen", true).append("svg").attr("width", 1000).datum(ball_seen).call(chart);
     chart.height(null); // reuse same chart obj -> must reset height!
   }
   console.log(teams);

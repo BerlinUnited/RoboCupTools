@@ -75,44 +75,51 @@ if (config.get('file', '') !== '') {
   loadJson(config.get('file', ''));
 }
 
+function reset() {
+  position_data = {};
+  d3.select('table tr').html("");
+  d3.select('#scatterplot_table tr').html("");
+}
+
 function filterMessages(messages) {
-      console.log(messages);
-      for(var msg of messages) {
-        var _ip       = msg.address || "";
-        var _time     = msg.timestamp || 0;
-        var _team     = msg.teamNum || 0;
-        var _player   = msg.playerNum || 0;
-        var _pos      = { 'x':msg.pose[0], 'y':msg.pose[1], 'r':msg.pose[2] };
-        var _ball     = { 'x':msg.ball[0], 'y':msg.ball[1] };
-        var _ballAge  = msg.ballAge;
-        var _ballSeen = _ballAge >= 0 && _ballAge <= config.get('maxBallAge', 1);
-        var _state    = msg.gameState;
+  reset();
+  //console.log(messages);
+  for(var msg of messages) {
+    var _ip       = msg.address || "";
+    var _time     = msg.timestamp || 0;
+    var _team     = msg.teamNum || 0;
+    var _player   = msg.playerNum || 0;
+    var _pos      = { 'x':msg.pose[0], 'y':msg.pose[1], 'r':msg.pose[2] };
+    var _ball     = { 'x':msg.ball[0], 'y':msg.ball[1] };
+    var _ballAge  = msg.ballAge;
+    var _ballSeen = _ballAge >= 0 && _ballAge <= config.get('maxBallAge', 1);
+    var _state    = msg.gameState;
 
-        // add team if not exists
-        if (!position_data.hasOwnProperty(_team)) {
-          position_data[_team] = {};
-        }
-        // add player of team if not exists
-        if (!position_data[_team].hasOwnProperty(_player)) {
-            position_data[_team][_player] = [];
-        }
+    // add team if not exists
+    if (!position_data.hasOwnProperty(_team)) {
+      position_data[_team] = {};
+    }
+    // add player of team if not exists
+    if (!position_data[_team].hasOwnProperty(_player)) {
+        position_data[_team][_player] = [];
+    }
 
-        // DEBUG-G-ING
-        //if(_team == 4 && _pos.x == 0 && _pos.y == 0) { console.log(_player, _ip); }
-        //if(_team == 4 && _pos.y >= 3000) { console.log(_player, _ip, _pos.x, _pos.y, msToTime(_time)); }
-        if(_ballSeen) {
-        	// ball is in local coordinates!
-        	var sinR = Math.sin(_pos.r), cosR = Math.cos(_pos.r);
-        	var x = _ball.x * cosR - _ball.y * sinR + _pos.x, y = _ball.x * sinR + _ball.y * cosR + _pos.y;
-        	position_data[_team][_player].push({ 'gameState': _state, 'position': [ field.scale() * x, field.scale() * y ] });
-        }
-      }
+    // DEBUG-G-ING
+    //if(_team == 4 && _pos.x == 0 && _pos.y == 0) { console.log(_player, _ip); }
+    //if(_team == 4 && _pos.y >= 3000) { console.log(_player, _ip, _pos.x, _pos.y, msToTime(_time)); }
+    if(_ballSeen) {
+    	// ball is in local coordinates!
+    	var sinR = Math.sin(_pos.r), cosR = Math.cos(_pos.r);
+    	var x = _ball.x * cosR - _ball.y * sinR + _pos.x, y = _ball.x * sinR + _ball.y * cosR + _pos.y;
+    	position_data[_team][_player].push({ 'gameState': _state, 'position': [ field.scale() * x, field.scale() * y ] });
+    }
+  }
 
-      addTeamButtons();
-      addBallButtons();
-      changeHeatmap();
-      
-    };
+  addTeamButtons();
+  addBallButtons();
+  changeHeatmap();
+  
+};
 
 function addTeamButtons() {
   var html = '';
