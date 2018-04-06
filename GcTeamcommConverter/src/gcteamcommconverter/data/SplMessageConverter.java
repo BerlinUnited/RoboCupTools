@@ -157,5 +157,4 @@ public class SplMessageConverter extends TypeAdapter<SplMessage>
         // currently not needed ...
         return null;
     }
-    
 }

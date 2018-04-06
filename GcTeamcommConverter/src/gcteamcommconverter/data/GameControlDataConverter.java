@@ -68,5 +68,4 @@ public class GameControlDataConverter extends TypeAdapter<GameControlData>
         // currently not needed ...
         return null;
     }
-    
 }

@@ -1,4 +1,4 @@
-package gcteamcommconverter.FileConverter;
+package gcteamcommconverter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  *
  * @author Philipp Strobel <philippstrobel@posteo.de>
  */
-public class GamecontrollerInputStream extends ObjectInputStream
+public class GcInputStream extends ObjectInputStream
 {
     private final ClassLoader loader;
     private String requiredClass;
@@ -28,7 +28,7 @@ public class GamecontrollerInputStream extends ObjectInputStream
      * @param gc
      * @throws IOException 
      */
-    public GamecontrollerInputStream(InputStream in, ClassLoader gc) throws IOException {
+    public GcInputStream(InputStream in, ClassLoader gc) throws IOException {
         super(in);
         loader = gc;
     }

@@ -4,19 +4,23 @@ import gcteamcommconverter.FileConverter.FileConverterRaw;
 import gcteamcommconverter.FileConverter.FileConverterTC;
 import gcteamcommconverter.FileConverter.FileConverter;
 import gcteamcommconverter.FileConverter.FileConverterGTC;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -24,6 +28,63 @@ import java.util.logging.Logger;
  */
 public class GcTeamcommConverter
 {
+    /**
+     * The id and the names of all known teams.
+     */
+    public static final Map<Integer, String> TEAM_NAMES;
+    static {
+        Map<Integer, String> a = new HashMap<>();
+        a.put(0, "Invisibles");
+        a.put(1, "UT Austin Villa");
+        a.put(2, "Austrian Kangaroos");
+        a.put(3, "Bembelbots");
+        a.put(4, "Berlin United");
+        a.put(5, "B-Human");
+        a.put(6, "Cerberus");
+        a.put(7, "DAInamite");
+        a.put(8, "Dutch Nao Team");
+        a.put(9, "Edinferno");
+        a.put(10, "Kouretes");
+        a.put(11, "MiPal");
+        a.put(12, "Nao Devils Dortmund");
+        a.put(13, "Nao-Team HTWK");
+        a.put(14, "Northern Bites");
+        a.put(15, "NTU RoboPAL");
+        a.put(16, "RoboCanes");
+        a.put(17, "RoboEireann");
+        a.put(18, "UNSW Sydney");
+        a.put(19, "SPQR Team");
+        a.put(20, "TJArk");
+        a.put(21, "UChile Robotics Team");
+        a.put(22, "UPennalizers");
+        a.put(23, "Crude Scientists");
+        a.put(24, "HULKs");
+        a.put(26, "MRL-SPL");
+        a.put(27, "Philosopher");
+        a.put(28, "Rimal Team");
+        a.put(29, "SpelBots");
+        a.put(30, "Team-NUST");
+        a.put(31, "UnBeatables");
+        a.put(32, "UTH-CAR");
+        a.put(33, "NomadZ");
+        a.put(34, "SPURT");
+        a.put(35, "Blue Spider");
+        a.put(36, "Camellia Dragons");
+        a.put(37, "JoiTech-SPL");
+        a.put(38, "Linköping Humanoids");
+        a.put(39, "WrightOcean");
+        a.put(40, "Mars");
+        a.put(41, "Aztlan Team");
+        a.put(42, "CMSingle");
+        a.put(43, "TeamSP");
+        a.put(44, "Luxembourg United");
+        a.put(90, "DoBerMan");
+        a.put(91, "B-HULKs");
+        a.put(92, "Swift-Ark");
+        a.put(93, "Team USA");
+        TEAM_NAMES = Collections.unmodifiableMap(a);
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -77,19 +138,53 @@ public class GcTeamcommConverter
         if(files.isEmpty() || converter.isEmpty()) {
             printHelp();
         } else {
-            converter.forEach((cls) -> {
-                files.forEach((file) -> {
-                    try {
-                        FileConverter fc = cls.getConstructor(File.class).newInstance(file);
-                        fc.setGameControllers(gc);
-                        fc.convertFile();
-                    } catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
-                        Logger.getLogger(GcTeamcommConverter.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                });
+            // instatiate file converter
+            List<FileConverter> converterObj = converter.stream().map((cls) -> {
+                try { 
+                    return (FileConverter) cls.getConstructor().newInstance();
+                } catch (Exception ex) {
+                    Logger.getLogger(GcTeamcommConverter.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                return null;
+            }).collect(Collectors.toList());
+            
+            // iterate through files and apply converters
+            files.forEach((file) -> {
+                GcLogFile lf = new GcLogFile(file, gc);
+                
+                if(!lf.canReadFile()) {
+                    System.err.println("Can not read file: " + file.getAbsolutePath());
+                } else if(!lf.canWriteFile()) {
+                    System.err.println("Cannot write output file! (access rights?)");
+                } else if(lf.getClassLoader() == null) {
+                    System.err.println("No suitable GameController available!");
+                } else if(lf.getData() == null) {
+                    System.err.println("No data available!");
+                } else {
+                    converterObj.forEach((conv) -> {
+                        System.out.println("convert '" + file.getAbsolutePath() + "' to '" + file.getAbsoluteFile() + conv.getExtension() + "'");
+                        
+                        // select teams, except for raw converteer
+                        if(conv instanceof FileConverterRaw) {
+                            conv.setTeams(lf.getTeams());
+                        } else {
+                            conv.setTeams(selectTeams(lf.getTeams()));
+                        }
+                        
+                        // converted & write data
+                        int counter_conv = lf.writeFile(conv);
+                        
+                        System.out.println("Message statistics: \n" 
+                                + "\tparsing, ok = " + lf.counter_ok + "\n"
+                                + "\tparsing, error =  " + lf.counter_fail + "\n"
+                                + "\tfilter/convert, ok =  " + counter_conv + "\n"
+                                + "\tfilter/convert, error =  " + (lf.counter_ok - counter_conv) + "\n"
+                        );
+                    });
+                }
             });
         }
-    }
+    } // END main()
     
     private static void printHelp() {
         System.out.println("Converts TeamCommunication log files of the GameController to JSON file(s).\n"
@@ -99,7 +194,7 @@ public class GcTeamcommConverter
                 + "\t--tc\tconverts log file team communication to json (specific data only) with extension '.tc.json'\n"
                 + "\t--gtc\tconverts log file gamecontroller and team communication to json (specific data only) with extension '.gtc.json'\n"
         );
-    }
+    } // END printHelp()
     
     /**
      * Creates class loader for all jar files in the 'gc' directory.
@@ -115,14 +210,44 @@ public class GcTeamcommConverter
                 // 'accept' only jar files
                 if(jar.isFile() && jar.getAbsolutePath().endsWith(".jar")) {
                     try {
-                        gamecontrollers.add(new URLClassLoader(new URL[]{ jar.toURL() }));
+                        gamecontrollers.add(new GcClassLoader(jar));
                         System.out.println("Found GameController: " + jar.getName());
-                    } catch (MalformedURLException | SecurityException | IllegalArgumentException ex) {
+                    } catch (SecurityException | IllegalArgumentException ex) {
                         Logger.getLogger(GcTeamcommConverter.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
         }
         return gamecontrollers;
-    }
+    } // END loadGameControllers()
+    
+    /**
+     * Asks the user to select team numbers from the given set.
+     * 
+     * @param teams the numbers the user can choose from.
+     * @return the selected team numbers
+     */
+    public static Set<Integer> selectTeams(Set<Integer> teams) {
+        if(teams.size() > 2) {
+            System.out.println("Messages of more than two teams are in this log file:\n" + teams.stream().map(n->{return "- "+String.format("%3d", n) +": "+TEAM_NAMES.getOrDefault(n, "");}).collect(Collectors.joining("\n")));
+            System.out.print("Type comma seperated team numbers, which you like to include: ");
+            HashSet result = new HashSet();
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            try {
+                String s = br.readLine();
+                String[] nums = s.split(",");
+                for (String num : nums) {
+                    try {
+                        result.add(Integer.parseInt(num.trim()));
+                    } catch (NumberFormatException e) { /* ignore */ }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(FileConverter.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            Set<Integer> selection = teams.stream().filter((t) -> { return result.contains(t); }).collect(Collectors.toSet());
+            System.out.println("Selection: " + selection);
+            return selection;
+        }
+        return teams;
+    } // END selectTeams()
 }

@@ -1,7 +1,6 @@
 package gcteamcommconverter.FileConverter;
 
 import gcteamcommconverter.data.SplMessage;
-import java.io.File;
 import java.nio.ByteBuffer;
 
 /**
@@ -9,14 +8,30 @@ import java.nio.ByteBuffer;
  */
 public class FileConverterTC extends FileConverter
 {
+    /** Tracks the last active game state in the log file. */
     private byte currentGameState = 0; //GameControlData.STATE_INITIAL;
     
-    public FileConverterTC(File f) {
-        super(f, ".tc.json");
-    }
-    
+    /**
+     * Returns the extension, which should be used to write the converted data of this FileConverter.
+     * 
+     * @return the file extension ".tc.json"
+     */
     @Override
-    protected Object convertAndFilter(long t, Object o) {
+    public final String getExtension() {
+        return ".tc.json";
+    }
+
+    /**
+     * Converts & filters the given log Object o to a SplMessage object.
+     * If the given log object wasn't of type 'SPLStandardMessagePackage', couldn't be converted
+     * or the team number isn't in the team selection, "null" is returned.
+     * 
+     * @param t the timestamp of this log object
+     * @param o the log object
+     * @return a SplMessage object or null
+     */
+    @Override
+    public Object convertAndFilter(long t, Object o) {
         
         if (o.getClass().getName().equals("teamcomm.net.SPLStandardMessagePackage")) {
             try {
@@ -45,5 +60,4 @@ public class FileConverterTC extends FileConverter
         // current object shouldn't be included in the json output
         return null;
     }
-    
 }
