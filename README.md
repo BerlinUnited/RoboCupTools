@@ -1,6 +1,6 @@
 # RoboCupTools
 Tools for collection, organization and processing of RoboCup related data.
-https://robocup.tools
+http://robocup.tools
 
 
 ## GcTeamcommConverter (qick use)
