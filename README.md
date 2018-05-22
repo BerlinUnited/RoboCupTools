@@ -19,3 +19,7 @@ Open one of the following viewers directly in your browser and select a json fil
 * d3_ballmap.html
 * d3_heatmap.html
 * d3_timeline.html
+
+## GoPro Recording
+[RaspberryPi Setup](GoPro/Raspi-Setup)  
+[Script Setup](GoPro/README)
