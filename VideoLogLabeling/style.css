@@ -1,0 +1,126 @@
+body {
+
+}
+
+.timeline {
+  width: 100%;
+  height: 30px;
+  border: solid 1px #999;
+  background-color:#eee;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top:3px;
+  clear: both;
+}
+
+.timeline a {
+  display: inline-block;
+  border:solid 0px #000;
+  margin:0px;
+  padding:0px;
+  width:100%;
+  height:100%;
+}
+
+.timeline a.button {
+  background-color:#66a;
+  text-align: center;
+  line-height:30px;
+  color: #000;
+}
+
+.timeline a.blank {
+  background-color:none;
+}
+
+.timeline a.button.turn {
+  background-color:#fff;
+}
+
+.timeline a.button.kick_left {
+  background-color:#eae;
+}
+
+.timeline a.button.kick_right {
+  background-color:#aee;
+}
+
+.timeline a.button.kick_short {
+  background-color:#99e;
+}
+
+.timeline a.button.kick_long {
+  background-color:#66a;
+}
+
+.timeline a.button.selected {
+  background-color:#f00;
+}
+
+.hide {
+  display: none;
+}
+
+/* overview page */
+
+#watermark
+{
+ position:fixed;
+ bottom:0;
+ right:-1.5%;
+ opacity:0.1;
+ z-index:-99;
+ color:white;
+ width: 70%;
+ height: 70%;
+ background:url(img/naoth-logo.png);
+ background-size: contain;
+ background-repeat: no-repeat;
+ background-position: right bottom;
+}
+
+.video-player {
+  width: 100%; 
+  height: 100%;
+}
+
+.field-drawing {
+  width: 100%;
+}
+
+.labels a {
+  margin: 5px;
+}
+.labels {
+  margin-bottom:5px;
+}
+
+.title {
+  background-color:#003366;
+  color:#fff; 
+  padding-left:1%;
+}
+
+.title span {
+  font-weight: bold;
+  font-size: 2.5em;
+}
+
+.table-head {
+  background-color:rgba(0, 47, 108,0.7);
+}
+
+.table-head span {
+  color:#fff;
+  font-weight: bold;
+}
+
+.table-row {
+  background-color:#EEE;
+}
+
+.errors {
+  margin-top:20px; 
+  position:absolute; 
+  bottom: 0px;
+}
