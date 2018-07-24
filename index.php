@@ -1,4 +1,15 @@
 <?php
+// uncomment/delete in production mode or set to FALSE
+defined('APP_DEBUG') or define('APP_DEBUG', TRUE);
+
+require(__DIR__ . '/php/autoload.php');
+require(__DIR__ . '/php/base/Application.php');
+
+$config = require(__DIR__ . '/php/config.php');
+
+(new app\Application($config))->run();
+
+/*    
   include 'php/listcontents.php';
   
   $game = NULL;
@@ -28,3 +39,4 @@ if( $game != NULL) {
   include 'php/overview_template.php';
 }
 ?>
+*/

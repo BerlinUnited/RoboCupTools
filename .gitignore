@@ -1,5 +1,7 @@
 #general
-.htaccess
+nbproject/
+.idea/
+#.htaccess
 
 #python
 *.pyc
