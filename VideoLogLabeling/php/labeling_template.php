@@ -75,12 +75,11 @@
         }
       ?>
       
-      <?php /* HACK: not used for now 
+      <?php /* NOTE: There's no user authentication - everybody can submit labels! */ ?>
       <form>
         Name: <input type="text" name="lastname" data-ng-model="widget.title">
         <input type="button" value="Submit" ng-click="save($event)">
       </form>
-      */ ?>
     </div>
 
   
@@ -91,6 +90,9 @@
   </div>
 
 
+  <script type="text/javascript">
+    label_name = "<?=($name != 'blank')?$name:''?>";
+  </script>
   <script src="js/field.js"></script>
   <script src="js/labeling.js"></script>
 </body>

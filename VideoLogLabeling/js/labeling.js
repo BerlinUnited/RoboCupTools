@@ -44,7 +44,7 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
   $scope.model = [];
   $scope.selected = null;
 
-  $scope.widget = {title: '<?php if($name != "blank") { echo $name; } ?>'};
+  $scope.widget = {title: label_name};
 
   /*
   $scope.openFile = function(input) {

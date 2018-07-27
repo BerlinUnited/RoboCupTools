@@ -5,7 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
     
-  <script src="lib/player/jquery.js"></script>
+  <script src="lib/jquery-3.2.0.js"></script>
   
   <script src="lib/player/mediaelement-and-player.min.js"></script>
   <link rel="stylesheet" href="lib/player/mediaelementplayer.css" />
@@ -28,8 +28,7 @@
 	echo '</div>';
     //Header
 	echo '<div class="row table-head">';
-		echo '<div class="col-sm-1"></div>';
-		echo '<div class="col-sm-2">';
+		echo '<div class="col-sm-offset-1 col-sm-2">';
 			echo '<span>Date-Competion-OppTeam-halftime (#Robots)</span>';
 		echo '</div>';
 		echo '<div class="col-sm-8">';
@@ -47,9 +46,8 @@
         } else {
           echo '<div class="row">';
         }
-        echo '<div class="col-sm-1"></div>';
         
-        echo '<div class="col-sm-2">';
+        echo '<div class="col-sm-offset-1 col-sm-2">';
           echo '<strong>'.$g->name.' - '.$g->half.' ('.count($g->logs).') </strong>';
         echo '</div>';
         
