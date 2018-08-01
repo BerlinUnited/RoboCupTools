@@ -56,6 +56,14 @@ def frameFilter(frame):
       action = 'kick_short'
     elif "kick_with_foot" in o:
       action = 'kick_long'
+    elif option_state(o, "path_striker2018", "sidekick_right"):
+      action = 'kick_right'
+    elif option_state(o, "path_striker2018", "sidekick_left"):
+      action = 'kick_left'
+    elif option_state(o, "path_striker2018", "forwardkick_left"):
+      action = 'forwardkick_left'
+    elif option_state(o, "path_striker2018", "forwardkick_right"):
+      action = 'forwardkick_right'
    
    
     return [frame["FrameInfo"].time/(1000.0*60), action,

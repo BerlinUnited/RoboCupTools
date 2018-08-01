@@ -18,7 +18,7 @@ if __name__ == "__main__":
   
   for root, dirs, files in os.walk(rootDir):
     for file in files:
-        if file.endswith(".log"):
+        if file.endswith("game.log"):
           logFile = os.path.join(root, file)
           outFile = os.path.join(root, "labels.json")
           
