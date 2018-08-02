@@ -9,14 +9,7 @@
   }
   
   if(isset($_GET["game"])) {
-    foreach ($games as $key => $g) {
-      if(sizeof($g->logs) > 0) {
-        if($_GET["game"] == $key) {
-          $game = $g;
-          break;
-        }
-      }
-    }
+    // TODO: search for a game!
   }
 ?>
 

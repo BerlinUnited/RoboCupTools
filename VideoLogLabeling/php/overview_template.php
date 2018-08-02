@@ -35,40 +35,59 @@
 				echo '<span>Label Set</span>';
 		echo '</div>';
 	echo '</div>';
-	
+
+	$errors = [];
     $i = 0;
-    foreach ($games as $key => $g) {
-      
-      if(sizeof($g->logs) > 0) 
-      {
-        if( $i % 2 == 1) {
-          echo '<div class="row table-row">';
-        } else {
-          echo '<div class="row">';
-        }
-        
-        echo '<div class="col-sm-offset-1 col-sm-2">';
-          echo '<strong>'.$g->name.' - '.$g->half.' ('.count($g->logs).') </strong>';
+    foreach ($events as $event) {
+        /* @var Event $event */
+        echo '<div class="row'.($i % 2 == 1 ? ' table-row':'').'">';
+
+        echo '<div class="col-sm-offset-1 col-sm-11">';
+            echo '<strong>'.$event->getDateString().' - '.$event->getName().' </strong>';
         echo '</div>';
-        
-        echo '<div class="col-sm-8">';
-          echo '<span class="labels">';
-          foreach (array_reverse($g->logs[0]->json) as $name => $path) {
-            echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
-          }
-          echo '</span>';
-        echo '</div>';
-        echo '</div>';
-        //echo '<video src="'.$g->video_path.'" style="width: 100%;" id="player'.$i.'"></video>';
+
+        echo '</div>'; // .row
         $i++;
-      }
+
+        if ($event->hasGames()) {
+            foreach ($event->getGames() as $game) {
+                /* @var Game $game */
+                if($game->hasErrors()) {
+                    $errors[] = $game;
+                } else {
+                    echo '<div class="row'.($i % 2 == 1 ? ' table-row':'').'">';
+                    echo '<div class="col-sm-offset-2 col-sm-4">'
+                        . $game->getDateString()
+                        . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2()
+                        . ' #' . $game->getHalf()
+                        . '</div>';
+                    echo '<div class="col-sm-6">label';
+                    /*
+                    echo '<span class="labels">';
+                    foreach (array_reverse($g->logs[0]->json) as $name => $path) {
+                        echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
+                    }
+                    echo '</span>';
+                    */
+                    echo '</div>'; // .col-sm-8
+
+                    echo '</div>'; // .row
+                    $i++;
+                }
+            }
+        } else {
+            echo '<div class="row'.($i % 2 == 1 ? ' table-row':'').'">';
+                echo '<div class="col-sm-offset-2 col-sm-10"><i>No games for this event available!</i></div>';
+            echo '</div>'; // .row
+            $i++;
+        }
     }
     
     
     echo '<div class="errors"><pre>';
-    foreach ($games as $key => $g) 
+    foreach ($errors as $game)
     {
-      echo $g->allErrors;
+      echo $game->getErrors();
     }
     echo '</pre></div>';
   ?>
