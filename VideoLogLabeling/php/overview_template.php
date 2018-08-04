@@ -54,7 +54,8 @@ foreach ($events as $event) {
                             . ' (' . $game->getSize() . ')'
                         .'</td>'
                     .'<td>'
-                    .'<a href="./index.php?game='.$game->getId().'&name=New">[New]</a>';
+                    //.'<a href="./index.php?game='.$game->getId().'&name=New">[New]</a>'
+                ;
 
                 if ($game->hasLogs()) {
                     $keys = [];

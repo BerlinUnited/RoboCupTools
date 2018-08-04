@@ -42,7 +42,7 @@ class NaoLog
                         $log_label_file = $log_data_path . DIRECTORY_SEPARATOR . implode('',Config::l('labels'));
                         if(is_file($log_label_file)) {
                             $this->parseSync();
-                            $this->events = $log_label_file;
+                            $this->events = $this->labels['New'] =$log_label_file;
                             foreach (glob($log_data_path . DIRECTORY_SEPARATOR . implode('*',Config::l('labels'))) as $label) {
                                 // skip the base label file
                                 if($label === $log_label_file) { continue; }
