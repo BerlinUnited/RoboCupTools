@@ -60,17 +60,26 @@
                         . $game->getDateString()
                         . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2()
                         . ' #' . $game->getHalf()
+                        . ' (' . $game->getSize() . ')'
                         . '</div>';
-                    echo '<div class="col-sm-6">label';
-                    /*
-                    echo '<span class="labels">';
-                    foreach (array_reverse($g->logs[0]->json) as $name => $path) {
-                        echo '<a href="./index.php?game='.$key.'&name='.$name.'">['.$name.']</a>';
-                    }
-                    echo '</span>';
-                    */
-                    echo '</div>'; // .col-sm-8
-
+                    echo '<div class="col-sm-6">';
+                        echo '<span class="labels">';
+                            echo '<a href="./index.php?game='.$game->getId().'&name=New">[New]</a>';
+                            if ($game->hasLogs()) {
+                                $keys = [];
+                                foreach ($game->getLogs() as $log) {
+                                    /* @var NaoLog $log */
+                                    foreach ($log->getLabels() as $key => $file) {
+                                        if(in_array($key, $keys)) { continue; }
+                                        $keys[] = $key;
+                                    }
+                                }
+                                foreach ($keys as $key) {
+                                    echo '<a href="./index.php?game='.$game->getId().'&name='.$key.'">['.$key.']</a>';
+                                }
+                            }
+                        echo '</span>';
+                    echo '</div>'; // .col-sm-6
                     echo '</div>'; // .row
                     $i++;
                 }
@@ -87,7 +96,9 @@
     echo '<div class="errors"><pre>';
     foreach ($errors as $game)
     {
-      echo $game->getErrors();
+        foreach ($game->getErrors() as $error) {
+            echo 'ERROR: ' . $error . '<br>';
+        }
     }
     echo '</pre></div>';
   ?>

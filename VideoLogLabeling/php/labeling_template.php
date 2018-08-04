@@ -1,3 +1,8 @@
+<?php
+/* @var Game $game */
+/* @var string $name */
+/* @var string $basepath */
+?>
 <!DOCTYPE html>
 <html lang="en" ng-app="test">
 <head>
@@ -38,7 +43,7 @@
       <h3><a href="./index.php"><< BACK</a></h3>
     </div>
     <div class="col-sm-10">
-      <h3><?php echo $g->name." - ".$g->half; ?></h3>
+      <h3><?=$game->getEvent()->getName()?> | <?=$game->getDateString()?> - <?=$game->getTeam1()?> vs. <?=$game->getTeam2()?> #<?=$game->getHalf()?></h3>
     </div>
   </div>
 
@@ -52,10 +57,12 @@
     <div class="col-sm-7">
       <div ng-controller="PlayerController">
         <video class="video-player" id="player" preload="metadata">
-        <?php /* src="<?php echo $g->video_path; ?>" */ ?>
-        <?php foreach ($g->video_paths as $key => $value) { ?>
-          <source src="<?php echo $value; ?>" >
-        <?php }?>
+        <?php
+            foreach ($game->getVideos() as $video) {
+                $video_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $video);
+                echo '<source src="'.$video_url.'" >';
+            }
+        ?>
         </video>
       </div>
     </div>
@@ -70,9 +77,11 @@
     <div class="col-sm-10 pull-right">
       <?php
       //<div data-timeline data-file="log/labels.json"></div>
-        foreach ($g->logs as $key => $log) {
-          echo '<div class="timeline" data-timeline data-file="'.$log->json[$name].'" data-logoffset="'.$log->log_offset.'" data-videooffset="'.$log->video_offset.'"></div>';
-        }
+      foreach ($game->getLogs() as $log) {
+          /* @var NaoLog $log */
+          $log_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getLabel($name));
+          echo '<div class="timeline" data-timeline data-file="'.$log_url.'" data-logoffset="'.$log->getSyncInfo('log_offset').'" data-videooffset="'.$log->getSyncInfo('video_offset').'"></div>';
+      }
       ?>
       
       <?php /* NOTE: There's no user authentication - everybody can submit labels! */ ?>
@@ -91,7 +100,7 @@
 
 
   <script type="text/javascript">
-    label_name = "<?=($name != 'blank')?$name:''?>";
+    label_name = "<?=($name != 'New')?$name:''?>";
   </script>
   <script src="js/field.js"></script>
   <script src="js/labeling.js"></script>

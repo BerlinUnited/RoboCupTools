@@ -1,69 +1,73 @@
 <?php
+require_once 'Config.php';
+require_once 'NaoLog.php';
 
 class Game
 {
-    private static $regex = "/(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})_(\S+)_vs_(\S+)_half([1,2])/";
-    // 1_91_Nao0379
-    private static $regex_log = "/(\d{1})_(\d{2})_(\w+)/";
-    private static $directories = [
-        'nao'  => 'game_logs',
-        'gc'   => 'gc_logs',
-        'video'=> 'videos',
-        'data' => 'extracted'
-    ];
-
     private $is_valid = false;
+    private $id;
     private $path;
     private $date;
     private $team1;
     private $team2;
     private $half;
+    private $event;
+
+    private $logs = [];
+    private $videos = [];
 
     private $errors = [];
     private $warnings = [];
 
-    function __construct(SplFileInfo $path) {
-        $this->is_valid = preg_match(static::$regex, $path->getFilename(), $matches) === 1;
+    function __construct(SplFileInfo $path, Event $event) {
+        $this->is_valid = preg_match(Config::g('regex'), $path->getFilename(), $matches) === 1;
         if ($this->is_valid) {
             $this->path = $path->getRealPath();
             $this->date = DateTimeImmutable::createFromFormat('Y-m-d_H-i-s',$matches[1]);
             $this->team1 = str_replace('_', ' ', $matches[2]);
             $this->team2 = str_replace('_', ' ', $matches[3]);
             $this->half = intval($matches[4]);
+            $this->id = sha1($this->path);
+            $this->event = $event;
 
             $this->init();
         }
     }
 
     private function init() {
-        $path = $this->path . DIRECTORY_SEPARATOR . static::$directories['nao'];
+        $path = $this->path . DIRECTORY_SEPARATOR . Config::$game['dirs']['nao'];
         if (is_dir($path)) {
-            // TODO: read nao logs
             $it = new DirectoryIterator($path);
             foreach($it as $file) {
                 if (!$file->isDot() && $file->isDir()) {
-                    
-                    //echo  . "\n";
+                    $log = new NaoLog($file, $this->path, Config::g('dirs')['data']);
+                    if ($log->isValid()) {
+                        $this->logs[] = $log;
+                    } else {
+                        foreach ($log->getErrors() as $error) {
+                            $this->errors[] = $this->getTeam1() . ' vs. ' . $this->getTeam2() . ', #' . $this->getHalf() . '/' . $log->getPlayer() . ': ' . $error;
+                        }
+                    }
                 }
             }
         } else {
             $this->errors[] = 'No log files!';
         }
 
-        if (is_dir($this->path . DIRECTORY_SEPARATOR . static::$directories['video'])) {
-            // TODO: read video files
+        $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['video'];
+        if (is_dir($path)) {
+            $it = new DirectoryIterator($path);
+            foreach($it as $file) {
+                if (!$file->isDot() && $file->isFile() && in_array(strtolower($file->getExtension()),Config::g('video_types'))) {
+                    // TODO: own class for video !?
+                    $this->videos[] = $file->getRealPath();
+                }
+            }
         } else {
             $this->errors[] = 'No video files!';
         }
 
-        if (is_dir($this->path . DIRECTORY_SEPARATOR . static::$directories['data'])) {
-            // TODO: read video files
-            //var_dump(glob($this->path . DIRECTORY_SEPARATOR . static::$directories['data'] . '*.mp4'));
-        } else {
-            $this->errors[] = 'No sync & json files!';
-        }
-
-        if (is_dir($this->path . DIRECTORY_SEPARATOR . static::$directories['gc'])) {
+        if (is_dir($this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['gc'])) {
             // TODO: read gamecontroller files
         } else {
             $this->warnings[] = 'No gamecontroller files!';
@@ -91,6 +95,14 @@ class Game
     public function getErrors()
     {
         return $this->errors;
+    }
+
+    /**
+     * @return string
+     */
+    public function getId()
+    {
+        return $this->id;
     }
 
     /**
@@ -131,5 +143,52 @@ class Game
     public function getHalf()
     {
         return $this->half;
+    }
+
+    /**
+     * @return array
+     */
+    public function hasLogs()
+    {
+        return count($this->logs) > 0;
+    }
+
+    /**
+     * @return array
+     */
+    public function getLogs()
+    {
+        return $this->logs;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSize()
+    {
+        return count($this->logs);
+    }
+
+    /**
+     * @return Event
+     */
+    public function getEvent()
+    {
+        return $this->event;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasVideos()
+    {
+        return count($this->videos) > 0;
+    }
+    /**
+     * @return array
+     */
+    public function getVideos()
+    {
+        return $this->videos;
     }
 }

@@ -1,10 +1,9 @@
 <?php
+require_once 'Config.php';
 require_once 'Game.php';
 
 class Event
 {
-    private static $regex = "/(\d{4}-\d{2}-\d{2})_(\w+)/";
-
     private $is_valid = false;
     private $path;
 	private $date;
@@ -17,7 +16,7 @@ class Event
      * @param $path
      */
 	function __construct(SplFileInfo $path) {
-        $this->is_valid = preg_match(static::$regex, $path->getFilename(), $matches) === 1  ;
+        $this->is_valid = preg_match(Config::e('regex'), $path->getFilename(), $matches) === 1  ;
         if ($this->is_valid) {
             $this->path = $path->getRealPath();
             $this->date = DateTimeImmutable::createFromFormat('Y-m-d',$matches[1]);
@@ -31,9 +30,9 @@ class Event
         $it = new DirectoryIterator($this->path);
         foreach($it as $file) {
             if (!$file->isDot() && $file->isDir()) {
-                $game = new Game($file);
+                $game = new Game($file, $this);
                 if ($game->isValid()) {
-                    $this->games[] = $game;
+                    $this->games[$game->getId()] = $game;
                 }
             }
         }
@@ -61,6 +60,17 @@ class Event
     }
 
     /**
+     * @return array
+     */
+    public function getGame($id)
+    {
+        if(array_key_exists($id, $this->games)) {
+            return $this->games[$id];
+        }
+        return null;
+    }
+
+    /**
      * @return bool|DateTimeImmutable
      */
     public function getDate()
@@ -77,7 +87,7 @@ class Event
     }
 
     /**
-     * @return mixed
+     * @return string
      */
     public function getName()
     {
