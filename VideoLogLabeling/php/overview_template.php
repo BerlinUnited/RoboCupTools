@@ -28,10 +28,10 @@
 	echo '</div>';
     //Header
 	echo '<div class="row table-head">';
-		echo '<div class="col-sm-offset-1 col-sm-2">';
-			echo '<span>Date-Competion-OppTeam-halftime (#Robots)</span>';
+		echo '<div class="col-sm-offset-2 col-sm-4">';
+			echo '<span>Date, Time - Opponents - #halftime (Robots)</span>';
 		echo '</div>';
-		echo '<div class="col-sm-8">';
+		echo '<div class="col-sm-6">';
 				echo '<span>Label Set</span>';
 		echo '</div>';
 	echo '</div>';

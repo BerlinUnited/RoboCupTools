@@ -16,7 +16,7 @@ class Event
      * @param $path
      */
 	function __construct(SplFileInfo $path) {
-        $this->is_valid = preg_match(Config::e('regex'), $path->getFilename(), $matches) === 1  ;
+        $this->is_valid = preg_match('/'.Config::e('regex').'/', $path->getFilename(), $matches) === 1  ;
         if ($this->is_valid) {
             $this->path = $path->getRealPath();
             $this->date = DateTimeImmutable::createFromFormat('Y-m-d',$matches[1]);

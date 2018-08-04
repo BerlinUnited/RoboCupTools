@@ -20,7 +20,7 @@ class Game
     private $warnings = [];
 
     function __construct(SplFileInfo $path, Event $event) {
-        $this->is_valid = preg_match(Config::g('regex'), $path->getFilename(), $matches) === 1;
+        $this->is_valid = preg_match('/'.Config::g('regex').'/', $path->getFilename(), $matches) === 1;
         if ($this->is_valid) {
             $this->path = $path->getRealPath();
             $this->date = DateTimeImmutable::createFromFormat('Y-m-d_H-i-s',$matches[1]);
@@ -35,7 +35,7 @@ class Game
     }
 
     private function init() {
-        $path = $this->path . DIRECTORY_SEPARATOR . Config::$game['dirs']['nao'];
+        $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['nao'];
         if (is_dir($path)) {
             $it = new DirectoryIterator($path);
             foreach($it as $file) {

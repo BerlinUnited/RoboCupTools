@@ -2,33 +2,33 @@
 
 class Config
 {
+    private static $instance = null;
+
     // configuration for events
-    public static $event = [
-        // the regular expression, identifying the event directory
-        'regex' => "/(\d{4}-\d{2}-\d{2})_(\w+)/"
-    ];
-
+    private $event = [];
     // configuration for games
-    public static $game = [
-        // the regular expression, identifying the game(half) directory inside a event directory
-        'regex' => "/(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})_(\S+)_vs_(\S+)_half([1,2])/",
-        'dirs' => [
-            'nao'  => 'game_logs',
-            'gc'   => 'gc_logs',
-            'video'=> 'videos',
-            'data' => 'extracted'
-        ],
-        'video_types' => [ "mp4", "webm" ],
-    ];
-
+    private $game = [];
     // configuration for logs
-    public static $log = [
-        // the regular expression, identify the robots game log directory inside a game directroy
-        'regex' => "/(\d{1})_(\d{2})_(\w+)/",
-        'sync' => 'game.log.videoanalyzer.properties',
-        'labels' => ['labels', '.json'],
-    ];
+    private $log = [];
 
+    private function __construct() {
+        $config = json_decode(file_get_contents('config'), true);
+
+        foreach (get_class_vars(__CLASS__) as $k => $v) {
+            if(array_key_exists($k, $config)) {
+                $this->$k = $config[$k];
+            }
+        }
+    }
+
+    private function __clone() { /* disable copy */ }
+
+    final public static function getInstance() {
+        if (self::$instance === null) {
+            self::$instance = new Config();
+        }
+        return self::$instance;
+    }
 
     /**
      * Shorthand function for accessing the event configuration
@@ -36,7 +36,7 @@ class Config
      * @return mixed
      */
     public static function e($key) {
-        return self::$event[$key];
+        return self::getInstance()->event[$key];
     }
 
     /**
@@ -45,7 +45,7 @@ class Config
      * @return mixed
      */
     public static function g($key) {
-        return self::$game[$key];
+        return self::getInstance()->game[$key];
     }
 
     /**
@@ -54,7 +54,7 @@ class Config
      * @return mixed
      */
     public static function l($key) {
-        return self::$log[$key];
+        return self::getInstance()->log[$key];
     }
 
 }

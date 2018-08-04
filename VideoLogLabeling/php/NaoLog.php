@@ -25,7 +25,7 @@ class NaoLog
     private $errors = [];
 
     function __construct(SplFileInfo $path, $game_path, $data_dir) {
-        $this->is_valid = preg_match(Config::l('regex'), $path->getFilename(), $matches) === 1;
+        $this->is_valid = preg_match('/'.Config::l('regex').'/', $path->getFilename(), $matches) === 1;
         if ($this->is_valid) {
             $this->path = $path->getRealPath();
             $this->player = intval($matches[1]);
@@ -72,16 +72,10 @@ class NaoLog
     }
 
     private function parseSync() {
-        $lines = file($this->sync_file);
-        foreach ($lines as $line_num => $line) {
-            if(strcmp(substr($line,0,16),'sync-time-video=') == 0) {
-                $this->sync_info['video_offset'] = substr($line,16);
-            } elseif(strcmp(substr($line,0,14),'sync-time-log=') == 0) {
-                $this->sync_info['log_offset'] = substr($line,14);
-            } elseif(strcmp(substr($line,0,11),'video-file=') == 0) {
-                $this->sync_info['video'] = substr($line,11);
-            }
-        }
+        $syncings = parse_ini_file($this->sync_file);
+        $this->sync_info['video_offset'] = empty($syncings['sync-time-video'])?0:floatval($syncings['sync-time-video']);
+        $this->sync_info['log_offset'] = empty($syncings['sync-time-log'])?0:floatval($syncings['sync-time-log']);
+        $this->sync_info['video'] = empty($syncings['video-file'])?'':$syncings['video-file'];
     }
 
     /**
