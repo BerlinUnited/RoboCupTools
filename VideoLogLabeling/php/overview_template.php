@@ -14,98 +14,86 @@
   <script src="lib/bootstrap/js/bootstrap.min.js"></script>
   
   <link rel="stylesheet" href="style.css" />
-
 </head>
-
 <body>
-
 <div class="container-fluid" ng-controller="MainController">
+    <div class="row" id="title">
+        <div class="col-sm-offset-2 col-sm-8">
+            <span>Nao Team Humboldt - Annotation Interface</span>
+        </div>
+    </div>
+    <div class="row" id="content">
+        <div class="col-sm-offset-2 col-sm-8">
+            <table class="table table-striped table-condensed">
+                <thead>
+                    <tr>
+                        <th>Competition</th>
+                        <th>Date, Time - Opponents - #halftime (Robots)</th>
+                        <th>Label set</th>
+                    </tr>
+                </thead>
+                <tbody>
+<?php
+$errors = [];
+foreach ($events as $event) {
+    /* @var Event $event */
+    echo '<tr><td colspan="3">'.$event->getDateString().' - '.$event->getName().'</td></tr>';
 
-  <?php
-	//
-	echo '<div class="row title">';
-		echo '<span>Nao Team Humboldt - Annotation Interface</span>';		
-	echo '</div>';
-    //Header
-	echo '<div class="row table-head">';
-		echo '<div class="col-sm-offset-2 col-sm-4">';
-			echo '<span>Date, Time - Opponents - #halftime (Robots)</span>';
-		echo '</div>';
-		echo '<div class="col-sm-6">';
-				echo '<span>Label Set</span>';
-		echo '</div>';
-	echo '</div>';
+    if ($event->hasGames()) {
+        foreach ($event->getGames() as $game) {
+            /* @var Game $game */
+            if($game->hasErrors()) {
+                $errors[] = $game;
+            } else {
+                echo '<tr>'
+                        .'<td>'.'</td>'
+                        .'<td>'
+                            . $game->getDateString()
+                            . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2()
+                            . ' #' . $game->getHalf()
+                            . ' (' . $game->getSize() . ')'
+                        .'</td>'
+                    .'<td>'
+                    .'<a href="./index.php?game='.$game->getId().'&name=New">[New]</a>';
 
-	$errors = [];
-    $i = 0;
-    foreach ($events as $event) {
-        /* @var Event $event */
-        echo '<div class="row'.($i % 2 == 1 ? ' table-row':'').'">';
-
-        echo '<div class="col-sm-offset-1 col-sm-11">';
-            echo '<strong>'.$event->getDateString().' - '.$event->getName().' </strong>';
-        echo '</div>';
-
-        echo '</div>'; // .row
-        $i++;
-
-        if ($event->hasGames()) {
-            foreach ($event->getGames() as $game) {
-                /* @var Game $game */
-                if($game->hasErrors()) {
-                    $errors[] = $game;
-                } else {
-                    echo '<div class="row'.($i % 2 == 1 ? ' table-row':'').'">';
-                    echo '<div class="col-sm-offset-2 col-sm-4">'
-                        . $game->getDateString()
-                        . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2()
-                        . ' #' . $game->getHalf()
-                        . ' (' . $game->getSize() . ')'
-                        . '</div>';
-                    echo '<div class="col-sm-6">';
-                        echo '<span class="labels">';
-                            echo '<a href="./index.php?game='.$game->getId().'&name=New">[New]</a>';
-                            if ($game->hasLogs()) {
-                                $keys = [];
-                                foreach ($game->getLogs() as $log) {
-                                    /* @var NaoLog $log */
-                                    foreach ($log->getLabels() as $key => $file) {
-                                        if(in_array($key, $keys)) { continue; }
-                                        $keys[] = $key;
-                                    }
-                                }
-                                foreach ($keys as $key) {
-                                    echo '<a href="./index.php?game='.$game->getId().'&name='.$key.'">['.$key.']</a>';
-                                }
-                            }
-                        echo '</span>';
-                    echo '</div>'; // .col-sm-6
-                    echo '</div>'; // .row
-                    $i++;
+                if ($game->hasLogs()) {
+                    $keys = [];
+                    foreach ($game->getLogs() as $log) {
+                        /* @var NaoLog $log */
+                        foreach ($log->getLabels() as $key => $file) {
+                            if(in_array($key, $keys)) { continue; }
+                            $keys[] = $key;
+                        }
+                    }
+                    foreach ($keys as $key) {
+                        echo '<a href="./index.php?game='.$game->getId().'&name='.$key.'">['.$key.']</a>';
+                    }
                 }
+                echo '</td>'
+                    .'</tr>';
             }
-        } else {
-            echo '<div class="row'.($i % 2 == 1 ? ' table-row':'').'">';
-                echo '<div class="col-sm-offset-2 col-sm-10"><i>No games for this event available!</i></div>';
-            echo '</div>'; // .row
-            $i++;
         }
+    } else {
+        echo '<tr class="warning"><td colspan="3">No games for this event available!</td></tr>';
     }
-    
-    
-    echo '<div class="errors"><pre>';
-    foreach ($errors as $game)
-    {
-        foreach ($game->getErrors() as $error) {
-            echo 'ERROR: ' . $error . '<br>';
-        }
-    }
-    echo '</pre></div>';
+}
+?>
+                </tbody>
+            </table>
+        </div><!-- col-sm-offset-2 col-sm-8 -->
+    </div><!-- .row #content -->
+</div>
+
+<div class="errors">
+    <pre>
+  <?php
+  foreach ($errors as $game) {
+      foreach ($game->getErrors() as $error) {
+          echo 'ERROR: ' . $error . '<br>';
+      }
+  }
   ?>
-  </div>
-  
-  
-  
+    </pre>
 </div>
 
 <div id="watermark"></div>

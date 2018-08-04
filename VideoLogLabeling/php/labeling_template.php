@@ -34,24 +34,25 @@
 <body>
 
 <div class="container-fluid" ng-controller="MainController">
-  <div class="row title">
-    <span>Nao Team Humboldt - Annotation Interface</span>
-  </div>
-
-  <div class="row">
-    <div class="col-sm-2">
-      <h3><a href="./index.php"><< BACK</a></h3>
+    <div class="row" id="title">
+        <div class="col-sm-offset-2 col-sm-8">
+            <span>Nao Team Humboldt - Annotation Interface</span>
+        </div>
     </div>
-    <div class="col-sm-10">
-      <h3><?=$game->getEvent()->getName()?> | <?=$game->getDateString()?> - <?=$game->getTeam1()?> vs. <?=$game->getTeam2()?> #<?=$game->getHalf()?></h3>
-    </div>
-  </div>
 
+    <div class="row">
+        <div class="col-sm-2">
+            <h3><a href="./index.php"><< BACK</a></h3>
+        </div>
+        <div class="col-sm-10">
+            <h3><?= $game->getEvent()->getName() ?> | <?= $game->getDateString() ?> - <?= $game->getTeam1() ?> vs. <?= $game->getTeam2() ?> #<?= $game->getHalf() ?></h3>
+        </div>
+    </div>
 
     <div class="col-sm-2">
-      <div ng-controller="FormController"> 
-        <form name="labels" sf-schema="schema" sf-form="form" sf-model="model" ng-submit="onSubmit(labels)"></form>
-      </div>
+        <div ng-controller="FormController">
+            <form name="labels" sf-schema="schema" sf-form="form" sf-model="model" ng-submit="onSubmit(labels)"></form>
+        </div>
     </div>
     
     <div class="col-sm-7">

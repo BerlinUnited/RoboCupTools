@@ -88,35 +88,35 @@ body {
   width: 100%;
 }
 
-.labels a {
-  margin: 5px;
-}
-.labels {
-  margin-bottom:5px;
-}
-
-.title {
+#title {
   background-color:#003366;
   color:#fff; 
   padding-left:1%;
 }
 
-.title span {
-  font-weight: bold;
-  font-size: 2.5em;
+#title span {
+    font-weight: bold;
+    font-size: 2.5em;
+    margin: .3em 0 .3em 0;
+    display: inline-block;
 }
 
-.table-head {
-  background-color:rgba(0, 47, 108,0.7);
+#content {
+    margin-top: 1em;
 }
 
-.table-head span {
-  color:#fff;
-  font-weight: bold;
+#content table thead tr > th {
+    background-color:rgba(0, 47, 108,0.7);
+    color:#fff;
+    font-weight: bold;
 }
 
-.table-row {
-  background-color:#EEE;
+#content table td:first-of-type {
+    font-weight: bold;
+}
+
+#content table td:last-of-type a {
+    margin: 5px;
 }
 
 .errors {
