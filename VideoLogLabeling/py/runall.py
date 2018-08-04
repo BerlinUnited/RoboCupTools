@@ -1,38 +1,41 @@
-#!/usr/bin/python
-import os, sys, getopt
-from multiprocessing import Process
+#!/usr/bin/python2
+import os, json
+from multiprocessing import Pool
+
 import mainExportKicks
 
-def run_stuff(logFile, outFile):
+def run_stuff(args):
+  logFile, outFile = args
   print(logFile)
   print(outFile)
   cache = mainExportKicks.init(logFile)
   mainExportKicks.run(cache, outFile)
 
 if __name__ == "__main__":
-
+  config = json.load(open('../config', 'r'))
   rootDir = "../log"
-  
-  max_number_of_processes = 4
-  threads = []
-  
+  work = []
+
   for root, dirs, files in os.walk(rootDir):
     for file in files:
-        if file.endswith("game.log"):
+        if file.endswith(config['log']['name']):
           logFile = os.path.join(root, file)
-          outFile = os.path.join(root, "labels.json")
+
+          outPath = os.path.realpath(os.path.join(root, '../../', config['game']['dirs']['data'], os.path.basename(root)))
+          outFile = os.path.join(outPath, ''.join(config['log']['labels']))
+
+          if not os.path.isdir(outPath):
+              print "ERROR: data path doesn't exsists (", outPath, ")"
+              continue
           
           if os.path.isfile(outFile):
             print "EXISTS ", outFile
             continue
-          
-          try:
-             p = Process(target=run_stuff, args=(logFile, outFile, ))
-             threads.append(p)
-             p.start()
-          except:
-             print "Error: unable to start thread"
+
+          work.append((logFile, outFile))
              
-             
-  for t in threads:
-    t.join()
+  if work:
+    pool = Pool()
+    pool.map(run_stuff, work)
+
+  print("FINISH")
