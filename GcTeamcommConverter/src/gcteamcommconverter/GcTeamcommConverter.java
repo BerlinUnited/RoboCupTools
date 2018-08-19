@@ -78,10 +78,18 @@ public class GcTeamcommConverter
         a.put(42, "CMSingle");
         a.put(43, "TeamSP");
         a.put(44, "Luxembourg United");
+        a.put(45, "Naova ETS");
+        a.put(46, "Recife Soccer");
+        a.put(47, "Rinobot");
+
+        
         a.put(90, "DoBerMan");
         a.put(91, "B-HULKs");
         a.put(92, "Swift-Ark");
         a.put(93, "Team USA");
+        a.put(94, "B-Swift");
+        a.put(95, "AstroNAOtas");
+        a.put(96, "Team-Team");
         TEAM_NAMES = Collections.unmodifiableMap(a);
     }
     
