@@ -84,7 +84,14 @@
           echo '<div class="timeline" data-timeline data-file="'.$log_url.'" data-logoffset="'.$log->getSyncInfo('log_offset').'" data-videooffset="'.$log->getSyncInfo('video_offset').'" data-playernumber="'.$log->getPlayer().'"></div>';
       }
       ?>
-      
+      <div id="configuration">
+        <div class="collapse container-fluid" id="event_configuration">
+          <div class="row"></div>
+        </div>
+        <div id="configuration_control">
+          <span class="caret"></span> <a role="button" data-toggle="collapse" href="#event_configuration" aria-expanded="false" aria-controls="collapseExample">Select events</a>
+        </div>
+      </div>
       <?php /* NOTE: There's no user authentication - everybody can submit labels! */ ?>
       <form>
         Name: <input type="text" name="lastname" data-ng-model="widget.title">
@@ -95,10 +102,9 @@
   
 </div>
 
-  <div class="hide">
+  <div class="hidden">
     <img id="nao" src="nao.png" />
   </div>
-
 
   <script type="text/javascript">
     label_name = "<?=($name != 'New')?$name:''?>";

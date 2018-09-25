@@ -266,6 +266,9 @@ app.directive('timeline', function($compile) {
             duration_none = duration_none + (v.end-v.begin);
           } else {
             num_event = num_event + 1;
+            if($('#event_configuration input[name="'+v.type+'"]').length == 0) {
+              $('#event_configuration .row').append('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" onclick="hide_event(\''+v.type+'\')" checked> '+v.type+'</label></div></div>');
+            }
           }
         }
         
@@ -284,3 +287,8 @@ app.directive('timeline', function($compile) {
     }
   };
 });
+
+function hide_event(e) {
+  console.log();
+  $("."+e).toggleClass('visibility_hidden');
+}
