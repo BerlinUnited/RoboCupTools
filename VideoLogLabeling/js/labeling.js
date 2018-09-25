@@ -245,7 +245,12 @@ app.directive('timeline', function($compile) {
     link: function(scope, element, attrs) {
 
       $.getJSON( attrs.file, function( data ) {
-        
+        element.append('<div style="position:absolute;">#'+attrs.playernumber+'</div>');
+        //var r = new RegExp(".*/(.*)/labels.json").exec(attrs.file);
+        //if (r.length > 1) {
+        //  element.append('<div style="position:absolute;">'+r[1]+'</div>');
+        //}
+
         // HACK: estimate the duration of the logfile
         var duration = 0;
         var num_none = 0;

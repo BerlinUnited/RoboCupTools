@@ -81,7 +81,7 @@
       foreach ($game->getLogs() as $log) {
           /* @var NaoLog $log */
           $log_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getLabel($name));
-          echo '<div class="timeline" data-timeline data-file="'.$log_url.'" data-logoffset="'.$log->getSyncInfo('log_offset').'" data-videooffset="'.$log->getSyncInfo('video_offset').'"></div>';
+          echo '<div class="timeline" data-timeline data-file="'.$log_url.'" data-logoffset="'.$log->getSyncInfo('log_offset').'" data-videooffset="'.$log->getSyncInfo('video_offset').'" data-playernumber="'.$log->getPlayer().'"></div>';
       }
       ?>
       
