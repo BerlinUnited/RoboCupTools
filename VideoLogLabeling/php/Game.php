@@ -50,6 +50,7 @@ class Game
                     }
                 }
             }
+            uasort($this->logs, function($a, $b){ return $a->getPlayer() - $b->getPlayer(); });
         } else {
             $this->errors[] = 'No log files!';
         }
