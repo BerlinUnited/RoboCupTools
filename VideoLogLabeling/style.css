@@ -53,6 +53,10 @@ body {
   background-color:#66a;
 }
 
+.timeline a.button.fallen {
+  background-color:#ff5d00;
+}
+
 .timeline a.button.selected {
   background-color:#f00;
 }

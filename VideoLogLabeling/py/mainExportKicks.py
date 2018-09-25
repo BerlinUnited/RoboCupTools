@@ -64,6 +64,8 @@ def frameFilter(frame):
       action = 'forwardkick_left'
     elif option_state(o, "path_striker2018", "forwardkick_right"):
       action = 'forwardkick_right'
+    elif option_state(o, "fall_down_and_stand_up", "stand_up"):
+      action = 'fallen'
    
    
     return [frame["FrameInfo"].time/(1000.0*60), action,
