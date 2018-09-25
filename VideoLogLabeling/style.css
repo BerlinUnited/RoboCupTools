@@ -3,6 +3,7 @@ body {
 }
 
 .timeline {
+  position: relative;
   width: 100%;
   height: 30px;
   border: solid 1px #999;
@@ -13,7 +14,15 @@ body {
   clear: both;
 }
 
+.timeline .info {
+  position:absolute;
+  height: 100%;
+  padding: 2px;
+  font-weight: bold;
+}
+
 .timeline a {
+  position: relative;
   display: inline-block;
   border:solid 0px #000;
   margin:0px;

@@ -245,7 +245,7 @@ app.directive('timeline', function($compile) {
     link: function(scope, element, attrs) {
 
       $.getJSON( attrs.file, function( data ) {
-        element.append('<div style="position:absolute;">#'+attrs.playernumber+'</div>');
+        element.append('<div class="info">#'+attrs.playernumber+'</div>');
         //var r = new RegExp(".*/(.*)/labels.json").exec(attrs.file);
         //if (r.length > 1) {
         //  element.append('<div style="position:absolute;">'+r[1]+'</div>');
