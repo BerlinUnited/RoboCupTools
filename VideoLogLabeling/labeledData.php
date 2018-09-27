@@ -6,7 +6,7 @@
   
   foreach ($games as $key => $g) {
     
-    if(sizeof($g->logs) > 0) {
+    if(sizeof($g->logs) > 0) {  
       
       $game_data = array();
       foreach ($g->logs as $key => $log) {

@@ -34,7 +34,9 @@
                 </thead>
                 <tbody>
 <?php
-$errors = [];
+if (!$events) {
+  echo '<tr><td colspan="3"><i>No events/games available.</i></td></tr>';
+}
 foreach ($events as $event) {
     /* @var Event $event */
     echo '<tr><td colspan="3">'.$event->getDateString().' - '.$event->getName().'</td></tr>';
@@ -85,12 +87,16 @@ foreach ($events as $event) {
     </div><!-- .row #content -->
 </div>
 
-<div class="errors">
+<div class="errors <?=$errors?'':'hide'?>">
     <pre>
   <?php
   foreach ($errors as $game) {
-      foreach ($game->getErrors() as $error) {
-          echo 'ERROR: ' . $error . '<br>';
+      if($game instanceof Game) {
+          foreach ($game->getErrors() as $error) {
+              echo 'ERROR: ' . $error . '<br>';
+          }
+      } else {
+          echo '<b>ERROR: ' . $game . '</b><br>';
       }
   }
   ?>

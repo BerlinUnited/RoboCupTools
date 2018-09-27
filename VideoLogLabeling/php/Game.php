@@ -21,7 +21,7 @@ class Game
 
     function __construct(SplFileInfo $path, Event $event) {
         $this->is_valid = preg_match('/'.Config::g('regex').'/', $path->getFilename(), $matches) === 1;
-        if ($this->is_valid) {
+        if ($this->is_valid && $path->isReadable()) {
             $this->path = $path->getRealPath();
             $this->date = DateTimeImmutable::createFromFormat('Y-m-d_H-i-s',$matches[1]);
             $this->team1 = str_replace('_', ' ', $matches[2]);
@@ -31,6 +31,8 @@ class Game
             $this->event = $event;
 
             $this->init();
+        } else {
+            $this->errors[] = 'Game log path not valid or not readable!';
         }
     }
 

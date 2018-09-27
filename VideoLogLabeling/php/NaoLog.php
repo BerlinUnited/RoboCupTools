@@ -26,7 +26,7 @@ class NaoLog
 
     function __construct(SplFileInfo $path, $game_path, $data_dir) {
         $this->is_valid = preg_match('/'.Config::l('regex').'/', $path->getFilename(), $matches) === 1;
-        if ($this->is_valid) {
+        if ($this->is_valid && $path->isReadable()) {
             $this->path = $path->getRealPath();
             $this->player = intval($matches[1]);
             $this->head = $matches[2];
@@ -63,6 +63,8 @@ class NaoLog
             } else {
                 $this->addError('Invalid path to meta data!');
             }
+        } else {
+            $this->addError('Invalid or not readable log path');
         }
     }
 
