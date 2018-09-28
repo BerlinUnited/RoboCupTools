@@ -47,7 +47,7 @@ if (isset($_GET["download"])) {
             break;
     }
 } elseif ($game != NULL) {
-    include 'php/labeling_template.php';
+    include 'php/template_labeling.php';
 } else {
-    include 'php/overview_template.php';
+    include 'php/template_overview.php';
 }
