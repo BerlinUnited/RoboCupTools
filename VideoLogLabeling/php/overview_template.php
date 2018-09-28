@@ -24,9 +24,11 @@
     </div>
     <div class="row" id="content">
         <div class="col-sm-offset-2 col-sm-8">
+            <form method="post" action="index.php?download=selected">
             <table class="table table-striped table-condensed">
                 <thead>
                     <tr>
+                        <th></th>
                         <th>Competition</th>
                         <th>Date, Time - Opponents - #halftime (Robots)</th>
                         <th>Label set</th>
@@ -36,11 +38,12 @@
                 <tbody>
 <?php
 if (!$events) {
-  echo '<tr><td colspan="4"><i>No events/games available.</i></td></tr>';
+  echo '<tr><td colspan="5"><i>No events/games available.</i></td></tr>';
 }
+
 foreach ($events as $event) {
     /* @var Event $event */
-    echo '<tr><td colspan="4">'.$event->getDateString().' - '.$event->getName().'</td></tr>';
+    echo '<tr><td></td><td colspan="4">'.$event->getDateString().' - '.$event->getName().'</td></tr>';
 
     if ($event->hasGames()) {
         foreach ($event->getGames() as $game) {
@@ -49,6 +52,7 @@ foreach ($events as $event) {
                 $errors[] = $game;
             } else {
                 echo '<tr>'
+                        .'<td><input type="checkbox" name="games[]" value="'.$game->getId().'" /></td>'
                         .'<td>'.'</td>'
                         .'<td>'
                             . $game->getDateString()
@@ -87,6 +91,8 @@ foreach ($events as $event) {
 ?>
                 </tbody>
             </table>
+            <input class="btn btn-default btn-xs pull-right" type="submit" value="Download selected">
+            </form>
         </div><!-- col-sm-offset-2 col-sm-8 -->
     </div><!-- .row #content -->
 </div>

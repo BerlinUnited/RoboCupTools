@@ -209,8 +209,8 @@ class Game
      */
     public function getLabelsAsJson() {
         $json = '[';
-        foreach ($this->logs as $log) {
-            $json .= $log->getLabelsAsJson() . ", \n";
+        for ($i=0; $i < count($this->logs); $i++) { 
+            $json .= $this->logs[$i]->getLabelsAsJson() . ($i === count($this->logs)-1 ? "\n" : ", \n");
         }
         $json .= ']';
         return $json;

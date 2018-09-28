@@ -27,18 +27,17 @@ usort($events, function ($a, $b) { return $a->getDate() < $b->getDate(); });
 // if a requested game was found, show the labeling view, otherwise the overview
 if (isset($_GET["download"])) {
     switch ($_GET["download"]) {
-        case 'all':
-            // TODO: 
-            break;
-        case 'selection':
-            // TODO: 
+        case 'selected':
+            if(isset($_POST['games']) && is_array($_POST['games'])) {
+                sendAsJson('selected_game_data.json', createSelectionLabelJson($events));
+            } else {
+                echo "ERROR: invalid game selection!";
+            }
             break;
         case 'game':
             if ($game != NULL) {
-                // send data as downloadable json file
-                header('Content-Type: application/json');
-                header('Content-Disposition: attachment; filename="'.$game->getDateString() . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2() . ' #' . $game->getHalf().'.json"');
-                echo $game->getLabelsAsJson();
+                $fileName = $game->getDateString() . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2() . ' #' . $game->getHalf().'.json';
+                sendAsJson($fileName, $game->getLabelsAsJson());
             } else {
                 echo "ERROR: invalid game id!";
             }

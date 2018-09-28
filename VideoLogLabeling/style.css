@@ -125,11 +125,11 @@ body {
     font-weight: bold;
 }
 
-#content table td:first-of-type {
+#content table td:nth-of-type(2) {
     font-weight: bold;
 }
 
-#content table td:last-of-type a {
+#content table td:nth-last-of-type(2) a {
     margin: 5px;
 }
 

@@ -151,9 +151,11 @@ class NaoLog
      * @return string
      */
     public function getLabelsAsJson() {
+        $logNames = array_keys($this->labels);
+
         $json = '{';
-        foreach ($this->labels as $name => $file) {
-            $json .= '"'.$name.'": ' . file_get_contents($file) . ",\n";
+        for ($i=0; $i < count($logNames); $i++) {
+            $json .= '"'.$logNames[$i].'": ' . file_get_contents($this->labels[$logNames[$i]]) . ($i === count($logNames)-1 ? "\n" : ", \n");
         }
         $json .= '}';
         return $json;
