@@ -145,4 +145,17 @@ class NaoLog
         }
         return false;
     }
+
+    /**
+     * Returns the event data as JSON string.
+     * @return string
+     */
+    public function getLabelsAsJson() {
+        $json = '{';
+        foreach ($this->labels as $name => $file) {
+            $json .= '"'.$name.'": ' . file_get_contents($file) . ",\n";
+        }
+        $json .= '}';
+        return $json;
+    }
 }

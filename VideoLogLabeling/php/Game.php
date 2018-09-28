@@ -187,11 +187,32 @@ class Game
     {
         return count($this->videos) > 0;
     }
+
     /**
      * @return array
      */
     public function getVideos()
     {
         return $this->videos;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasLabels() {
+        return $this->hasLogs() && array_filter($this->logs, function ($l) { return $l->hasLabels(); });
+    }
+
+    /**
+     * Returns the label/event data as JSON string.
+     * @return string
+     */
+    public function getLabelsAsJson() {
+        $json = '[';
+        foreach ($this->logs as $log) {
+            $json .= $log->getLabelsAsJson() . ", \n";
+        }
+        $json .= ']';
+        return $json;
     }
 }

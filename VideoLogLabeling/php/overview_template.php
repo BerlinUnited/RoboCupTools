@@ -30,16 +30,17 @@
                         <th>Competition</th>
                         <th>Date, Time - Opponents - #halftime (Robots)</th>
                         <th>Label set</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
 <?php
 if (!$events) {
-  echo '<tr><td colspan="3"><i>No events/games available.</i></td></tr>';
+  echo '<tr><td colspan="4"><i>No events/games available.</i></td></tr>';
 }
 foreach ($events as $event) {
     /* @var Event $event */
-    echo '<tr><td colspan="3">'.$event->getDateString().' - '.$event->getName().'</td></tr>';
+    echo '<tr><td colspan="4">'.$event->getDateString().' - '.$event->getName().'</td></tr>';
 
     if ($event->hasGames()) {
         foreach ($event->getGames() as $game) {
@@ -55,7 +56,7 @@ foreach ($events as $event) {
                             . ' #' . $game->getHalf()
                             . ' (' . $game->getSize() . ')'
                         .'</td>'
-                    .'<td>'
+                        .'<td>'
                     //.'<a href="./index.php?game='.$game->getId().'&name=New">[New]</a>'
                 ;
 
@@ -73,6 +74,9 @@ foreach ($events as $event) {
                     }
                 }
                 echo '</td>'
+                    .'<td>'
+                        . ($game->hasLabels() ? '<a href="./index.php?download=game&game='.$game->getId().'" target="_blank" title="Save annotated events as JSON"><span class="glyphicon glyphicon-save-file"></span></a>' : '')
+                    .'</td>'
                     .'</tr>';
             }
         }

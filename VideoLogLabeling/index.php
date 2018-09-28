@@ -1,5 +1,6 @@
 <?php
 // required includes
+require_once 'php/functions.php';
 require_once 'php/Config.php';
 require_once 'php/Event.php';
 
@@ -16,43 +17,37 @@ if (PHP_SAPI === 'cli') {
 // global variables
 $basepath = __DIR__;
 $name = isset($_GET["name"]) ? $_GET["name"] : "new";
-$game = NULL;
-$events = [];
-$errors = [];
 
-// read log directories
-foreach (Config::paths() as $path) {
-    if (is_dir($path) && is_readable($path)) {
-        try {
-            foreach(new DirectoryIterator($path) as $file) {
-                if (!$file->isDot() && $file->isDir()) {
-                    $event = new \Event($file);
-                    if ($event->isValid()) {
-                        $events[] = $event;
-                    }
-                }
-            }
-        } catch (Exception $e) {
-            $errors[] = 'reading log directory: ' . $e->getMessage();
-        }
-    }
-}
+$errors = [];
+$events = readLogs(Config::paths(), $errors); // read log directories
+$game = isset($_GET["game"]) ? getGame($events, $_GET["game"]) : NULL; // search for a requested game
 
 usort($events, function ($a, $b) { return $a->getDate() < $b->getDate(); });
 
-// search for a requested game
-if (isset($_GET["game"])) {
-    foreach ($events as $event) {
-        /* @var Event $event */
-        if(array_key_exists($_GET["game"], $event->getGames())) {
-            $game = $event->getGame($_GET["game"]);
-            break;
-        }
-    }
-}
-
 // if a requested game was found, show the labeling view, otherwise the overview
-if ($game != NULL) {
+if (isset($_GET["download"])) {
+    switch ($_GET["download"]) {
+        case 'all':
+            // TODO: 
+            break;
+        case 'selection':
+            // TODO: 
+            break;
+        case 'game':
+            if ($game != NULL) {
+                // send data as downloadable json file
+                header('Content-Type: application/json');
+                header('Content-Disposition: attachment; filename="'.$game->getDateString() . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2() . ' #' . $game->getHalf().'.json"');
+                echo $game->getLabelsAsJson();
+            } else {
+                echo "ERROR: invalid game id!";
+            }
+            break;
+        default:
+            echo "ERROR: invalid download request!";
+            break;
+    }
+} elseif ($game != NULL) {
     include 'php/labeling_template.php';
 } else {
     include 'php/overview_template.php';
