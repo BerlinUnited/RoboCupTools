@@ -36,7 +36,7 @@
 <div class="container-fluid" ng-controller="MainController">
     <div class="row" id="title">
         <div class="col-sm-offset-2 col-sm-8">
-            <span>Nao Team Humboldt - Annotation Interface</span>
+            <a href="index.php">Nao Team Humboldt - Annotation Interface</a>
         </div>
     </div>
 
