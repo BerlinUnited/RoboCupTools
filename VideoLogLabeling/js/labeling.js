@@ -268,7 +268,9 @@ app.directive('timeline', function($compile) {
           } else {
             num_event = num_event + 1;
             if($('#event_configuration input[name="'+v.type+'"]').length == 0) {
-              $('#event_configuration .row').append('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" onclick="hide_event(\''+v.type+'\')" checked> '+v.type+'</label></div></div>');
+              var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');
+              event_checkbox.change(function(e) { hide_event(e.target.name) });
+              $('#event_configuration .row').append(event_checkbox);
             }
           }
         }
