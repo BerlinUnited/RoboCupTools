@@ -5,7 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
     
-  <script src="lib/jquery-3.2.0.js"></script>
+  <script src="lib/jquery-3.2.0.js" type="text/javascript"></script>
   
   <script src="lib/player/mediaelement-and-player.min.js"></script>
   <link rel="stylesheet" href="lib/player/mediaelementplayer.css" />
@@ -91,7 +91,9 @@ foreach ($events as $event) {
 ?>
                 </tbody>
             </table>
+            <?php if ($events) { ?>
             <input class="btn btn-default btn-xs pull-right" type="submit" value="Download selected">
+            <?php } ?>
             </form>
         </div><!-- col-sm-offset-2 col-sm-8 -->
     </div><!-- .row #content -->

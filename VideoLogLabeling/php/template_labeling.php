@@ -106,9 +106,6 @@
     <img id="nao" src="nao.png" />
   </div>
 
-  <script type="text/javascript">
-    label_name = "<?=($name != 'New')?$name:''?>";
-  </script>
   <script src="js/field.js"></script>
   <script src="js/labeling.js"></script>
 </body>

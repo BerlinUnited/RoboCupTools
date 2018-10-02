@@ -44,7 +44,8 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
   $scope.model = [];
   $scope.selected = null;
 
-  $scope.widget = {title: label_name};
+  var url = new URL(window.location.href);
+  $scope.widget = { title: url.searchParams.get("name") !== null ? url.searchParams.get("name") : 'New' };
 
   /*
   $scope.openFile = function(input) {
