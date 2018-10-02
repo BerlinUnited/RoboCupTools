@@ -3,7 +3,6 @@
 from google.protobuf import descriptor
 from google.protobuf import message
 from google.protobuf import reflection
-from google.protobuf import descriptor_pb2
 # @@protoc_insertion_point(imports)
 
 
@@ -1376,7 +1375,7 @@ _FEATURETABLE = descriptor.Descriptor(
   containing_type=None,
   fields=[
     descriptor.FieldDescriptor(
-      name='classes', full_name='naothmessages.FeatureTable.classes', index=0,
+      name='utils', full_name='naothmessages.FeatureTable.utils', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -1445,7 +1444,7 @@ _FEATUREKEYPOINT.fields_by_name['pt'].message_type = CommonTypes_pb2._FLOATVECTO
 _FEATUREDETECTIONRESULT.fields_by_name['keyPoints'].message_type = _FEATUREKEYPOINT
 _FEATUREDETECTIONRESULT.fields_by_name['descriptors'].message_type = _SINGLEDESCRIPTOR
 _FEATURECLASS.fields_by_name['samples'].message_type = _SINGLEDESCRIPTOR
-_FEATURETABLE.fields_by_name['classes'].message_type = _FEATURECLASS
+_FEATURETABLE.fields_by_name['utils'].message_type = _FEATURECLASS
 DESCRIPTOR.message_types_by_name['CMDArg'] = _CMDARG
 DESCRIPTOR.message_types_by_name['CMD'] = _CMD
 DESCRIPTOR.message_types_by_name['StopwatchItem'] = _STOPWATCHITEM

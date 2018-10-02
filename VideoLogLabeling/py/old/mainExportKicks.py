@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import BehaviorParser
+from py.parsers import BehaviorParser
 import json
 import math
 
