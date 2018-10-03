@@ -101,8 +101,12 @@ class Log:
         # print(self.directory, self.data_directory, self.file)
         parser = BehaviorParser.BehaviorParser()
         log = BehaviorParser.LogReader(self.file, parser)
-        data = { 'parsed_actions': actions.keys(), 'intervals': {} }
+        data = { 'parsed_actions': actions.keys(), 'intervals': {}, 'start': 0, 'end': 0 }
         tmp = {}
+
+        if log.size > 0:
+            # ignore the first frame and set the second frame time as starting point of this log file
+            data['start'] = log[1]["FrameInfo"].time / (1000.0 * 60) * 60
 
         # enforce the whole log being parsed (this is necessary for older game logs)
         for frame in log:
@@ -135,6 +139,8 @@ class Log:
                         interval_id = '{}_{}'.format(tmp[a]['frame'], a)
                         data['intervals'][interval_id] = tmp[a]
                         del tmp[a]
+            # update the time of the last frame
+            data['end'] = fi.time / (1000.0 * 60) * 60
 
         label_file = self.data_directory + '/' + config['log']['labels'][0] + config['log']['labels'][1]
         json.dump(data, open(label_file, 'w'), indent=4, separators=(',', ': '))

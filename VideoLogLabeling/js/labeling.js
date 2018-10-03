@@ -76,31 +76,17 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
     $scope.model.push({"file":file, "data":data});
   }
   
-  $scope.addPeriod = function(timeline, data, duration, log_offset, video_offset, duration_none, num_event) 
+  $scope.addPeriod = function(timeline, data, data_id, start, end, log_offset, video_offset) 
   {
     var offset = video_offset - log_offset;
-    
-    //var duration = playerGlobal.player.media.duration;
-    var width = 0;
-    
-    var non_supression = 0.2;
-    var event_duration_add = duration_none * non_supression / num_event;
-    
-    if(data.type == 'none') {
-      width = (data.end-data.begin)/duration*(1.0 - non_supression);
-    } else {
-      width = (data.end-data.begin + event_duration_add)/duration;
-    }
-    width = Math.min(width*100, 100);
-    
-    var c = data.type == 'none'?'blank':'button';
-    
-    var str = '<a href="#" class="'+c+' '+data.type+'" data-toggle="tooltip" title="'+data.type+'"></a>';
-    var o = $compile(str)($scope);
-    $(o).css( "width", "" + width + "%");
+    var width = (data.end - data.begin) / (end - log_offset) * 100;
+    var starting_at = (data.begin - log_offset) / (end - log_offset) * 100;
 
-    
-    
+    var str = '<a href="#" id="'+data_id+'" class="button '+data.type+'" data-toggle="tooltip" title="'+data.type+'"></a>';
+    var o = $compile(str)($scope);
+    $(o).css( "width", width + "%");
+    $(o).css( "left", starting_at + "%");
+
     o[0].onclick = function() {
       $rootScope.$broadcast('setPeriod', data, offset);
       o.addClass("selected");
@@ -246,43 +232,23 @@ app.directive('timeline', function($compile) {
     link: function(scope, element, attrs) {
 
       $.getJSON( attrs.file, function( data ) {
+        // show the player number in the timeline
         element.append('<div class="info">#'+attrs.playernumber+'</div>');
-        //var r = new RegExp(".*/(.*)/labels.json").exec(attrs.file);
-        //if (r.length > 1) {
-        //  element.append('<div style="position:absolute;">'+r[1]+'</div>');
-        //}
-
-        // HACK: estimate the duration of the logfile
-        var duration = 0;
-        var num_none = 0;
-        var num_event = 0;
-        var duration_none = 0;
-        for (var i = 0; i < data.intervals.length; i++) 
-        {
-          var v = data.intervals[i];
-          duration = duration + (v.end-v.begin);
-          
-          if(v.type == 'none') {
-            num_none = num_none + 1;
-            duration_none = duration_none + (v.end-v.begin);
-          } else {
-            num_event = num_event + 1;
-            if($('#event_configuration input[name="'+v.type+'"]').length == 0) {
-              var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');
-              event_checkbox.change(function(e) { hide_event(e.target.name) });
-              $('#event_configuration .row').append(event_checkbox);
-            }
-          }
-        }
-        
-        for (var i = 0; i < data.intervals.length; i++) 
-        {
-          var v = data.intervals[i];
+        // iterate through the actions and add the interval to the timeline
+        for(var id in data.intervals) {
+          var v = data.intervals[id];
+          // if no annotations are available, initialize with empty map
           if (typeof v.labels === 'undefined') {
             v.labels = {};
           }
+          // collect all found actions in the log file and add a control to the UI
+          if($('#event_configuration input[name="'+v.type+'"]').length == 0) {
+            var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');
+            event_checkbox.change(function(e) { hide_event(e.target.name) });
+            $('#event_configuration .row').append(event_checkbox);
+          }
           
-          scope.addPeriod(element, v, duration, attrs.logoffset, attrs.videooffset, duration_none, num_event);
+          scope.addPeriod(element, v, id, data.start, data.end, attrs.logoffset, attrs.videooffset);
         }
         
         scope.addLogfileToModel(attrs.file, data);

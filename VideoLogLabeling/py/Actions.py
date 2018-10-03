@@ -2,6 +2,15 @@
 Here should be all actions defined, which should be parsed from a log file.
 '''
 
+def ready(symbols, option):
+    return symbols['game.state'] == 1
+
+def finish(symbols, option):
+    return symbols['game.state'] == 4
+
+def penalized(symbols, option):
+    return symbols['game.state'] == 5
+
 def turn(symbols, option):
     return 'turn_to_attack_direction' in option
 

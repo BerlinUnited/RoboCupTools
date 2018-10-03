@@ -60,7 +60,6 @@ def do_work(log, dry=False):
 if __name__ == "__main__":
     # parse the arguments
     args = parseArguments()
-    print(args)
 
     # init global vars
     log_dir = '../log'
