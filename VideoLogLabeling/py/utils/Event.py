@@ -30,7 +30,7 @@ class Event:
             game_dir = os.path.join(self.directory, game)
             if os.path.isdir(game_dir) and re.match(config['game']['regex'], game):
 
-                g = Game(None, game_dir)
+                g = Game(self, game_dir)
                 self.games.append(g)
 
     def __repr__(self):

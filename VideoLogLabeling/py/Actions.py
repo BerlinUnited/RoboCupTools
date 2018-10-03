@@ -1,5 +1,6 @@
-
-# option in o and o[option]["state"].name == state
+'''
+Here should be all actions defined, which should be parsed from a log file.
+'''
 
 def turn(symbols, option):
     return 'turn_to_attack_direction' in option

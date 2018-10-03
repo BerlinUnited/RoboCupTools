@@ -1,5 +1,6 @@
 import glob
 import json
+import math
 import os
 import re
 
@@ -43,10 +44,9 @@ class Log:
             sync_file = os.path.join(self.data_directory, config['log']['sync'])
             if os.path.isfile(sync_file):
                 self.sync_file = { 'file': sync_file }
-                # TODO: parse this file
+                # TODO: parse this file?
 
             self.labels = glob.glob(self.data_directory+'/'+config['log']['labels'][0]+'*'+config['log']['labels'][1])
-            # TODO: parse labels ?
 
     def __read_labels(self):
         if self.labels_data is None:
@@ -101,7 +101,8 @@ class Log:
         # print(self.directory, self.data_directory, self.file)
         parser = BehaviorParser.BehaviorParser()
         log = BehaviorParser.LogReader(self.file, parser)
-        data = { 'parsed_actions': actions.keys(), 'intervals': [] }
+        data = { 'parsed_actions': actions.keys(), 'intervals': {} }
+        tmp = {}
 
         # enforce the whole log being parsed (this is necessary for older game logs)
         for frame in log:
@@ -116,25 +117,28 @@ class Log:
             # got valid data
             if s and o:
                 for a in actions:
+                    # check if an action applies
                     if actions[a](s, o):
-                        # TODO: how to find the start/begin of the interval??
-                        '''
-                        pose = {"x": begin_data[2], "y": begin_data[3], "r": begin_data[4]}
-                        ball = {"x": begin_data[5], "y": begin_data[6]}
-                        t_begin = begin_data[0] * 60
-                        t_end = end_data[0] * 60
-                        type = begin_data[1]
-
-                        intervals.append({"type": type, "begin": t_begin, "end": t_end, "pose": pose, "ball": ball})
-                        return [frame["FrameInfo"].time / (1000.0 * 60), action,
-                                m["robot_pose.x"], m["robot_pose.y"], m["robot_pose.rotation"] * math.pi / 180,
-                                m["ball.position.field.x"], m["ball.position.field.y"]]
-                        '''
+                        # begin an interval for this action
+                        if a not in tmp or tmp[a] is None:
+                            tmp[a] = { 'type': a,
+                                       'frame': fi.frameNumber,
+                                       'begin': fi.time / (1000.0 * 60) * 60,
+                                       "pose": {"x": s["robot_pose.x"], "y": s["robot_pose.y"], "r": s["robot_pose.rotation"] * math.pi / 180},
+                                       "ball": {"x": s["ball.position.field.x"], "y": s["ball.position.field.y"]} }
+                        elif tmp[a]['frame'] == fi.frameNumber - 1:
+                            # continue this action interval
+                            tmp[a]['frame'] = fi.frameNumber
+                    elif a in tmp and tmp[a] is not None:
+                        # there's an open interval, close it
+                        tmp[a]['end'] = fi.time / (1000.0 * 60) * 60
+                        interval_id = '{}_{}'.format(tmp[a]['frame'], a)
+                        data['intervals'][interval_id] = tmp[a]
+                        del tmp[a]
 
         label_file = self.data_directory + '/' + config['log']['labels'][0] + config['log']['labels'][1]
-        #json.dump(data, open(label_file, 'w'), indent=4, separators=(',', ': '))
-        print(label_file, data)
-
+        json.dump(data, open(label_file, 'w'), indent=4, separators=(',', ': '))
+        self.labels.append(label_file)
 
     def __repr__(self):
         return "Nao{} #{}".format(self.nao, self.player_number)
