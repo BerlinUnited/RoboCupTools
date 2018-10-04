@@ -17,7 +17,8 @@ def parseArguments():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('--dry-run', action='store_true', help="Just iterates over the log files and prints out, what should be done, but doesn't parse anything.")
-    parser.add_argument('-l','--list', action='store', help="Lists some informations.")
+    parser.add_argument('-l','--list', action='store', help="Lists some information ('actions', 'events', 'games').")
+    parser.add_argument('--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (defulat).')
 
     return parser.parse_args()
 
@@ -42,19 +43,29 @@ def load_actions():
 
     return actions
 
-def do_work(log, dry=False):
-    # check if the syncing infos with the video exists
-    if not log.has_syncing_file():
-        print("{} / {} / {} - missing syncing file! creating default ...".format(log.game.event, log.game, log))
-        if not dry: log.create_default_syncing_file()
-    # check if the default label file exits
-    if not log.has_label_file():
-        print("{} / {} / {} - missing label file! creating default ...".format(log.game.event, log.game, log))
-        if not dry: log.create_label_file(actions)
-    elif [a for a in actions.keys() if a not in log.parsed_actions()]:
+def do_work(log, dry=False, full=False):
+    try:
+        # check if the syncing infos with the video exists
+        if not log.has_syncing_file():
+            print("{} / {} / {} - missing syncing file! creating default ...".format(log.game.event, log.game, log))
+            if not dry: log.create_default_syncing_file()
+        # check if the default label file exits
+        if not log.has_label_file():
+            print("{} / {} / {} - missing label file! creating default ...".format(log.game.event, log.game, log))
+            if not dry: log.create_label_file(actions)
         # check if all actions were parsed
-        print("{} / {} / {} - missing actions in label file! re-creating ...".format(log.game.event, log.game, log))
-        if not dry: log.create_label_file(actions)
+        elif set(actions.keys()) - set(log.parsed_actions()):
+            # retrieve the missing action functions
+            missing = {}
+            if full:
+                missing = actions
+            else:
+                for a in set(actions.keys()) - set(log.parsed_actions()): missing[a] = actions[a]
+            print("{} / {} / {} - missing actions in label file! re-creating {}...".format(log.game.event, log.game, log, 'full' if full else ''))
+            if not dry: log.create_label_file(missing)
+
+    except Exception as e:
+        print('ERROR: {}'.format(str(e)))
 
 
 if __name__ == "__main__":
@@ -82,14 +93,14 @@ if __name__ == "__main__":
                 for g in e.games:
                     print("\t\t{}".format(g))
         else:
-            print('ERROR: Unkown list option! Only the following are recognized: actions, events, games')
+            print('ERROR: Unknown list option! Only the following are recognized: actions, events, games')
     elif args.dry_run:
         print('Iterate through log files without doing actually something - DRY RUN!\n')
         # iterate through events, their games and the log files
         for e in events:
             for g in e.games:
                 for l in g.logs.values():
-                    do_work(l, True)
+                    do_work(l, True,args.full)
     else:
         # do the hard work
         pp = multiprocessing.Pool()
@@ -97,7 +108,7 @@ if __name__ == "__main__":
         for e in events:
             for g in e.games:
                 for l in g.logs.values():
-                    pp.apply_async(do_work, (l,))
+                    pp.apply_async(do_work, (l,False,args.full))
         # wait for workers to finish
         pp.close()
         pp.join()

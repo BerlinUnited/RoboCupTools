@@ -101,7 +101,12 @@ class Log:
         # print(self.directory, self.data_directory, self.file)
         parser = BehaviorParser.BehaviorParser()
         log = BehaviorParser.LogReader(self.file, parser)
-        data = { 'parsed_actions': actions.keys(), 'intervals': {}, 'start': 0, 'end': 0 }
+        data = self.__read_labels()
+        # update or create data structure
+        if data is not None:
+            data['parsed_actions'] = list(set(data['parsed_actions']) | set(actions.keys()))
+        else:
+            data = { 'parsed_actions': actions.keys(), 'intervals': {}, 'start': 0, 'end': 0 }
         tmp = {}
 
         if log.size > 0:
@@ -119,7 +124,7 @@ class Log:
             fi = frame["FrameInfo"]
 
             # got valid data
-            if s and o:
+            if s and o and fi:
                 for a in actions:
                     # check if an action applies
                     if actions[a](s, o):
@@ -139,8 +144,9 @@ class Log:
                         interval_id = '{}_{}'.format(tmp[a]['frame'], a)
                         data['intervals'][interval_id] = tmp[a]
                         del tmp[a]
+
             # update the time of the last frame
-            data['end'] = fi.time / (1000.0 * 60) * 60
+            if fi: data['end'] = fi.time / (1000.0 * 60) * 60
 
         label_file = self.data_directory + '/' + config['log']['labels'][0] + config['log']['labels'][1]
         json.dump(data, open(label_file, 'w'), indent=4, separators=(',', ': '))
