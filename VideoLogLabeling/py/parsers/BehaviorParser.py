@@ -2,8 +2,8 @@
 
 import os, sys, getopt
 
-from LogReader import LogReader
-from LogReader import Parser
+from LogReaderV2 import LogReader
+from LogReaderV2 import Parser
 
 from matplotlib import pyplot
 import numpy
