@@ -90,6 +90,7 @@ class Log:
                 m, o = frame["BehaviorStateSparse"]
 
             if m['game.state'] == 1:
+                log.close()
                 return frame.number, frame['FrameInfo'].time
 
         return None
@@ -151,6 +152,7 @@ class Log:
         label_file = self.data_directory + '/' + config['log']['labels'][0] + config['log']['labels'][1]
         json.dump(data, open(label_file, 'w'), indent=4, separators=(',', ': '))
         self.labels.append(label_file)
+        log.close()
 
     def __repr__(self):
         return "Nao{} #{}".format(self.nao, self.player_number)

@@ -56,6 +56,10 @@ class LogReader:
     def __getitem__(self, item):
         return self.frames[item]
 
+    def close(self):
+        self.mm.close()
+        self.file.close()
+
 class Frame:
     def __init__(self, reader, number):
         self.reader = reader
