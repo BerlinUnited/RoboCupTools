@@ -3,6 +3,10 @@ import argparse
 import multiprocessing
 import os
 import re
+import sys
+import traceback
+
+sys.path.append(os.path.join(os.path.abspath('.'), 'parsers'))
 
 import Actions
 from utils import config, Event
@@ -18,7 +22,7 @@ def parseArguments():
     )
     parser.add_argument('--dry-run', action='store_true', help="Just iterates over the log files and prints out, what should be done, but doesn't parse anything.")
     parser.add_argument('-l','--list', action='store', help="Lists some information ('actions', 'events', 'games').")
-    parser.add_argument('--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (defulat).')
+    parser.add_argument('--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
 
     return parser.parse_args()
 
@@ -63,9 +67,11 @@ def do_work(log, dry=False, full=False):
                 for a in set(actions.keys()) - set(log.parsed_actions()): missing[a] = actions[a]
             print("{} / {} / {} - missing actions in label file! re-creating {}...".format(log.game.event, log.game, log, 'full' if full else ''))
             if not dry: log.create_label_file(missing)
-
-    except Exception as e:
-        print('ERROR: {}'.format(str(e)))
+    except KeyboardInterrupt:
+        # ignore canceled jobs
+        pass
+    except Exception:
+        traceback.print_exc()
 
 
 if __name__ == "__main__":

@@ -38,7 +38,7 @@ class LogReader:
         self.frames = []
         while self.mm.tell() < self.mm.size():
             # search for string end and start after the frameNumber
-            end_pos = self.mm.find('\0', self.mm.tell()+4)
+            end_pos = self.mm.find(b'\0', self.mm.tell()+4)
             # calculate the string size
             str_size = end_pos - self.mm.tell()
             # extract frameNumber, name and data size; ignore NULL-byte (\0)
@@ -46,7 +46,7 @@ class LogReader:
             # create new frame, if the frameNumber doesn't exists
             if not self.frames or self.frames[-1].number != fn: self.frames.append(Frame(self, fn))
             # add representation to frame
-            self.frames[-1].messages[name] = (self.mm.tell(), size, None)
+            self.frames[-1].messages[name.decode('utf8')] = (self.mm.tell(), size, None)
             # advance file pointer
             self.mm.seek(size, os.SEEK_CUR)
 

@@ -3,8 +3,9 @@ import json
 import math
 import os
 import re
+import io
 
-from py.parsers import BehaviorParser
+from parsers import BehaviorParser
 from .Config import config
 
 
@@ -52,7 +53,7 @@ class Log:
         if self.labels_data is None:
             label_file = self.data_directory+'/'+config['log']['labels'][0]+config['log']['labels'][1]
             if os.path.isfile(label_file):
-                self.labels_data = json.load(open(label_file, 'r'), 'utf-8')
+                self.labels_data = json.load(io.open(label_file, 'r', encoding='utf-8'))
 
         return self.labels_data
 
@@ -107,7 +108,7 @@ class Log:
         if data is not None:
             data['parsed_actions'] = list(set(data['parsed_actions']) | set(actions.keys()))
         else:
-            data = { 'parsed_actions': actions.keys(), 'intervals': {}, 'start': 0, 'end': 0 }
+            data = { 'parsed_actions': list(actions.keys()), 'intervals': {}, 'start': 0, 'end': 0 }
         tmp = {}
 
         if log.size > 0:
