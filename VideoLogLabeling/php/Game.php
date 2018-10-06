@@ -44,7 +44,7 @@ class Game
                 if (!$file->isDot() && $file->isDir()) {
                     $log = new NaoLog($file, $this->path, Config::g('dirs')['data']);
                     if ($log->isValid()) {
-                        $this->logs[] = $log;
+                        $this->logs[$log->getId()] = $log;
                     } else {
                         foreach ($log->getErrors() as $error) {
                             $this->errors[] = $this->getTeam1() . ' vs. ' . $this->getTeam2() . ', #' . $this->getHalf() . '/' . $log->getPlayer() . ': ' . $error;
@@ -214,5 +214,33 @@ class Game
         }
         $json .= ']';
         return $json;
+    }
+
+    public function saveLabels($name, $labels) {
+        // make sure we got the right format
+        if (!is_array($labels)) {
+            return 'ERROR: invalid labels data!';
+        }
+        // iterate through logs
+        foreach ($labels as $value) {
+            // check each log labels entry
+            if (isset($value['id']) && is_string($value['id']) && isset($value['labels']) && is_string($value['labels'])) {
+                // TODO: sanitize $value['id']
+                if (array_key_exists($value['id'], $this->logs)) {
+                    // let the log handle the actual saving
+                    $result = $this->logs[$value['id']]->saveLabels($name, $value['labels']);
+                    // report errors if there were some
+                    if ($result !== true) {
+                        return $result;
+                    }
+                } else {
+                    return 'ERROR: invalid log id!';
+                }
+            } else {
+                return 'ERROR: invalid log labels data!';
+            }
+        }
+
+        return true;
     }
 }

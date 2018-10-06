@@ -71,24 +71,25 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
   };
   */
   
-  $scope.addLogfileToModel = function(file, data) 
+  $scope.addLogfileToModel = function(id, data) 
   {
-    $scope.model.push({"file":file, "data":data});
+    $scope.model.push({"id":id, "data":data});
   }
   
-  $scope.addPeriod = function(timeline, data, data_id, start, end, log_offset, video_offset) 
+  $scope.addPeriod = function(timeline, interval_id, data, log_offset, video_offset) 
   {
+    var interval = data.intervals[interval_id];
     var offset = video_offset - log_offset;
-    var width = (data.end - data.begin) / (end - log_offset) * 100;
-    var starting_at = (data.begin - log_offset) / (end - log_offset) * 100;
+    var width = (interval.end - interval.begin) / (data.end - log_offset) * 100;
+    var starting_at = (interval.begin - log_offset) / (data.end - log_offset) * 100;
 
-    var str = '<a href="#" id="'+data_id+'" class="button '+data.type+'" data-toggle="tooltip" title="'+data.type+'"></a>';
+    var str = '<a href="#" id="'+interval_id+'" class="button '+interval.type+'" data-toggle="tooltip" title="'+interval.type+'"></a>';
     var o = $compile(str)($scope);
     $(o).css( "width", width + "%");
     $(o).css( "left", starting_at + "%");
 
     o[0].onclick = function() {
-      $rootScope.$broadcast('setPeriod', data, offset);
+      $rootScope.$broadcast('setPeriod', interval_id, data, offset);
       o.addClass("selected");
       
       if($scope.selected != null) {
@@ -102,24 +103,32 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
   
   $scope.save = function(event) 
   {
-    if($scope.widget.title == '') {
+    var name = $scope.widget.title.trim();
+    if(name.length === 0 || name.toLowerCase() === 'new') {
       alert("ERROR: you need to set a tag.");
+      return;
+    }
+
+    var url = new URL(window.location.href);
+    var game = url.searchParams.get("game");
+    if (game === null) {
+      alert("ERROR: invalid game id.");
+      return;
+    }
+
+    data = [];
+    for(var i in $scope.model) {
+      // TODO: clear/skip empty labels
+      var str = JSON.stringify($scope.model[i].data.labels, null, '  ');
+      if (str.length > 2) {
+        data.push({'id':$scope.model[i].id, 'labels': str});
+      }
     }
     
-    //console.log($scope.widget.title);
-    for(var i = 0; i < $scope.model.length; ++i) {
-      var log = $scope.model[i];
-      var str = JSON.stringify(log.data, null, '  ');
-      //console.log(log.file);
-      //console.log(str);
-      //event.target.href = 'data:text/json;charset=utf8,' + encodeURIComponent(str);
-      
-      $.post( "php/admin/save.php", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
-       .done(function( result ) {
-          console.log(result);
-        });
-    }
-    //var str = JSON.stringify($scope.model, null, '  ');
+    $.post(null, {"tag" : $scope.widget.title, "data" : data})
+      .done(function( result ) {
+        console.log(result);
+      });
   }
 });
 
@@ -199,26 +208,32 @@ app.controller('FormController', function($scope) {
     }
   }*/
 
-  $scope.$on('setPeriod', function(event, data) {
-      $scope.model = data.labels;
+  $scope.$on('setPeriod', function(event, interval_id, data, offset) {
+      if(typeof data.labels[interval_id] === 'undefined') { data.labels[interval_id] = {}; }
+      $scope.model = data.labels[interval_id];
       $scope.$apply();
   });
 });
 
 
 app.controller('PlayerController', function($scope) {
-  $scope.$on('setPeriod', function(event, data, offset) {
-    var t_begin = data.begin + offset;
-    var t_end = data.end + offset + (data.type == 'none'?0.0:3.0);
+  $scope.$on('setPeriod', function(event, interval_id, data, offset) {
+    var t_begin = data.intervals[interval_id].begin + offset;
+    var t_end = data.intervals[interval_id].end + offset + (data.intervals[interval_id].type == 'none'?0.0:3.0);
     playerGlobal.setPeriod(t_begin, t_end);
   });
 });
 
 app.controller('DrawingController', function($scope) {
-  $scope.$on('setPeriod', function(event, data) {
+  $scope.$on('setPeriod', function(event, interval_id, data, offset) {
     //draw the robot position
-    //console.log(data.pose.x, data.pose.y, data.pose.r);
-    draw(data.pose.x/10.0, data.pose.y/10.0, data.pose.r, data.ball.x/10.0, data.ball.y/10.0);
+    draw(
+        data.intervals[interval_id].pose.x/10.0, 
+        data.intervals[interval_id].pose.y/10.0, 
+        data.intervals[interval_id].pose.r, 
+        data.intervals[interval_id].ball.x/10.0, 
+        data.intervals[interval_id].ball.y/10.0
+    );
   });
 });
 
@@ -232,11 +247,13 @@ app.directive('timeline', function($compile) {
     link: function(scope, element, attrs) {
 
       $.getJSON( attrs.file, function( data ) {
+        // if not already available, add the label container
+        if(typeof data.labels === 'undefined') { data.labels = {}; }
         // show the player number in the timeline
         element.append('<div class="info">#'+attrs.playernumber+'</div>');
         // iterate through the actions and add the interval to the timeline
-        for(var id in data.intervals) {
-          var v = data.intervals[id];
+        for(var interval_id in data.intervals) {
+          var v = data.intervals[interval_id];
           // if no annotations are available, initialize with empty map
           if (typeof v.labels === 'undefined') {
             v.labels = {};
@@ -248,16 +265,14 @@ app.directive('timeline', function($compile) {
             $('#event_configuration .row').append(event_checkbox);
           }
           
-          scope.addPeriod(element, v, id, data.start, data.end, attrs.logoffset, attrs.videooffset);
+          scope.addPeriod(element, interval_id, data, attrs.logoffset, attrs.videooffset);
         }
-        
-        scope.addLogfileToModel(attrs.file, data);
+        scope.addLogfileToModel(attrs.id, data);
       });
     }
   };
 });
 
 function hide_event(e) {
-  console.log();
   $("."+e).toggleClass('visibility_hidden');
 }

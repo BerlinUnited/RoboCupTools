@@ -47,7 +47,20 @@ if (isset($_GET["download"])) {
             break;
     }
 } elseif ($game != NULL) {
-    include 'php/template_labeling.php';
+    $request = isset($_SERVER['REQUEST_METHOD']) ? strtoupper($_SERVER['REQUEST_METHOD']) : 'GET';
+    // save the posted labels
+    if($request === 'POST') {
+        // TODO: we need some kind of authentication/authorization
+        if (isset($_POST['tag']) && isset($_POST['data'])) {
+            $result = $game->saveLabels($_POST['tag'], $_POST['data']);
+            // return the result of saving labels
+            echo $result !== true ? $result : 'SUCCESS';
+        } else {
+            echo 'ERROR: missing tag or label data!';
+        }
+    } else {
+        include 'php/template_labeling.php';
+    }
 } else {
     include 'php/template_overview.php';
 }

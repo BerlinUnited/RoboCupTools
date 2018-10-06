@@ -6,6 +6,8 @@ class NaoLog
     /** @var bool */
     private $is_valid = false;
     /** @var string */
+    private $id;
+    /** @var string */
     private $path;
     /** @var int */
     private $player;
@@ -28,6 +30,7 @@ class NaoLog
         $this->is_valid = preg_match('/'.Config::l('regex').'/', $path->getFilename(), $matches) === 1;
         if ($this->is_valid && $path->isReadable()) {
             $this->path = $path->getRealPath();
+            $this->id = sha1($this->path);
             $this->player = intval($matches[1]);
             $this->head = $matches[2];
             $this->body = $matches[3];
@@ -109,6 +112,14 @@ class NaoLog
     }
 
     /**
+     * @return string
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
      * @return array
      */
     public function getLabels()
@@ -159,5 +170,20 @@ class NaoLog
         }
         $json .= '}';
         return $json;
+    }
+
+    /**
+     * Saves the given labels as json file under the given name.
+     * @param $name the name of the json label file
+     * @param $labels the labels to save
+     * @return true|string
+     */
+    public function saveLabels($name, $labels) {
+        // TODO: make sure the parametes are "ok" - sanitize
+        $path = dirname($this->events) . DIRECTORY_SEPARATOR . Config::l('labels')[0].'-'.$name.Config::l('labels')[1];
+        if ( file_put_contents($path, $labels) === FALSE ) {
+            return "ERROR: writing labels file!";
+        }
+        return true;
     }
 }
