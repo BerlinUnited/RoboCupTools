@@ -73,6 +73,7 @@ foreach ($events as $event) {
                             $keys[] = $key;
                         }
                     }
+                    echo '<a href="./index.php?game='.$game->getId().'">[New]</a>';
                     foreach ($keys as $key) {
                         echo '<a href="./index.php?game='.$game->getId().'&name='.$key.'">['.$key.']</a>';
                     }

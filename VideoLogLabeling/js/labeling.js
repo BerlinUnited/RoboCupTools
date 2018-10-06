@@ -249,15 +249,17 @@ app.directive('timeline', function($compile) {
       $.getJSON( attrs.file, function( data ) {
         // if not already available, add the label container
         if(typeof data.labels === 'undefined') { data.labels = {}; }
+        if(typeof attrs.labels !== 'undefined') {
+          $.getJSON( attrs.labels, function( labels ) {
+            // TODO: extend instead of replace!
+            data.labels = labels;
+          });
+        }
         // show the player number in the timeline
         element.append('<div class="info">#'+attrs.playernumber+'</div>');
         // iterate through the actions and add the interval to the timeline
         for(var interval_id in data.intervals) {
           var v = data.intervals[interval_id];
-          // if no annotations are available, initialize with empty map
-          if (typeof v.labels === 'undefined') {
-            v.labels = {};
-          }
           // collect all found actions in the log file and add a control to the UI
           if($('#event_configuration input[name="'+v.type+'"]').length == 0) {
             var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');

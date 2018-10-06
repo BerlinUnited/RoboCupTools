@@ -9,6 +9,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><?= $game->getEvent()->getName() ?> | <?= $game->getDateString() ?> - <?= $game->getTeam1() ?> vs. <?= $game->getTeam2() ?> #<?= $game->getHalf() ?></title>
     
   <script src="lib/jquery-3.2.0.js"></script>
   
@@ -80,8 +81,16 @@
       //<div data-timeline data-file="log/labels.json"></div>
       foreach ($game->getLogs() as $log) {
           /* @var NaoLog $log */
-          $log_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getLabel($name));
-          echo '<div id="'.$log->getId().'" class="timeline" data-timeline data-file="'.$log_url.'" data-logoffset="'.$log->getSyncInfo('log_offset').'" data-videooffset="'.$log->getSyncInfo('video_offset').'" data-playernumber="'.$log->getPlayer().'"></div>';
+          // TODO: security risk - any file could be loaded?!
+          $log_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getEvents());
+          echo '<div id="'.$log->getId().'"'
+                  .' class="timeline"'
+                  .' data-file="'.$log_url.'"'
+                  .' data-logoffset="'.$log->getSyncInfo('log_offset').'"'
+                  .' data-videooffset="'.$log->getSyncInfo('video_offset').'"'
+                  .' data-playernumber="'.$log->getPlayer().'"'
+                  .(($name !== null && $log->getLabel($name) !== null)?' data-labels="'.str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getLabel($name)).'"':'')
+                  .' data-timeline ></div>';
       }
       ?>
       <div id="configuration">

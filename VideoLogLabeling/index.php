@@ -16,7 +16,7 @@ if (PHP_SAPI === 'cli') {
 
 // global variables
 $basepath = __DIR__;
-$name = isset($_GET["name"]) ? $_GET["name"] : "new";
+$name = isset($_GET["name"]) ? $_GET["name"] : null;
 
 $errors = [];
 $events = readLogs(Config::paths(), $errors); // read log directories
