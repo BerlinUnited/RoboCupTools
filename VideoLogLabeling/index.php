@@ -26,6 +26,7 @@ usort($events, function ($a, $b) { return $a->getDate() < $b->getDate(); });
 
 // if a requested game was found, show the labeling view, otherwise the overview
 if (isset($_GET["download"])) {
+    // TODO: adjust download for the new separation of events and labels!
     switch ($_GET["download"]) {
         case 'selected':
             if(isset($_POST['games']) && is_array($_POST['games'])) {
