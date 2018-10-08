@@ -39,4 +39,4 @@ def forwardkick_right(symbols, option):
     return 'path_striker2018' in option and option['path_striker2018']['state'].name == 'forwardkick_right'
 
 def fallen(symbols, option):
-    return 'fall_down_and_stand_up' in option and option['fall_down_and_stand_up']['state'].name == 'stand_up'
+    return 'fall_down_and_stand_up' in option and option['fall_down_and_stand_up']['state'].name != 'idle'

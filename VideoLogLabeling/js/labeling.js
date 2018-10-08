@@ -202,8 +202,8 @@ app.controller('FormController', function($scope) {
 
 app.controller('PlayerController', function($scope) {
   $scope.$on('setPeriod', function(event, interval_id, data, offset) {
-    var t_begin = data.intervals[interval_id].begin + offset;
-    var t_end = data.intervals[interval_id].end + offset + (data.intervals[interval_id].type == 'none'?0.0:3.0);
+    var t_begin = data.intervals[interval_id].begin + offset - 3.0;
+    var t_end = data.intervals[interval_id].end + offset + 3.0;
     playerGlobal.setPeriod(t_begin, t_end);
   });
 });
