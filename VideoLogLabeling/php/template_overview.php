@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log Annotation | Overview</title>
     
   <script src="lib/jquery-3.2.0.js" type="text/javascript"></script>
   
@@ -73,6 +74,7 @@ foreach ($events as $event) {
                             $keys[] = $key;
                         }
                     }
+                    echo '<a href="./index.php?game='.$game->getId().'">[New]</a>';
                     foreach ($keys as $key) {
                         echo '<a href="./index.php?game='.$game->getId().'&name='.$key.'">['.$key.']</a>';
                     }

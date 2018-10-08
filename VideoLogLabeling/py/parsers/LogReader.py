@@ -95,7 +95,7 @@ class LogReader:
         #  self.names.append(name)
         
     except StopIteration as ex:
-      print ex
+      print(str(ex))
       
   def __scanFrame(self):
     if self.scanPosition == -1:
@@ -106,7 +106,7 @@ class LogReader:
     #if self.idx > 30*100:
     #  return False
   
-    last = (self.scanPosition*100) / self.size
+    #last = (self.scanPosition*100) / self.size
   
     try:
       currentFrame = None
@@ -134,9 +134,9 @@ class LogReader:
         if name not in self.names:
           self.names.append(name)
       
-      new = (self.scanPosition*100) / self.size
-      if new > last:
-        print new
+      #new = (self.scanPosition*100) / self.size
+      #if new > last:
+      #  print(new)
       
       #if new > 3:
       #  raise StopIteration
@@ -190,4 +190,4 @@ if __name__ == "__main__":
   myParser.register("CameraMatrixTop", "CameraMatrix")
 
   for i in LogReader("./cognition.log", myParser):
-    print i.frameNumber, i.name
+    print('{} {}'.format(i.frameNumber, i.name))

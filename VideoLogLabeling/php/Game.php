@@ -44,7 +44,7 @@ class Game
                 if (!$file->isDot() && $file->isDir()) {
                     $log = new NaoLog($file, $this->path, Config::g('dirs')['data']);
                     if ($log->isValid()) {
-                        $this->logs[] = $log;
+                        $this->logs[$log->getId()] = $log;
                     } else {
                         foreach ($log->getErrors() as $error) {
                             $this->errors[] = $this->getTeam1() . ' vs. ' . $this->getTeam2() . ', #' . $this->getHalf() . '/' . $log->getPlayer() . ': ' . $error;
@@ -208,11 +208,48 @@ class Game
      * @return string
      */
     public function getLabelsAsJson() {
-        $json = '[';
-        for ($i=0; $i < count($this->logs); $i++) { 
-            $json .= $this->logs[$i]->getLabelsAsJson() . ($i === count($this->logs)-1 ? "\n" : ", \n");
+        $json = '{';
+        $keys = array_keys($this->logs);
+        for ($i=0; $i < count($keys); $i++) { 
+            $json .= '"' . $this->logs[$keys[$i]]->getPlayer() . '": ' . $this->logs[$keys[$i]]->getLabelsAsJson() . ($i === count($keys)-1 ? "\n" : ", \n");
         }
-        $json .= ']';
+        $json .= '}';
         return $json;
+    }
+
+    /**
+     * Saves the given labels for each log as json file under the given name.
+     * If saving was successfull, 'true' is returned, otherwise an error string is returned.
+     *
+     * @param $name the name of the json label file
+     * @param $labels the labels to save
+     * @return true|string
+     */
+    public function saveLabels($name, $labels) {
+        // make sure we got the right format
+        if (!is_array($labels)) {
+            return 'ERROR: invalid labels data!';
+        }
+        // iterate through logs
+        foreach ($labels as $value) {
+            // check each log labels entry
+            if (isset($value['id']) && is_string($value['id']) && isset($value['labels']) && is_string($value['labels'])) {
+                // is the log id correct
+                if (preg_match("/\w+/i", $value['id']) && array_key_exists($value['id'], $this->logs)) {
+                    // let the log handle the actual saving
+                    $result = $this->logs[$value['id']]->saveLabels($name, $value['labels']);
+                    // report errors if there were some
+                    if ($result !== true) {
+                        return $result;
+                    }
+                } else {
+                    return 'ERROR: invalid log id!';
+                }
+            } else {
+                return 'ERROR: invalid log labels data!';
+            }
+        }
+
+        return true;
     }
 }

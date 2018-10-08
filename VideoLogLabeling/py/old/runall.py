@@ -2,7 +2,8 @@
 import os, json
 from multiprocessing import Pool
 
-import mainExportKicks
+from py.old import mainExportKicks
+
 
 def run_stuff(args):
   logFile, outFile = args

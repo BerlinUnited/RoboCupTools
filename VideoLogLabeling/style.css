@@ -12,22 +12,25 @@ body {
   margin-right: auto;
   margin-bottom:3px;
   clear: both;
+  overflow: hidden;
 }
 
 .timeline .info {
   position:absolute;
+  z-index: 100;
   height: 100%;
   padding: 2px;
   font-weight: bold;
 }
 
 .timeline a {
-  position: relative;
+  position: absolute;
   display: inline-block;
   border:solid 0px #000;
   margin:0px;
   padding:0px;
   width:100%;
+  min-width: 2px;
   height:100%;
 }
 

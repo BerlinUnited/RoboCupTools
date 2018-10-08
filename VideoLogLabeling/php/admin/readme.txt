@@ -1,1 +1,0 @@
-Put a .htaccess file here to restrict administrative access.

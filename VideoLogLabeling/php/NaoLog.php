@@ -6,6 +6,8 @@ class NaoLog
     /** @var bool */
     private $is_valid = false;
     /** @var string */
+    private $id;
+    /** @var string */
     private $path;
     /** @var int */
     private $player;
@@ -28,6 +30,7 @@ class NaoLog
         $this->is_valid = preg_match('/'.Config::l('regex').'/', $path->getFilename(), $matches) === 1;
         if ($this->is_valid && $path->isReadable()) {
             $this->path = $path->getRealPath();
+            $this->id = sha1($this->path);
             $this->player = intval($matches[1]);
             $this->head = $matches[2];
             $this->body = $matches[3];
@@ -42,7 +45,7 @@ class NaoLog
                         $log_label_file = $log_data_path . DIRECTORY_SEPARATOR . implode('',Config::l('labels'));
                         if(is_file($log_label_file)) {
                             $this->parseSync();
-                            $this->events = $this->labels['New'] =$log_label_file;
+                            $this->events = $log_label_file;
                             foreach (glob($log_data_path . DIRECTORY_SEPARATOR . implode('*',Config::l('labels'))) as $label) {
                                 // skip the base label file
                                 if($label === $log_label_file) { continue; }
@@ -104,6 +107,25 @@ class NaoLog
         return $this->errors;
     }
 
+    /**
+     * @return string
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEvents()
+    {
+        return $this->events;
+    }
+
+    /**
+     * @return bool
+     */
     public function hasLabels() {
         return count($this->labels) > 0;
     }
@@ -151,13 +173,34 @@ class NaoLog
      * @return string
      */
     public function getLabelsAsJson() {
-        $logNames = array_keys($this->labels);
-
-        $json = '{';
-        for ($i=0; $i < count($logNames); $i++) {
-            $json .= '"'.$logNames[$i].'": ' . file_get_contents($this->labels[$logNames[$i]]) . ($i === count($logNames)-1 ? "\n" : ", \n");
+        // get the events
+        $e = json_decode(file_get_contents($this->events), true);
+        // add the label entry if not already set
+        if(!isset($e['labels'])) { $e['labels'] = []; }
+        // add all labels
+        foreach ($this->labels as $key => $value) {
+            $e['labels'][$key] = json_decode(file_get_contents($value), true);
         }
-        $json .= '}';
-        return $json;
+        return json_encode($e);
+    }
+
+    /**
+     * Saves the given labels as json file under the given name.
+     * If saving was successfull, 'true' is returned, otherwise an error string is returned.
+     * 
+     * @param $name the name of the json label file
+     * @param $labels the labels to save
+     * @return true|string
+     */
+    public function saveLabels($name, $labels) {
+        // replace umlaute & remove invalid characters
+        $name = str_replace(["Ä", "Ö", "Ü", "ä", "ö", "ü", "ß"], ["Ae", "Oe", "Ue", "ae", "oe", "ue", "ss"], $name);
+        $name = preg_replace(['/\s+/', '/[^a-zA-Z0-9_-]/'], ['-', ''], $name);
+        // prepate the save path
+        $path = dirname($this->events) . DIRECTORY_SEPARATOR . Config::l('labels')[0] . '-' . $name . Config::l('labels')[1];
+        if ( file_put_contents($path, $labels) === FALSE ) {
+            return "ERROR: writing labels file!";
+        }
+        return true;
     }
 }

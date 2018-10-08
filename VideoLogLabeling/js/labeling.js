@@ -71,38 +71,25 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
   };
   */
   
-  $scope.addLogfileToModel = function(file, data) 
+  $scope.addLogfileToModel = function(id, data) 
   {
-    $scope.model.push({"file":file, "data":data});
+    $scope.model.push({"id":id, "data":data});
   }
   
-  $scope.addPeriod = function(timeline, data, duration, log_offset, video_offset, duration_none, num_event) 
+  $scope.addPeriod = function(timeline, interval_id, data, log_offset, video_offset) 
   {
+    var interval = data.intervals[interval_id];
     var offset = video_offset - log_offset;
-    
-    //var duration = playerGlobal.player.media.duration;
-    var width = 0;
-    
-    var non_supression = 0.2;
-    var event_duration_add = duration_none * non_supression / num_event;
-    
-    if(data.type == 'none') {
-      width = (data.end-data.begin)/duration*(1.0 - non_supression);
-    } else {
-      width = (data.end-data.begin + event_duration_add)/duration;
-    }
-    width = Math.min(width*100, 100);
-    
-    var c = data.type == 'none'?'blank':'button';
-    
-    var str = '<a href="#" class="'+c+' '+data.type+'" data-toggle="tooltip" title="'+data.type+'"></a>';
-    var o = $compile(str)($scope);
-    $(o).css( "width", "" + width + "%");
+    var width = (interval.end - interval.begin) / (data.end - log_offset) * 100;
+    var starting_at = (interval.begin - log_offset) / (data.end - log_offset) * 100;
 
-    
-    
+    var str = '<a href="#" id="'+interval_id+'" class="button '+interval.type+'" data-toggle="tooltip" title="'+interval.type+'"></a>';
+    var o = $compile(str)($scope);
+    $(o).css( "width", width + "%");
+    $(o).css( "left", starting_at + "%");
+
     o[0].onclick = function() {
-      $rootScope.$broadcast('setPeriod', data, offset);
+      $rootScope.$broadcast('setPeriod', interval_id, data, offset);
       o.addClass("selected");
       
       if($scope.selected != null) {
@@ -116,56 +103,48 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
   
   $scope.save = function(event) 
   {
-    if($scope.widget.title == '') {
+    var name = $scope.widget.title.trim();
+    if(name.length === 0 || name.toLowerCase() === 'new') {
       alert("ERROR: you need to set a tag.");
+      return;
     }
-    
-    //console.log($scope.widget.title);
-    for(var i = 0; i < $scope.model.length; ++i) {
-      var log = $scope.model[i];
-      var str = JSON.stringify(log.data, null, '  ');
-      //console.log(log.file);
-      //console.log(str);
-      //event.target.href = 'data:text/json;charset=utf8,' + encodeURIComponent(str);
-      
-      $.post( "php/admin/save.php", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
-       .done(function( result ) {
+
+    var url = new URL(window.location.href);
+    var game = url.searchParams.get("game");
+    if (game === null) {
+      alert("ERROR: invalid game id.");
+      return;
+    }
+
+    data = [];
+    for(var i in $scope.model) {
+      // check & remove empty objects/arrays
+      var lbl = $scope.model[i].data.labels;
+      for(var l in lbl) {
+        for(var a in lbl[l]) {
+          if ($.isEmptyObject(lbl[l][a])) { delete lbl[l][a]; }
+        }
+        if ($.isEmptyObject(lbl[l])) { delete lbl[l]; }
+      }
+      if ($.isEmptyObject(lbl)) { continue; }
+      // add to the sending array
+      data.push({'id':$scope.model[i].id, 'labels': JSON.stringify($scope.model[i].data.labels, null, '  ')});
+    }
+
+    if(data.length > 0) {
+      $.post(null, {"tag" : $scope.widget.title, "data" : data})
+        .done(function( result ) {
           console.log(result);
         });
+    } else {
+      alert('Nothing to save!')
     }
-    //var str = JSON.stringify($scope.model, null, '  ');
   }
 });
 
 
 app.controller('FormController', function($scope) {
-  
-  // TODO: load those from file
-
-  var labels = {
-    "basisLabels" : {"title": "Basis", "labels": [
-      {"value":"badView",       "name": "<b>view</b> obstructed"},
-      {"value":"nokick",        "name": "<b>no kick motion</b> performed"},
-      {"value":"delocalized",   "name": "robot <b>delocalized</b>"},
-      {"value":"noBall",        "name": "<b>no ball</b> in front of robot"}
-    ]},
-    "situationLabels" : {"title": "Situation", "labels": [
-      {"value":"moved",         "name": "ball <b>moved</b> by the kick"},
-      {"value":"touch",         "name": "<b>touch</b> the ball <b>before</b> kick"},
-      {"value":"pushed",        "name": "<b>pushed</b> by opponent while kicking"},
-      {"value":"fall",          "name": "<b>fall</b> after kick"},
-      {"value":"balldirection", "name": "ball moved in the <b>desired direction</b>"}
-    ]},
-    "resultLabels" : {"title": "Result", "labels": [
-      {"value":"oppgoal",       "name": "<b>goal</b> scored"},
-      {"value":"sideOut",       "name": "ball out on a <b>side line</b>"},
-      {"value":"ownOut",        "name": "ball out on the <b>own groundline</b>"},
-      {"value":"oppOut",        "name": "ball out on the <b>opponent groundline</b>"},
-      {"value":"ballToOwnGoal", "name": "ball moved <b>closer to own</b> goal"},
-      {"value":"ballToOppGoal", "name": "ball moved <b>closer to opponent</b> goal"}
-    ]}
-  };
-  
+  labels = typeof ANNOTATION_LABELS === 'undefined' ? {} : ANNOTATION_LABELS;
   var properties = {};
   var form = [];
   
@@ -213,26 +192,32 @@ app.controller('FormController', function($scope) {
     }
   }*/
 
-  $scope.$on('setPeriod', function(event, data) {
-      $scope.model = data.labels;
+  $scope.$on('setPeriod', function(event, interval_id, data, offset) {
+      if(typeof data.labels[interval_id] === 'undefined') { data.labels[interval_id] = {}; }
+      $scope.model = data.labels[interval_id];
       $scope.$apply();
   });
 });
 
 
 app.controller('PlayerController', function($scope) {
-  $scope.$on('setPeriod', function(event, data, offset) {
-    var t_begin = data.begin + offset;
-    var t_end = data.end + offset + (data.type == 'none'?0.0:3.0);
+  $scope.$on('setPeriod', function(event, interval_id, data, offset) {
+    var t_begin = data.intervals[interval_id].begin + offset - 3.0;
+    var t_end = data.intervals[interval_id].end + offset + 3.0;
     playerGlobal.setPeriod(t_begin, t_end);
   });
 });
 
 app.controller('DrawingController', function($scope) {
-  $scope.$on('setPeriod', function(event, data) {
+  $scope.$on('setPeriod', function(event, interval_id, data, offset) {
     //draw the robot position
-    //console.log(data.pose.x, data.pose.y, data.pose.r);
-    draw(data.pose.x/10.0, data.pose.y/10.0, data.pose.r, data.ball.x/10.0, data.ball.y/10.0);
+    draw(
+        data.intervals[interval_id].pose.x/10.0, 
+        data.intervals[interval_id].pose.y/10.0, 
+        data.intervals[interval_id].pose.r, 
+        data.intervals[interval_id].ball.x/10.0, 
+        data.intervals[interval_id].ball.y/10.0
+    );
   });
 });
 
@@ -246,52 +231,33 @@ app.directive('timeline', function($compile) {
     link: function(scope, element, attrs) {
 
       $.getJSON( attrs.file, function( data ) {
+        // if not already available, add the label container
+        if(typeof data.labels === 'undefined') { data.labels = {}; }
+        if(typeof attrs.labels !== 'undefined') {
+          $.getJSON( attrs.labels, function( labels ) {
+            $.extend(data.labels, labels);
+          });
+        }
+        // show the player number in the timeline
         element.append('<div class="info">#'+attrs.playernumber+'</div>');
-        //var r = new RegExp(".*/(.*)/labels.json").exec(attrs.file);
-        //if (r.length > 1) {
-        //  element.append('<div style="position:absolute;">'+r[1]+'</div>');
-        //}
-
-        // HACK: estimate the duration of the logfile
-        var duration = 0;
-        var num_none = 0;
-        var num_event = 0;
-        var duration_none = 0;
-        for (var i = 0; i < data.intervals.length; i++) 
-        {
-          var v = data.intervals[i];
-          duration = duration + (v.end-v.begin);
-          
-          if(v.type == 'none') {
-            num_none = num_none + 1;
-            duration_none = duration_none + (v.end-v.begin);
-          } else {
-            num_event = num_event + 1;
-            if($('#event_configuration input[name="'+v.type+'"]').length == 0) {
-              var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');
-              event_checkbox.change(function(e) { hide_event(e.target.name) });
-              $('#event_configuration .row').append(event_checkbox);
-            }
-          }
-        }
-        
-        for (var i = 0; i < data.intervals.length; i++) 
-        {
-          var v = data.intervals[i];
-          if (typeof v.labels === 'undefined') {
-            v.labels = {};
+        // iterate through the actions and add the interval to the timeline
+        for(var interval_id in data.intervals) {
+          var v = data.intervals[interval_id];
+          // collect all found actions in the log file and add a control to the UI
+          if($('#event_configuration input[name="'+v.type+'"]').length == 0) {
+            var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');
+            event_checkbox.change(function(e) { hide_event(e.target.name) });
+            $('#event_configuration .row').append(event_checkbox);
           }
           
-          scope.addPeriod(element, v, duration, attrs.logoffset, attrs.videooffset, duration_none, num_event);
+          scope.addPeriod(element, interval_id, data, attrs.logoffset, attrs.videooffset);
         }
-        
-        scope.addLogfileToModel(attrs.file, data);
+        scope.addLogfileToModel(attrs.id, data);
       });
     }
   };
 });
 
 function hide_event(e) {
-  console.log();
   $("."+e).toggleClass('visibility_hidden');
 }
