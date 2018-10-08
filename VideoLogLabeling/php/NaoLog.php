@@ -173,18 +173,21 @@ class NaoLog
      * @return string
      */
     public function getLabelsAsJson() {
-        $logNames = array_keys($this->labels);
-
-        $json = '{';
-        for ($i=0; $i < count($logNames); $i++) {
-            $json .= '"'.$logNames[$i].'": ' . file_get_contents($this->labels[$logNames[$i]]) . ($i === count($logNames)-1 ? "\n" : ", \n");
+        // get the events
+        $e = json_decode(file_get_contents($this->events), true);
+        // add the label entry if not already set
+        if(!isset($e['labels'])) { $e['labels'] = []; }
+        // add all labels
+        foreach ($this->labels as $key => $value) {
+            $e['labels'][$key] = json_decode(file_get_contents($value), true);
         }
-        $json .= '}';
-        return $json;
+        return json_encode($e);
     }
 
     /**
      * Saves the given labels as json file under the given name.
+     * If saving was successfull, 'true' is returned, otherwise an error string is returned.
+     * 
      * @param $name the name of the json label file
      * @param $labels the labels to save
      * @return true|string

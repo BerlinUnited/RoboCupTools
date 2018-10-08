@@ -208,15 +208,23 @@ class Game
      * @return string
      */
     public function getLabelsAsJson() {
-        $json = '[';
+        $json = '{';
         $keys = array_keys($this->logs);
         for ($i=0; $i < count($keys); $i++) { 
-            $json .= $this->logs[$keys[$i]]->getLabelsAsJson() . ($i === count($keys)-1 ? "\n" : ", \n");
+            $json .= '"' . $this->logs[$keys[$i]]->getPlayer() . '": ' . $this->logs[$keys[$i]]->getLabelsAsJson() . ($i === count($keys)-1 ? "\n" : ", \n");
         }
-        $json .= ']';
+        $json .= '}';
         return $json;
     }
 
+    /**
+     * Saves the given labels for each log as json file under the given name.
+     * If saving was successfull, 'true' is returned, otherwise an error string is returned.
+     *
+     * @param $name the name of the json label file
+     * @param $labels the labels to save
+     * @return true|string
+     */
     public function saveLabels($name, $labels) {
         // make sure we got the right format
         if (!is_array($labels)) {
