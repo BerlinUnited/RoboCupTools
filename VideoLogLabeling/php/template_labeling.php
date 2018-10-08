@@ -115,6 +115,7 @@
     <img id="nao" src="nao.png" />
   </div>
 
+  <script src="js/annotation_labels.js"></script>
   <script src="js/field.js"></script>
   <script src="js/labeling.js"></script>
 </body>

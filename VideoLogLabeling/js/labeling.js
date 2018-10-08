@@ -118,49 +118,33 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
 
     data = [];
     for(var i in $scope.model) {
-      // TODO: clear/skip empty labels
-      var str = JSON.stringify($scope.model[i].data.labels, null, '  ');
-      if (str.length > 2) {
-        data.push({'id':$scope.model[i].id, 'labels': str});
+      // check & remove empty objects/arrays
+      var lbl = $scope.model[i].data.labels;
+      for(var l in lbl) {
+        for(var a in lbl[l]) {
+          if ($.isEmptyObject(lbl[l][a])) { delete lbl[l][a]; }
+        }
+        if ($.isEmptyObject(lbl[l])) { delete lbl[l]; }
       }
+      if ($.isEmptyObject(lbl)) { continue; }
+      // add to the sending array
+      data.push({'id':$scope.model[i].id, 'labels': JSON.stringify($scope.model[i].data.labels, null, '  ')});
     }
-    
-    $.post(null, {"tag" : $scope.widget.title, "data" : data})
-      .done(function( result ) {
-        console.log(result);
-      });
+
+    if(data.length > 0) {
+      $.post(null, {"tag" : $scope.widget.title, "data" : data})
+        .done(function( result ) {
+          console.log(result);
+        });
+    } else {
+      alert('Nothing to save!')
+    }
   }
 });
 
 
 app.controller('FormController', function($scope) {
-  
-  // TODO: load those from file
-
-  var labels = {
-    "basisLabels" : {"title": "Basis", "labels": [
-      {"value":"badView",       "name": "<b>view</b> obstructed"},
-      {"value":"nokick",        "name": "<b>no kick motion</b> performed"},
-      {"value":"delocalized",   "name": "robot <b>delocalized</b>"},
-      {"value":"noBall",        "name": "<b>no ball</b> in front of robot"}
-    ]},
-    "situationLabels" : {"title": "Situation", "labels": [
-      {"value":"moved",         "name": "ball <b>moved</b> by the kick"},
-      {"value":"touch",         "name": "<b>touch</b> the ball <b>before</b> kick"},
-      {"value":"pushed",        "name": "<b>pushed</b> by opponent while kicking"},
-      {"value":"fall",          "name": "<b>fall</b> after kick"},
-      {"value":"balldirection", "name": "ball moved in the <b>desired direction</b>"}
-    ]},
-    "resultLabels" : {"title": "Result", "labels": [
-      {"value":"oppgoal",       "name": "<b>goal</b> scored"},
-      {"value":"sideOut",       "name": "ball out on a <b>side line</b>"},
-      {"value":"ownOut",        "name": "ball out on the <b>own groundline</b>"},
-      {"value":"oppOut",        "name": "ball out on the <b>opponent groundline</b>"},
-      {"value":"ballToOwnGoal", "name": "ball moved <b>closer to own</b> goal"},
-      {"value":"ballToOppGoal", "name": "ball moved <b>closer to opponent</b> goal"}
-    ]}
-  };
-  
+  labels = typeof ANNOTATION_LABELS === 'undefined' ? {} : ANNOTATION_LABELS;
   var properties = {};
   var form = [];
   
@@ -251,8 +235,7 @@ app.directive('timeline', function($compile) {
         if(typeof data.labels === 'undefined') { data.labels = {}; }
         if(typeof attrs.labels !== 'undefined') {
           $.getJSON( attrs.labels, function( labels ) {
-            // TODO: extend instead of replace!
-            data.labels = labels;
+            $.extend(data.labels, labels);
           });
         }
         // show the player number in the timeline
