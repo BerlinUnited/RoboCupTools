@@ -226,8 +226,8 @@ class Game
         foreach ($labels as $value) {
             // check each log labels entry
             if (isset($value['id']) && is_string($value['id']) && isset($value['labels']) && is_string($value['labels'])) {
-                // TODO: sanitize $value['id']
-                if (array_key_exists($value['id'], $this->logs)) {
+                // is the log id correct
+                if (preg_match("/\w+/i", $value['id']) && array_key_exists($value['id'], $this->logs)) {
                     // let the log handle the actual saving
                     $result = $this->logs[$value['id']]->saveLabels($name, $value['labels']);
                     // report errors if there were some

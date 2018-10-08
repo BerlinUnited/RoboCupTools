@@ -190,8 +190,11 @@ class NaoLog
      * @return true|string
      */
     public function saveLabels($name, $labels) {
-        // TODO: make sure the parametes are "ok" - sanitize
-        $path = dirname($this->events) . DIRECTORY_SEPARATOR . Config::l('labels')[0].'-'.$name.Config::l('labels')[1];
+        // replace umlaute & remove invalid characters
+        $name = str_replace(["Ä", "Ö", "Ü", "ä", "ö", "ü", "ß"], ["Ae", "Oe", "Ue", "ae", "oe", "ue", "ss"], $name);
+        $name = preg_replace(['/\s+/', '/[^a-zA-Z0-9_-]/'], ['-', ''], $name);
+        // prepate the save path
+        $path = dirname($this->events) . DIRECTORY_SEPARATOR . Config::l('labels')[0] . '-' . $name . Config::l('labels')[1];
         if ( file_put_contents($path, $labels) === FALSE ) {
             return "ERROR: writing labels file!";
         }
