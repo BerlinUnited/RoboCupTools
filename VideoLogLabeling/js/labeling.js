@@ -277,3 +277,10 @@ function showSavingAlert(content, clz, delay, fadeout) {
 // initialize the alert
 $("#label_title_form .alert").hide();
 $("#label_title_form .alert").removeClass('hidden');
+
+// rotate the caret when collapseable is shown
+$('#event_configuration').on('show.bs.collapse', function () {
+  $('#configuration_control .caret').css({'transform' : 'rotate(180deg)'});
+}).on('hide.bs.collapse', function () {
+  $('#configuration_control .caret').css({'transform' : ''});
+});
