@@ -165,3 +165,13 @@ body {
   border-radius: 4px 4px 0px 4px;
   background-color: #fff;
 }
+
+#label_title_form {
+  margin-bottom: 1em;
+}
+
+#label_title_form .alert {
+  display: inline-block;
+  margin: 0;
+  padding: 6px 15px 6px 15px;
+}

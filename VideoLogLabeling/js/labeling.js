@@ -105,14 +105,14 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
   {
     var name = $scope.widget.title.trim();
     if(name.length === 0 || name.toLowerCase() === 'new') {
-      alert("ERROR: you need to set a tag.");
+      showSavingAlert('<b>WARNING: you need to set a tag!</b>', 'alert alert-warning', 1000, true);
       return;
     }
 
     var url = new URL(window.location.href);
     var game = url.searchParams.get("game");
     if (game === null) {
-      alert("ERROR: invalid game id.");
+      showSavingAlert('<b>ERROR: invalid game id!</b>', 'alert alert-danger', 0, false);
       return;
     }
 
@@ -134,10 +134,14 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
     if(data.length > 0) {
       $.post(null, {"tag" : $scope.widget.title, "data" : data})
         .done(function( result ) {
-          console.log(result);
+          if (result === 'SUCCESS') {
+            showSavingAlert('<b>Saved!</b>', 'alert alert-success', 800, true);
+          } else {
+            showSavingAlert('<b>'+result+'</b>', 'alert alert-danger', 0, false);
+          }
         });
     } else {
-      alert('Nothing to save!')
+      showSavingAlert('<b>Nothing to save!</b>', 'alert alert-warning', 600, true);
     }
   }
 });
@@ -261,3 +265,15 @@ app.directive('timeline', function($compile) {
 function hide_event(e) {
   $("."+e).toggleClass('visibility_hidden');
 }
+
+function showSavingAlert(content, clz, delay, fadeout) {
+  var alert = $("#label_title_form .alert");
+  alert.html(content).attr('class', clz).fadeIn();
+  if (fadeout) {
+    alert.delay(delay).fadeOut();
+  }
+}
+
+// initialize the alert
+$("#label_title_form .alert").hide();
+$("#label_title_form .alert").removeClass('hidden');

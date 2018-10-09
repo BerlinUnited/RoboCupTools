@@ -102,9 +102,13 @@
         </div>
       </div>
       <?php /* NOTE: There's no user authentication - everybody can submit labels! */ ?>
-      <form>
-        Name: <input type="text" name="lastname" data-ng-model="widget.title">
-        <input type="button" value="Submit" ng-click="save($event)">
+      <form id="label_title_form" class="form-inline">
+        <div class="form-group">
+          <label for="label_title">Name: </label>
+          <input type="text" id="label_title" name="label_title" class="form-control" data-ng-model="widget.title" placeholder="Labels title">
+        </div>
+        <input type="button" class="btn btn-default" value="Submit" ng-click="save($event)">
+        <div class="alert hidden" role="alert"></div>
       </form>
     </div>
 
