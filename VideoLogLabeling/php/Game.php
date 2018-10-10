@@ -203,6 +203,14 @@ class Game
         return $this->hasLogs() && array_filter($this->logs, function ($l) { return $l->hasLabels(); });
     }
 
+    public function getLabels() {
+        $result = [];
+        foreach ($this->logs as $log) {
+            $result = array_merge($result, $log->getLabelsName());
+        }
+        return array_unique($result);
+    }
+
     /**
      * Returns the label/event data as JSON string.
      * @return string
@@ -229,6 +237,14 @@ class Game
         // make sure we got the right format
         if (!is_array($labels)) {
             return 'ERROR: invalid labels data!';
+        }
+        // replace umlaute & remove invalid characters
+        $name = str_replace(["Ä", "Ö", "Ü", "ä", "ö", "ü", "ß"], ["Ae", "Oe", "Ue", "ae", "oe", "ue", "ss"], $name);
+        $name = preg_replace(['/\s+/', '/[^a-zA-Z0-9_-]/'], ['-', ''], $name);
+        // prevent overwriting existing names
+        // TODO: still not 100% save, could still be overwritten!
+        if (!isset($_GET['name']) && in_array($name, $this->getLabels())) {
+            return 'ERROR: Label name already exists!';
         }
         // iterate through logs
         foreach ($labels as $value) {
