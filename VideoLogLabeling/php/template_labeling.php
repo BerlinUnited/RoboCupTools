@@ -93,14 +93,38 @@
                   .' data-timeline ></div>';
       }
       ?>
-      <div id="configuration">
-        <div class="collapse container-fluid" id="event_configuration">
-          <div class="row"></div>
+      <div id="configuration" class="panel-group" role="tablist" aria-multiselectable="true">
+        <div class="panel panel-default">
+          <div id="event_configuration" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+            <div class="panel-body"><div class="row"></div></div>
+          </div>
+        </div>
+        <div class="panel panel-default">
+          <div id="video_configuration" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+            <div class="panel-body">
+                <div class="row">
+                  <div class="col-xs-6">
+                    <div class="form-group">
+                      <label for="video_configuration_before">Video offset <i>before</i> the event (in seconds)</label> <input type="number" step="0.1" min="0" class="form-control" id="video_configuration_before" value="3.0">
+                    </div>
+                  </div>
+                  <div class="col-xs-6">
+                    <div class="form-group">
+                      <label for="video_configuration_after">Video offset <i>after</i> the event (in seconds)</label> <input type="number" step="0.1" min="0" class="form-control" id="video_configuration_after" value="3.0">
+                    </div>
+                  </div>
+                </div>
+            </div>
+          </div>
         </div>
         <div id="configuration_control">
-          <span class="caret"></span> <a role="button" data-toggle="collapse" href="#event_configuration" aria-expanded="false" aria-controls="collapseExample">Select events</a>
+          <a role="button" data-toggle="collapse" data-parent="#configuration" href="#event_configuration" aria-expanded="false" aria-controls="event_configuration"><span class="glyphicon glyphicon-plus"></span> Select events</a>
+          &nbsp;|&nbsp;
+          <a role="button" data-toggle="collapse" data-parent="#configuration" href="#video_configuration" aria-expanded="false" aria-controls="video_configuration"><span class="glyphicon glyphicon-plus"></span> Video configuration</a>
         </div>
       </div>
+
+
       <?php /* NOTE: There's no user authentication - everybody can submit labels! */ ?>
       <form id="label_title_form" class="form-inline">
         <div class="form-group">

@@ -206,8 +206,8 @@ app.controller('FormController', function($scope) {
 
 app.controller('PlayerController', function($scope) {
   $scope.$on('setPeriod', function(event, interval_id, data, offset) {
-    var t_begin = data.intervals[interval_id].begin + offset - 3.0;
-    var t_end = data.intervals[interval_id].end + offset + 3.0;
+    var t_begin = data.intervals[interval_id].begin + offset - $('#video_configuration_before').val();
+    var t_end = data.intervals[interval_id].end + offset + $('#video_configuration_after').val();
     playerGlobal.setPeriod(t_begin, t_end);
   });
 });
@@ -278,9 +278,9 @@ function showSavingAlert(content, clz, delay, fadeout) {
 $("#label_title_form .alert").hide();
 $("#label_title_form .alert").removeClass('hidden');
 
-// rotate the caret when collapseable is shown
-$('#event_configuration').on('show.bs.collapse', function () {
-  $('#configuration_control .caret').css({'transform' : 'rotate(180deg)'});
+// update/show the current open state of the configuration panel
+$('#configuration .panel-collapse').on('show.bs.collapse', function () {
+  $('#configuration_control a[href="#'+this.id+'"] .glyphicon').toggleClass('glyphicon-plus glyphicon-minus');
 }).on('hide.bs.collapse', function () {
-  $('#configuration_control .caret').css({'transform' : ''});
+  $('#configuration_control a[href="#'+this.id+'"] .glyphicon').toggleClass('glyphicon-plus glyphicon-minus');
 });

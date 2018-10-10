@@ -146,6 +146,14 @@ body {
   text-align: right;
 }
 
+#configuration .panel+.panel {
+  margin: 0;
+}
+
+#configuration .panel-default {
+  border: 0;
+}
+
 #configuration_control {
   position: relative;
   display: inline-block;
@@ -158,12 +166,16 @@ body {
   background: #fff;
 }
 
-#event_configuration {
+#configuration .panel-collapse {
   text-align: left;
   border-color: #ddd;
   border: 1px solid #ddd;
   border-radius: 4px 4px 0px 4px;
   background-color: #fff;
+}
+
+#configuration .glyphicon {
+  font-size: 70%;
 }
 
 #label_title_form {
