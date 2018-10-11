@@ -20,21 +20,31 @@ def parseArguments():
                 "".format(os.path.basename(__file__)),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument('--dry-run', action='store_true', help="Just iterates over the log files and prints out, what should be done, but doesn't parse anything.")
-    parser.add_argument('-l','--list', action='store', help="Lists some information ('actions', 'events', 'games').")
-    parser.add_argument('--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
+    parser.add_argument('-d', '--dry-run', action='store_true', help="Just iterates over the log files and prints out, what should be done, but doesn't parse anything.")
+    parser.add_argument('-l', '--list', action='store', help="Lists some information ('actions', 'events', 'games').")
+    parser.add_argument('-r', '--reparse', action='store_true', help='If used with the "--full" or "--action" option, those actions gets reparsed.')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-f', '--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
+    group.add_argument('-a', '--action', action='store', nargs='+', help='Specifies the action(s) which should be used while parsing.')
+    parser.add_argument('-p', '--path', action='store', nargs='+', default=['../log'], help='Specifies the log directory/directories which should be parsed.')
 
     return parser.parse_args()
 
-def read_logs(root):
+def read_logs(paths):
     events = []
-    # scan for events
-    for event in os.listdir(root):
-        # make sure, the event directory has the correct naming scheme
-        event_dir = os.path.join(root, event)
-        event_regex = re.match(config['event']['regex'], event)
-        if os.path.isdir(event_dir) and event_regex is not None:
-            events.append(Event(event_dir))
+    if isinstance(paths, str): paths = [paths]
+    for p in paths:
+        if os.path.isdir(p):
+            print('Reading "{}" ...'.format(os.path.abspath(p)))
+            # scan for events
+            for event in os.listdir(p):
+                # make sure, the event directory has the correct naming scheme
+                event_dir = os.path.join(p, event)
+                event_regex = re.match(config['event']['regex'], event)
+                if os.path.isdir(event_dir) and event_regex is not None:
+                    events.append(Event(event_dir))
+        else:
+            print('ERROR: not a valid path: {}'.format(p))
 
     return events
 
@@ -47,7 +57,18 @@ def load_actions():
 
     return actions
 
-def do_work(log, dry=False, full=False):
+def retrieve_applying_actions(args, actions):
+    actions_applying = None
+    if args.full:
+        actions_applying = list(actions.keys())
+    elif args.action:
+        actions_applying = [a for a in actions.keys() if a in args.action]
+        actions_unavailable = [a for a in args.action if a not in actions.keys()]
+        if actions_unavailable:
+            print('WARNING: the following action(s) aren\'t available: {}'.format(str(actions_unavailable)))
+    return actions_applying
+
+def do_work(log, dry=False, apply=None, reparse=False):
     try:
         # check if the syncing infos with the video exists
         if not log.has_syncing_file():
@@ -58,14 +79,14 @@ def do_work(log, dry=False, full=False):
             print("{} / {} / {} - missing label file! creating default ...".format(log.game.event, log.game, log))
             if not dry: log.create_label_file(actions)
         # check if all actions were parsed
-        elif set(actions.keys()) - set(log.parsed_actions()):
-            # retrieve the missing action functions
+        elif set(actions.keys()) - set(log.parsed_actions()) or reparse:
+            # retrieve the missing action functions or the ones which should be applied
             missing = {}
-            if full:
-                missing = actions
+            if apply:
+                for a in apply: missing[a] = actions[a]
             else:
                 for a in set(actions.keys()) - set(log.parsed_actions()): missing[a] = actions[a]
-            print("{} / {} / {} - missing actions in label file! re-creating {}...".format(log.game.event, log.game, log, 'full' if full else ''))
+            print("{} / {} / {} - missing actions in label file! re-creating {} ...".format(log.game.event, log.game, log, str(apply)))
             if not dry: log.create_label_file(missing)
     except KeyboardInterrupt:
         # ignore canceled jobs
@@ -79,8 +100,7 @@ if __name__ == "__main__":
     args = parseArguments()
 
     # init global vars
-    log_dir = '../log'
-    events = read_logs(log_dir)
+    events = read_logs(args.path)
     actions = load_actions()
 
     if args.list:
@@ -100,23 +120,26 @@ if __name__ == "__main__":
                     print("\t\t{}".format(g))
         else:
             print('ERROR: Unknown list option! Only the following are recognized: actions, events, games')
-    elif args.dry_run:
-        print('Iterate through log files without doing actually something - DRY RUN!\n')
-        # iterate through events, their games and the log files
-        for e in events:
-            for g in e.games:
-                for l in g.logs.values():
-                    do_work(l, True,args.full)
     else:
-        # do the hard work
-        pp = multiprocessing.Pool()
-        # iterate through events, their games and the log files
-        for e in events:
-            for g in e.games:
-                for l in g.logs.values():
-                    pp.apply_async(do_work, (l,False,args.full))
-        # wait for workers to finish
-        pp.close()
-        pp.join()
+        actions_applying = retrieve_applying_actions(args, actions)
 
-        print('Done')
+        if args.dry_run:
+            print('Iterate through log files without doing actually something - DRY RUN!\n')
+            # iterate through events, their games and the log files
+            for e in events:
+                for g in e.games:
+                    for l in g.logs.values():
+                        do_work(l, True, actions_applying, args.reparse)
+        else:
+            # do the hard work
+            pp = multiprocessing.Pool()
+            # iterate through events, their games and the log files
+            for e in events:
+                for g in e.games:
+                    for l in g.logs.values():
+                        pp.apply_async(do_work, (l,False,actions_applying,args.reparse))
+            # wait for workers to finish
+            pp.close()
+            pp.join()
+
+            print('Done')
