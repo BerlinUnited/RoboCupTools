@@ -39,8 +39,8 @@ class Game:
                 # make sure, the game directory has the correct naming scheme
                 log_dir = os.path.join(game_logs, log)
                 if os.path.isdir(log_dir) and re.match(config['log']['regex'], log):
-                    #
-                    self.logs[log] = Log(self, log_dir, os.path.join(self.directory, config['game']['dirs']['data'], log))
+                    log_data_dir = os.path.join(self.directory, config['game']['dirs']['data'], log)
+                    self.logs[log] = Log(self, log_dir, log_data_dir)
 
     def scan_videos(self):
         videos = os.path.join(self.directory, config['game']['dirs']['video'])

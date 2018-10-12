@@ -44,7 +44,7 @@ class Log:
             # set the sync information
             sync_file = os.path.join(self.data_directory, config['log']['sync'])
             if os.path.isfile(sync_file):
-                self.sync_file = { 'file': sync_file }
+                self.sync_file = sync_file
                 # TODO: parse this file?
 
             self.labels = glob.glob(self.data_directory+'/'+config['log']['labels'][0]+'*'+config['log']['labels'][1])
@@ -71,6 +71,7 @@ class Log:
         if self.file:
             point = self.find_first_ready_state(self.file)
             if point:
+                self.__create_data_directory()
                 self.sync_file = os.path.join(self.data_directory, config['log']['sync'])
                 with open(self.sync_file, 'w') as sf:
                     sf.writelines([
@@ -150,10 +151,15 @@ class Log:
             # update the time of the last frame
             if fi: data['end'] = fi.time / (1000.0 * 60) * 60
 
+        self.__create_data_directory()
         label_file = self.data_directory + '/' + config['log']['labels'][0] + config['log']['labels'][1]
         json.dump(data, open(label_file, 'w'), indent=4, separators=(',', ': '))
         self.labels.append(label_file)
         log.close()
+
+    def __create_data_directory(self):
+        if not os.path.isdir(self.data_directory):
+            os.mkdir(self.data_directory)
 
     def __repr__(self):
         return "Nao{} #{}".format(self.nao, self.player_number)

@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import argparse
+import logging
 import multiprocessing
 import os
 import re
@@ -27,6 +28,7 @@ def parseArguments():
     action_group.add_argument('-f', '--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
     action_group.add_argument('-a', '--action', action='store', nargs='+', help='Specifies the action(s) which should be used while parsing.')
     parser.add_argument('-p', '--path', action='store', nargs='+', default=['../log'], help='Specifies the log directory/directories which should be parsed.')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Enables debug output.')
 
     return parser.parse_args()
 
@@ -98,6 +100,9 @@ def do_work(log, dry=False, apply=None, reparse=False):
 if __name__ == "__main__":
     # parse the arguments
     args = parseArguments()
+
+    if args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
 
     # init global vars
     events = read_logs(args.path)
