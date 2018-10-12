@@ -23,9 +23,9 @@ def parseArguments():
     parser.add_argument('-d', '--dry-run', action='store_true', help="Just iterates over the log files and prints out, what should be done, but doesn't parse anything.")
     parser.add_argument('-l', '--list', action='store', help="Lists some information ('actions', 'events', 'games').")
     parser.add_argument('-r', '--reparse', action='store_true', help='If used with the "--full" or "--action" option, those actions gets reparsed.')
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-f', '--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
-    group.add_argument('-a', '--action', action='store', nargs='+', help='Specifies the action(s) which should be used while parsing.')
+    action_group = parser.add_mutually_exclusive_group()
+    action_group.add_argument('-f', '--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
+    action_group.add_argument('-a', '--action', action='store', nargs='+', help='Specifies the action(s) which should be used while parsing.')
     parser.add_argument('-p', '--path', action='store', nargs='+', default=['../log'], help='Specifies the log directory/directories which should be parsed.')
 
     return parser.parse_args()
@@ -110,13 +110,13 @@ if __name__ == "__main__":
                 print("\t{}".format(a))
         elif args.list == 'events':
             print('The following events were found:')
-            for e in events:
+            for e in sorted(events, key=lambda ev: str(ev)):
                 print("\t{}".format(e))
         elif args.list == 'games':
             print('The following events and their games were found:')
-            for e in events:
+            for e in sorted(events, key=lambda ev: str(ev)):
                 print("\t{}".format(e))
-                for g in e.games:
+                for g in sorted(e.games, key=lambda ga: str(ga)):
                     print("\t\t{}".format(g))
         else:
             print('ERROR: Unknown list option! Only the following are recognized: actions, events, games')
