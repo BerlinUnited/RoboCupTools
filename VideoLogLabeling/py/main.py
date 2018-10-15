@@ -17,7 +17,16 @@ def parseArguments():
     parser = argparse.ArgumentParser(
         description='Iterates through the log files and parses events & actions defined in the Action.py file.',
         epilog= "Example:\n"
-                "\t{0} \n"
+                "\t{0}\n"
+                "\t\tSearches the default directory and parses missing actions.\n\n"
+                "\t{0} -l games\n"
+                "\t\tLists all found events and their including games.\n\n"
+                "\t{0} -p '/path/to/log/dir' '../../../another/dir'\n"
+                "\t\tInstead of the default log directory the given ones are used.\n\n"
+                "\t{0} -e '.*RC.*' '2018-04-06_Iran'\n"
+                "\t\tFilters all found events with the given pattern.\n\n"
+                "\t{0} -d -v -p '/path/to/log/dir' -e '.*RC18.*' '2018-04-06_Iran' -r -f\n"
+                "\t\tPerforms a 'dry-run' and uses the given log directory, searches for the event patterns and would fully reparse all found log files.\n\n"
                 "".format(os.path.basename(__file__)),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -29,6 +38,9 @@ def parseArguments():
     action_group.add_argument('-a', '--action', action='store', nargs='+', help='Specifies the action(s) which should be used while parsing.')
     parser.add_argument('-p', '--path', action='store', nargs='+', default=['../log'], help='Specifies the log directory/directories which should be parsed.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Enables debug output.')
+    filter_group = parser.add_mutually_exclusive_group()
+    filter_group.add_argument('-e', '--event', action='store', nargs='+', help='Parse only the given events (regex allowed).')
+    filter_group.add_argument('-g', '--game', action='store', nargs='+', help='Parse only the given games (regex allowed).')
 
     return parser.parse_args()
 
@@ -104,6 +116,10 @@ if __name__ == "__main__":
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
 
+    # creates the filter for the events/games if there were some given
+    event_filter = None if args.event is None else re.compile('|'.join(['(%s)' % e for e in args.event]))
+    game_filter = None if args.game is None else re.compile('|'.join(['(%s)' % e for e in args.game]))
+
     # init global vars
     events = read_logs(args.path)
     actions = load_actions()
@@ -132,17 +148,21 @@ if __name__ == "__main__":
             print('Iterate through log files without doing actually something - DRY RUN!\n')
             # iterate through events, their games and the log files
             for e in events:
-                for g in e.games:
-                    for l in g.logs.values():
-                        do_work(l, True, actions_applying, args.reparse)
+                if event_filter is None or event_filter.match(os.path.basename(e.directory)):
+                    for g in e.games:
+                        if game_filter is None or game_filter.match(os.path.basename(g.directory)):
+                            for l in g.logs.values():
+                                do_work(l, True, actions_applying, args.reparse)
         else:
             # do the hard work
             pp = multiprocessing.Pool()
             # iterate through events, their games and the log files
             for e in events:
-                for g in e.games:
-                    for l in g.logs.values():
-                        pp.apply_async(do_work, (l,False,actions_applying,args.reparse))
+                if event_filter is None or event_filter.match(os.path.basename(e.directory)):
+                    for g in e.games:
+                        if game_filter is None or game_filter.match(os.path.basename(g.directory)):
+                            for l in g.logs.values():
+                                pp.apply_async(do_work, (l,False,actions_applying,args.reparse))
             # wait for workers to finish
             pp.close()
             pp.join()
