@@ -73,7 +73,7 @@ class Game
             $video_data = json_decode(file_get_contents($path), true);
             if(!empty($video_data)) {
                 foreach ($video_data as $name => $value) {
-                    $this->videos[$name] = new Video($value);
+                    $this->videos[$name] = new Video($this, $value);
                 }
             }
         }
@@ -96,7 +96,7 @@ class Game
                     if(isset($this->videos[$file->getBasename()])) {
                         $this->videos[$file->getBasename()].addSource($file->getRealPath());
                     } else {
-                        $this->videos[$file->getBasename()] = new Video($file->getRealPath());
+                        $this->videos[$file->getBasename()] = new Video($this, $file->getRealPath());
                     }
                 }
             }
@@ -112,6 +112,14 @@ class Game
         } else {
             $this->warnings[] = 'No gamecontroller files!';
         }
+    }
+
+    /**
+     * @return string
+     */
+    public function getPath()
+    {
+        return $this->path;
     }
 
     /**

@@ -1,28 +1,34 @@
 <?php
+require_once 'Config.php';
+require_once 'Game.php';
 
 /**
  * Class Video
  */
 class Video
 {
+	/** @var Game The game this video belongs to. */
+	private $game;
     /** @var array Container for the sources of this video. */
 	private $sources = [];
 
     /**
      * Video constructor.
      *
+     * @param $game
      * @param $info
      */
-	function __construct($info)
+	function __construct(Game $game, $info)
 	{
+		$this->game = $game;
 		if(is_array($info)) {
 			if (isset($info['sources'])) {
 				foreach ($info['sources'] as $file) {
-					$this->sources[] = new VideoFile($file);
+					$this->sources[] = new VideoFile($this, $file);
 				}
 			}
 		} else {
-			$this->sources[] = new VideoFile($info);
+			$this->sources[] = new VideoFile($this, $info);
 		}
 	}
 
@@ -31,7 +37,7 @@ class Video
      */
     public function addSource($source)
     {
-        $this->sources[] = new VideoFile($source);
+        $this->sources[] = new VideoFile($this, $source);
     }
 
     /**
@@ -121,6 +127,14 @@ class Video
         }
         return false;
     }
+
+    /**
+     * @return string
+     */
+    public function getPath()
+    {
+    	return $this->game->getPath() . DIRECTORY_SEPARATOR . Config::g('dirs')['video'];
+    }
 }
 
 /**
@@ -128,17 +142,22 @@ class Video
  */
 class VideoFile
 {
+	/** @var Video The Video this file belongs to. */
+	private $video;
     /** @var string The URI for this video file. */
-	private $file;
+	private $uri;
 
     /**
      * VideoFile constructor.
      *
+     * @param $video
      * @param $file
      */
-	function __construct($file)
+	function __construct(Video $video, $file)
 	{
-		$this->file = $file;
+		$this->video = $video;
+        // videos in info file are without the path
+		$this->uri = strpos($file, DIRECTORY_SEPARATOR) === false ? $video->getPath() . DIRECTORY_SEPARATOR . $file : $file;
 	}
 
     /**
@@ -146,7 +165,7 @@ class VideoFile
      */
     public function getFile()
     {
-        return $this->file;
+        return $this->uri;
     }
 
     /**
@@ -155,7 +174,7 @@ class VideoFile
 	public function getMimeType()
 	{
 		// TODO: do we have other providers?!
-		return $this->isUrl() ? 'video/youtube' : mime_content_type($this->file);
+		return $this->isUrl() ? 'video/youtube' : mime_content_type($this->uri);
 	}
 
     /**
@@ -164,7 +183,7 @@ class VideoFile
      */
 	public function getUrl($basePath=__DIR__)
 	{
-		return $this->isUrl() ? $this->file : str_replace($basePath . DIRECTORY_SEPARATOR, '', $this->file);
+		return $this->isUrl() ? $this->uri : str_replace($basePath . DIRECTORY_SEPARATOR, '', $this->uri);
 	}
 
     /**
@@ -172,7 +191,7 @@ class VideoFile
      */
 	public function isFile()
 	{
-		return is_file($this->file);
+		return is_file($this->uri);
 	}
 
     /**
@@ -182,18 +201,17 @@ class VideoFile
      */
 	public function isUrl()
 	{
-		// TODO: check if file is an URL
-		return false;
+		return filter_var($this->uri, FILTER_VALIDATE_URL) !== FALSE;
 	}
 
     /**
-     * Returns true if file exists or url is available, otherwise false.
+     * Returns true if file exists or it is an url, otherwise false.
+     * NOTE: availability of the url isn't checked.
      *
      * @return bool
      */
 	public function exists()
 	{
-		// TODO: check URL exists
-		return $this->isUrl() ? true : file_exists($this->file);
+		return $this->isUrl() || file_exists($this->uri);
 	}
 }

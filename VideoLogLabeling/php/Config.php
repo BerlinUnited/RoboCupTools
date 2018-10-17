@@ -22,6 +22,7 @@ class Config
             "video" => "videos",
             "data"  => "extracted"
         ],
+        "video_file" => "videos.json",
         "video_types" => [ "mp4" ]
     ];
 
