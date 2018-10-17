@@ -1,5 +1,6 @@
 import glob
 import json
+import logging
 import math
 import os
 import re
@@ -67,7 +68,6 @@ class Log:
         return self.sync_file is not None
 
     def create_default_syncing_file(self):
-        print(self.directory, self.data_directory, self.file)
         if self.file:
             point = self.find_first_ready_state(self.file)
             if point:
@@ -80,6 +80,8 @@ class Log:
                         'sync-time-log='+str(point[1]/1000.0)+'\n',
                         'video-file='+(self.game.videos[0] if self.game.videos else '')+'\n'
                     ])
+            else:
+                logging.getLogger('Log').warning("There's no ready state in this log file (%s)!", self.file)
 
     def find_first_ready_state(self, file):
         parser = BehaviorParser.BehaviorParser()
@@ -92,8 +94,12 @@ class Log:
                 m, o = frame["BehaviorStateSparse"]
 
             if m['game.state'] == 1:
+                # read before closing log
+                n = frame.number
+                t = frame['FrameInfo'].time
+                # close log
                 log.close()
-                return frame.number, frame['FrameInfo'].time
+                return (n, t)
 
         return None
 
