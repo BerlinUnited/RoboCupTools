@@ -31,7 +31,8 @@ def parseArguments():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('-d', '--dry-run', action='store_true', help="Just iterates over the log files and prints out, what should be done, but doesn't parse anything.")
-    parser.add_argument('-l', '--list', action='store', help="Lists some information ('actions', 'events', 'games').")
+    parser.add_argument('-l', '--list', action='store', help="Lists some information ('actions', 'events', 'games', 'videos').")
+    parser.add_argument('-vf', '--video-file', action='store_true', help="Creates the default video info file, if it doesn't exists.")
     parser.add_argument('-r', '--reparse', action='store_true', help='If used with the "--full" or "--action" option, those actions gets reparsed.')
     action_group = parser.add_mutually_exclusive_group()
     action_group.add_argument('-f', '--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
@@ -139,6 +140,15 @@ if __name__ == "__main__":
                 print("\t{}".format(e))
                 for g in sorted(e.games, key=lambda ga: str(ga)):
                     print("\t\t{}".format(g))
+        elif args.list == 'videos':
+            print('The following events and their game videos were found:')
+            for e in sorted(events, key=lambda ev: str(ev)):
+                print("\t{}".format(e))
+                for g in sorted(e.games, key=lambda ga: str(ga)):
+                    if g.has_videos():
+                        print("\t\t{}".format(g))
+                        for v in g.videos:
+                            print("\t\t\t{}: {}".format(v, ', '.join(g.videos[v]['sources'])))
         else:
             print('ERROR: Unknown list option! Only the following are recognized: actions, events, games')
     else:
@@ -151,6 +161,10 @@ if __name__ == "__main__":
                 if event_filter is None or event_filter.match(os.path.basename(e.directory)):
                     for g in e.games:
                         if game_filter is None or game_filter.match(os.path.basename(g.directory)):
+                            # check, if video info file should be created
+                            if args.video_file and not g.has_video_file():
+                                print("{} / {} - missing video info file! creating default ...".format(e, g))
+                            # check work of logs
                             for l in g.logs.values():
                                 do_work(l, True, actions_applying, args.reparse)
         else:
@@ -161,6 +175,11 @@ if __name__ == "__main__":
                 if event_filter is None or event_filter.match(os.path.basename(e.directory)):
                     for g in e.games:
                         if game_filter is None or game_filter.match(os.path.basename(g.directory)):
+                            # check, if video info file should be created
+                            if args.video_file and not g.has_video_file():
+                                print("{} / {} - missing video info file! creating default ...".format(e, g))
+                                g.create_video_file()
+                            # do work of logs
                             for l in g.logs.values():
                                 pp.apply_async(do_work, (l,False,actions_applying,args.reparse))
             # wait for workers to finish
