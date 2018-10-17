@@ -60,9 +60,13 @@
       <div ng-controller="PlayerController">
         <video class="video-player" id="player" preload="metadata">
         <?php
-            foreach ($game->getVideos() as $video) {
-                $video_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $video);
-                echo '<source src="'.$video_url.'" >';
+            // TODO: add ability to select different videos (if available)
+            if($game->hasVideos()) {
+                // use the first video to display
+                $video = current($game->getVideos());
+                foreach ($video->getSources() as $source) {
+                    echo '<source src="'.$source->getUrl($basepath).'" type="'.$source->getMimeType().'">';
+                }
             }
         ?>
         </video>

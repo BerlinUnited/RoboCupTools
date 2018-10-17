@@ -1,6 +1,7 @@
 <?php
 require_once 'Config.php';
 require_once 'NaoLog.php';
+require_once 'Video.php';
 
 class Game
 {
@@ -19,6 +20,12 @@ class Game
     private $errors = [];
     private $warnings = [];
 
+    /**
+     * Game constructor.
+     *
+     * @param SplFileInfo $path
+     * @param Event $event
+     */
     function __construct(SplFileInfo $path, Event $event) {
         $this->is_valid = preg_match('/'.Config::g('regex').'/', $path->getFilename(), $matches) === 1;
         if ($this->is_valid && $path->isReadable()) {
@@ -36,6 +43,9 @@ class Game
         }
     }
 
+    /**
+     *
+     */
     private function init() {
         $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['nao'];
         if (is_dir($path)) {
@@ -57,16 +67,43 @@ class Game
             $this->errors[] = 'No log files!';
         }
 
+        // read video infos from video json file
+        $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['data'] . DIRECTORY_SEPARATOR . Config::g('video_file');
+        if(is_file($path)) {
+            $video_data = json_decode(file_get_contents($path), true);
+            if(!empty($video_data)) {
+                foreach ($video_data as $name => $value) {
+                    $this->videos[$name] = new Video($value);
+                }
+            }
+        }
+
+        // read the "real" video files
         $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['video'];
         if (is_dir($path)) {
             $it = new DirectoryIterator($path);
             foreach($it as $file) {
                 if (!$file->isDot() && $file->isFile() && in_array(strtolower($file->getExtension()),Config::g('video_types'))) {
-                    // TODO: own class for video !?
-                    $this->videos[] = $file->getRealPath();
+                    // check if we have this source already
+                    foreach ($this->videos as $video) {
+                        /* @var Video $video */
+                        if ($video->hasSource($file->getFilename())) {
+                            // we already have this source as video, skip it
+                            continue 2;
+                        }
+                    }
+                    // each video file is assumed to be different from the others
+                    if(isset($this->videos[$file->getBasename()])) {
+                        $this->videos[$file->getBasename()].addSource($file->getRealPath());
+                    } else {
+                        $this->videos[$file->getBasename()] = new Video($file->getRealPath());
+                    }
                 }
             }
-        } else {
+        }
+
+        // add error message if no videos are available
+        if(empty($this->videos)){
             $this->errors[] = 'No video files!';
         }
 
@@ -203,6 +240,9 @@ class Game
         return $this->hasLogs() && array_filter($this->logs, function ($l) { return $l->hasLabels(); });
     }
 
+    /**
+     * @return array
+     */
     public function getLabels() {
         $result = [];
         foreach ($this->logs as $log) {
