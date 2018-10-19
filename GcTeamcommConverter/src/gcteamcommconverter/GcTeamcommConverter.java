@@ -81,8 +81,7 @@ public class GcTeamcommConverter
         a.put(45, "Naova ETS");
         a.put(46, "Recife Soccer");
         a.put(47, "Rinobot");
-
-        
+  
         a.put(90, "DoBerMan");
         a.put(91, "B-HULKs");
         a.put(92, "Swift-Ark");
@@ -128,7 +127,10 @@ public class GcTeamcommConverter
                         paths.forEach((Path t) -> {
                             File df = t.toFile();
                             if(df.exists() && df.isFile() && df.getName().endsWith(".log")) {
-                                files.add(df);
+                                //don't convert initial and finished logs
+                                if(!(df.getName().contains("initial") || df.getName().contains("finished"))){
+                                    files.add(df);
+                                }                                
                             }
                         }
                         );
@@ -201,6 +203,8 @@ public class GcTeamcommConverter
                 + "\t--raw\tconverts log file 'as-is' to json with extension '.raw.json'\n"
                 + "\t--tc\tconverts log file team communication to json (specific data only) with extension '.tc.json'\n"
                 + "\t--gtc\tconverts log file gamecontroller and team communication to json (specific data only) with extension '.gtc.json'\n"
+                + "\n"
+                + "Note: files containing the substrings 'initial' and 'finished' are not converted"
         );
     } // END printHelp()
     
