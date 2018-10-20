@@ -70,10 +70,23 @@ class Log:
     def parsed_actions(self):
         return self.info_data['parsed_actions']
 
-    def has_syncing_file(self):
-        return self.sync_file is not None
+    def has_syncing_info(self):
+        return True if 'sync' in self.info_data and self.info_data['sync'] else False
 
-    def create_default_syncing_file(self):
+    def sync_with_videos(self):
+        # TODO: this can be better if we have more events for the video!
+        #       Then we can determine the correct syncing point, based on the time intervals between the events in the
+        #       video and log!
+        if self.file:
+            point = self.find_first_ready_state(self.file)
+            if point:
+                for k,v in self.game.videos.items():
+                    if 'events' in v and 'ready' in v['events'] and v['events']['ready']:
+                        if 'sync' not in self.info_data: self.info_data['sync'] = {}
+                        self.info_data['sync'][k] = { "log": point[1]/1000.0, "video": v['events']['ready'][0] }
+                self.__save_info_data()
+
+    def create_old_syncing_file(self):
         if self.file:
             point = self.find_first_ready_state(self.file)
             if point:

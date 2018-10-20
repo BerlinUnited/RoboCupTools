@@ -86,9 +86,9 @@ def retrieve_applying_actions(args, actions):
 def do_work(log, dry=False, apply=None, reparse=False):
     try:
         # check if the syncing infos with the video exists
-        if not log.has_syncing_file():
+        if not log.has_syncing_info():
             print("{} / {} / {} - missing syncing file! creating default ...".format(log.game.event, log.game, log))
-            if not dry: log.create_default_syncing_file()
+            if not dry: log.sync_with_videos()
         # check if the default label file exits
         if not log.has_info_file():
             print("{} / {} / {} - missing info file! creating default ...".format(log.game.event, log.game, log))
