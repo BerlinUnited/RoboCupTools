@@ -175,9 +175,12 @@ if __name__ == "__main__":
                 if event_filter is None or event_filter.match(os.path.basename(e.directory)):
                     for g in e.games:
                         if game_filter is None or game_filter.match(os.path.basename(g.directory)):
-                            # check, if video info file should be created
+                            # check, if video info file should be created or updated
                             if args.video_file and not g.has_video_file():
                                 print("{} / {} - missing video info file! creating default ...".format(e, g))
+                                g.create_video_file()
+                            elif g.has_video_file() and g.has_video_file_changed():
+                                print("{} / {} - updating video info file.".format(e, g))
                                 g.create_video_file()
                             # do work of logs
                             for l in g.logs.values():
