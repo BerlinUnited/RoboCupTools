@@ -102,10 +102,11 @@ class Game:
         for n in self.videos:
             # skip internal 'dirty' attribute
             if n == self.__dirty: continue
-            for file in files:
+            # skip already known sources
+            for i,file in enumerate(files):
                 if file in self.videos[n]['sources']:
-                    files.remove(file)
-        return files
+                    files[i] = None
+        return list(filter(None, files))
 
     def has_video_file(self):
         return self.videos_file is not None

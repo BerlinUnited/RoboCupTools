@@ -90,9 +90,9 @@ def do_work(log, dry=False, apply=None, reparse=False):
             print("{} / {} / {} - missing syncing file! creating default ...".format(log.game.event, log.game, log))
             if not dry: log.create_default_syncing_file()
         # check if the default label file exits
-        if not log.has_label_file():
-            print("{} / {} / {} - missing label file! creating default ...".format(log.game.event, log.game, log))
-            if not dry: log.create_label_file(actions)
+        if not log.has_info_file():
+            print("{} / {} / {} - missing info file! creating default ...".format(log.game.event, log.game, log))
+            if not dry: log.create_info_file(actions)
         # check if all actions were parsed
         elif set(actions.keys()) - set(log.parsed_actions()) or reparse:
             # retrieve the missing action functions or the ones which should be applied
@@ -102,7 +102,7 @@ def do_work(log, dry=False, apply=None, reparse=False):
             else:
                 for a in set(actions.keys()) - set(log.parsed_actions()): missing[a] = actions[a]
             print("{} / {} / {} - missing actions in label file! re-creating {} ...".format(log.game.event, log.game, log, str(apply)))
-            if not dry: log.create_label_file(missing)
+            if not dry: log.create_info_file(missing)
     except KeyboardInterrupt:
         # ignore canceled jobs
         pass
