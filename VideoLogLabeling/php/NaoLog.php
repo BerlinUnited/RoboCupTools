@@ -20,7 +20,9 @@ class NaoLog
     /** @var array */
     private $sync_info = [];
     /** @var string */
-    private $events;
+    private $info_file;
+    /** @var string */
+    private $info = null;
     /** @var array */
     private $labels = [];
     /** @var array */
@@ -39,27 +41,20 @@ class NaoLog
             if(is_dir($game_path) && is_dir($data_path)) {
                 $log_data_path = $data_path . DIRECTORY_SEPARATOR . $path->getFilename();
                 if(is_dir($log_data_path)) {
-                    $log_data_file = $log_data_path . DIRECTORY_SEPARATOR . Config::l('sync');
-                    if(is_file($log_data_file)) {
-                        $this->sync_file = $log_data_file;
-                        $log_label_file = $log_data_path . DIRECTORY_SEPARATOR . implode('',Config::l('labels'));
-                        if(is_file($log_label_file)) {
-                            $this->parseSync();
-                            $this->events = $log_label_file;
-                            foreach (glob($log_data_path . DIRECTORY_SEPARATOR . implode('*',Config::l('labels'))) as $label) {
-                                // skip the base label file
-                                if($label === $log_label_file) { continue; }
-                                // extract label name
-                                if(preg_match('/'.Config::l('labels')[0].'-(.+)'.Config::l('labels')[1].'/', basename($label), $matches) === 1) {
-                                    $this->labels[$matches[1]] = $label;
-                                }
+
+                    $log_info_file = $log_data_path . DIRECTORY_SEPARATOR . Config::l('info');
+                    if(is_file($log_info_file)) {
+                        $this->info_file = $log_info_file;
+                        foreach (glob($log_data_path . DIRECTORY_SEPARATOR . implode('*',Config::l('labels'))) as $label) {
+                            // extract label name
+                            if(preg_match('/'.Config::l('labels')[0].'-(.+)'.Config::l('labels')[1].'/', basename($label), $matches) === 1) {
+                                $this->labels[$matches[1]] = $label;
                             }
-                        } else {
-                            $this->addError('Missing event json file!');
                         }
                     } else {
-                        $this->addError('Missing video sync file!');
+                        $this->addError('Missing log info file!');
                     }
+
                 } else {
                     $this->addError('Missing data directory!');
                 }
@@ -76,11 +71,32 @@ class NaoLog
         $this->is_valid = false;
     }
 
-    private function parseSync() {
+    private function parseOldSync() {
+        //$game_path . DIRECTORY_SEPARATOR . $data_dir . DIRECTORY_SEPARATOR . $path->getFilename() . DIRECTORY_SEPARATOR . Config::l('sync');
+        // TODO!
+        $log_data_file = '';
+        if(is_file($log_data_file)) {
+            $this->sync_file = $log_data_file;
+
+            //$this->parseOldSync();
+
+        } else {
+            $this->addError('Missing video sync file!');
+        }
         $syncings = parse_ini_file($this->sync_file);
         $this->sync_info['video_offset'] = empty($syncings['sync-time-video'])?0:floatval($syncings['sync-time-video']);
         $this->sync_info['log_offset'] = empty($syncings['sync-time-log'])?0:floatval($syncings['sync-time-log']);
         $this->sync_info['video'] = empty($syncings['video-file'])?'':$syncings['video-file'];
+    }
+
+    /**
+     * @return array|null
+     */
+    private function getInfo() {
+        if($this->info === null && is_file($this->info_file)) {
+            $this->info = json_decode(file_get_contents($this->info_file), true);
+        }
+        return $this->info;
     }
 
     /**
@@ -118,9 +134,9 @@ class NaoLog
     /**
      * @return string
      */
-    public function getEvents()
+    public function getInfoFile()
     {
-        return $this->events;
+        return $this->info_file;
     }
 
     /**
@@ -166,14 +182,14 @@ class NaoLog
     }
 
     /**
-     * @return mixed|false
+     * @return array
      */
     public function getSyncInfo($name)
     {
-        if(array_key_exists($name, $this->sync_info)) {
-            return $this->sync_info[$name];
+        if($this->getInfo() !== null && isset($this->getInfo()['sync'][$name])) {
+            return $this->getInfo()['sync'][$name];
         }
-        return false;
+        return [ 'log' => 0.0, 'video' => 0.0 ];
     }
 
     /**
@@ -181,15 +197,13 @@ class NaoLog
      * @return string
      */
     public function getLabelsAsJson() {
-        // get the events
-        $e = json_decode(file_get_contents($this->events), true);
         // add the label entry if not already set
-        if(!isset($e['labels'])) { $e['labels'] = []; }
+        if(!isset($this->info['labels'])) { $this->info['labels'] = []; }
         // add all labels
         foreach ($this->labels as $key => $value) {
-            $e['labels'][$key] = json_decode(file_get_contents($value), true);
+            $this->info['labels'][$key] = json_decode(file_get_contents($value), true);
         }
-        return json_encode($e);
+        return json_encode($this->info);
     }
 
     /**
@@ -202,7 +216,7 @@ class NaoLog
      */
     public function saveLabels($name, $labels) {
         // prepate the save path
-        $path = dirname($this->events) . DIRECTORY_SEPARATOR . Config::l('labels')[0] . '-' . $name . Config::l('labels')[1];
+        $path = dirname($this->info_file) . DIRECTORY_SEPARATOR . Config::l('labels')[0] . '-' . $name . Config::l('labels')[1];
         if ( file_put_contents($path, $labels) === FALSE ) {
             return "ERROR: writing labels file!";
         }

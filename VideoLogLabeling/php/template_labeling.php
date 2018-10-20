@@ -86,12 +86,14 @@
       foreach ($game->getLogs() as $log) {
           /* @var NaoLog $log */
           // TODO: security risk - any file could be loaded?!
-          $log_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getEvents());
+          $log_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getInfoFile());
+          $sync_video = $game->hasVideos() ? key($game->getVideos()) : '';
+          $sync_info = $log->getSyncInfo($sync_video);
           echo '<div id="'.$log->getId().'"'
                   .' class="timeline"'
                   .' data-file="'.$log_url.'"'
-                  .' data-logoffset="'.$log->getSyncInfo('log_offset').'"'
-                  .' data-videooffset="'.$log->getSyncInfo('video_offset').'"'
+                  .' data-logoffset="'.$sync_info['log'].'"'
+                  .' data-videooffset="'.$sync_info['video'].'"'
                   .' data-playernumber="'.$log->getPlayer().'"'
                   .(($name !== null && $log->getLabel($name) !== null)?' data-labels="'.str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getLabel($name)).'"':'')
                   .' data-timeline ></div>';
