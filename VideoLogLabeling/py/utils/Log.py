@@ -57,19 +57,18 @@ class Log:
             # set the info file of this log
             info_file = self.__get_data_file('info')
             if os.path.isfile(info_file): self.info_file = info_file
+            self.__read_info_file()
             # retrieve all label files
             self.labels = glob.glob(self.data_directory+'/'+config['log']['labels'][0]+'*'+config['log']['labels'][1])
 
     def __read_info_file(self):
         if self.info_data is None and self.info_file is not None and os.path.isfile(self.info_file):
             self.info_data = json.load(io.open(self.info_file, 'r', encoding='utf-8'))
-        return self.info_data
+        else:
+            self.info_data = {'parsed_actions': [], 'intervals': {}, 'start': 0, 'end': 0, 'sync': {}}
 
     def parsed_actions(self):
-        data = self.__read_info_file()
-        if data and 'parsed_actions' in data:
-            return data['parsed_actions']
-        return []
+        return self.info_data['parsed_actions']
 
     def has_syncing_file(self):
         return self.sync_file is not None
@@ -117,20 +116,15 @@ class Log:
         return len(self.labels) > 0
 
     def create_info_file(self, actions):
-        # print(self.directory, self.data_directory, self.file)
         parser = BehaviorParser.BehaviorParser()
         log = BehaviorParser.LogReader(self.file, parser)
-        data = self.__read_info_file()
-        # update or create data structure
-        if data is not None:
-            data['parsed_actions'] = list(set(data['parsed_actions']) | set(actions.keys()))
-        else:
-            data = { 'parsed_actions': list(actions.keys()), 'intervals': {}, 'start': 0, 'end': 0 }
+        # update parsed actions
+        self.info_data['parsed_actions'] = list(set(self.info_data['parsed_actions']) | set(actions.keys()))
         tmp = {}
 
         if log.size > 0:
             # ignore the first frame and set the second frame time as starting point of this log file
-            data['start'] = log[1]["FrameInfo"].time / (1000.0 * 60) * 60
+            self.info_data['start'] = log[1]["FrameInfo"].time / (1000.0 * 60) * 60
 
         # enforce the whole log being parsed (this is necessary for older game logs)
         for frame in log:
@@ -161,17 +155,20 @@ class Log:
                         # there's an open interval, close it
                         tmp[a]['end'] = fi.time / (1000.0 * 60) * 60
                         interval_id = '{}_{}'.format(tmp[a]['frame'], a)
-                        data['intervals'][interval_id] = tmp[a]
+                        self.info_data['intervals'][interval_id] = tmp[a]
                         del tmp[a]
 
             # update the time of the last frame
-            if fi: data['end'] = fi.time / (1000.0 * 60) * 60
+            if fi: self.info_data['end'] = fi.time / (1000.0 * 60) * 60
 
+        self.__save_info_data()
+
+        log.close()
+
+    def __save_info_data(self):
         self.__create_data_directory()
         info_file = self.__get_data_file('info')
-        json.dump(data, open(info_file, 'w'), indent=4, separators=(',', ': '))
-        self.labels.append(info_file)
-        log.close()
+        json.dump(self.info_data, open(info_file, 'w'), indent=4, separators=(',', ': '))
 
     def __create_data_directory(self):
         if not os.path.isdir(self.data_directory):

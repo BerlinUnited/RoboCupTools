@@ -121,7 +121,7 @@ class Game:
         # remove (internal) dirty attribute
         if self.__dirty in self.videos:
             del self.videos[self.__dirty]
-        json.dump(self.videos, open(self.__get_video_file(), 'w'))
+        json.dump(self.videos, open(self.__get_video_file(), 'w'), indent=4, separators=(',', ': '))
 
     def __repr__(self):
         return "{} - {} vs. {} #{} [{}]".format(self.date.strftime('%d.%m.%Y, %H:%M'), self.team_1, self.team_2, self.half, len(self.logs))
