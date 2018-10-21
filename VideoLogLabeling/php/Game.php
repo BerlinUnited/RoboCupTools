@@ -78,6 +78,25 @@ class Game
             }
         }
 
+        // add error message if no videos are available
+        if(empty($this->videos)){
+            $this->errors[] = 'No video files!';
+        }
+
+        if (is_dir($this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['gc'])) {
+            // TODO: read gamecontroller files
+        } else {
+            $this->warnings[] = 'No gamecontroller files!';
+        }
+    }
+
+    /**
+     * Reads the video directory and adds missing video files to the video collection.
+     *
+     * @deprecated
+     */
+    private function readVideoDirectory()
+    {
         // read the "real" video files
         $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['video'];
         if (is_dir($path)) {
@@ -100,17 +119,6 @@ class Game
                     }
                 }
             }
-        }
-
-        // add error message if no videos are available
-        if(empty($this->videos)){
-            $this->errors[] = 'No video files!';
-        }
-
-        if (is_dir($this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['gc'])) {
-            // TODO: read gamecontroller files
-        } else {
-            $this->warnings[] = 'No gamecontroller files!';
         }
     }
 

@@ -137,9 +137,13 @@ body {
 }
 
 .errors {
-  margin-top:20px; 
-  position:absolute; 
-  bottom: 0px;
+  position: fixed;
+  bottom: 2em;
+  left: 2em;
+}
+
+.errors pre {
+    margin: 0;
 }
 
 #configuration {

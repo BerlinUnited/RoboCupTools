@@ -47,7 +47,11 @@ foreach ($events as $event) {
     echo '<tr><td></td><td colspan="4">'.$event->getDateString().' - '.$event->getName().'</td></tr>';
 
     if ($event->hasGames()) {
-        foreach ($event->getGames() as $game) {
+        // sort by date/time before showing the games
+        $games = $event->getGames();
+        usort($games, function ($a, $b) { return $a->getDate() > $b->getDate(); });
+        // show games
+        foreach ($games as $game) {
             /* @var Game $game */
             if($game->hasErrors()) {
                 $errors[] = $game;
@@ -102,19 +106,18 @@ foreach ($events as $event) {
 </div>
 
 <div class="errors <?=$errors?'':'hide'?>">
-    <pre>
-  <?php
+    <pre><?php
   foreach ($errors as $game) {
       if($game instanceof Game) {
+          echo $game->getDateString() . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2() . ' #' . $game->getHalf() . '<br>';
           foreach ($game->getErrors() as $error) {
-              echo 'ERROR: ' . $error . '<br>';
+              echo '<span class="text-danger">ERROR: ' . $error . '</span><br>';
           }
       } else {
           echo '<b>ERROR: ' . $game . '</b><br>';
       }
   }
-  ?>
-    </pre>
+  ?></pre>
 </div>
 
 <div id="watermark"></div>
