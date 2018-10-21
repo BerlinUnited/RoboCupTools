@@ -21,7 +21,7 @@ class Game:
         self.videos_file = None
         self.videos = {}
 
-        self.__dirty = 'dirty'
+        self.__dirty_v = False
         self.__url_schemes = ['http', 'https']
 
         self.parse_info()
@@ -90,7 +90,7 @@ class Game:
                             for v in video:
                                 self.videos[name]['sources'].append(v)
                             # mark as changed
-                            self.videos[self.__dirty] = True
+                            self.__dirty_v = True
 
                         # skip the remaining extensions
                         break
@@ -100,8 +100,6 @@ class Game:
 
     def __search_video_file(self, files):
         for n in self.videos:
-            # skip internal 'dirty' attribute
-            if n == self.__dirty: continue
             # skip already known sources
             for i,file in enumerate(files):
                 if file in self.videos[n]['sources']:
@@ -112,15 +110,12 @@ class Game:
         return self.videos_file is not None
 
     def has_video_file_changed(self):
-        return self.__dirty in self.videos and self.videos[self.__dirty]
+        return self.__dirty_v
 
     def has_videos(self):
         return len(self.videos) > 0
 
     def create_video_file(self):
-        # remove (internal) dirty attribute
-        if self.__dirty in self.videos:
-            del self.videos[self.__dirty]
         json.dump(self.videos, open(self.__get_video_file(), 'w'), indent=4, separators=(',', ': '))
 
     def __repr__(self):

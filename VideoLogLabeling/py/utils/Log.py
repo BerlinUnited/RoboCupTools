@@ -85,6 +85,8 @@ class Log:
                         if 'sync' not in self.info_data: self.info_data['sync'] = {}
                         self.info_data['sync'][k] = { "log": point[1]/1000.0, "video": v['events']['ready'][0] }
                 self.__save_info_data()
+            else:
+                logging.getLogger('Log').warning("There's no ready state in this log file (%s)!", self.file)
 
     def create_old_syncing_file(self):
         if self.file:
