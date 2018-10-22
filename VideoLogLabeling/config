@@ -16,7 +16,8 @@
         "video_file": "videos.json",
         "video_types": [
             "mp4", "webm", "url"
-        ]
+        ],
+        "video_default": "mp4"
     },
     "log": {
         "regex": "(\\d{1})_(\\d{2})_(\\w+)",

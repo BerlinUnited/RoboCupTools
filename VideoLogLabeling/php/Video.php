@@ -146,6 +146,8 @@ class VideoFile
 	private $video;
     /** @var string The URI for this video file. */
 	private $uri;
+    /** @var string The URI type. */
+	private $type;
 
     /**
      * VideoFile constructor.
@@ -153,11 +155,13 @@ class VideoFile
      * @param $video
      * @param $file
      */
-	function __construct(Video $video, $file)
+	function __construct(Video $video, $file, $type = null)
 	{
 		$this->video = $video;
         // videos in info file are without the path
 		$this->uri = strpos($file, DIRECTORY_SEPARATOR) === false ? $video->getPath() . DIRECTORY_SEPARATOR . $file : $file;
+
+		$this->type = strtolower($type !== null ? $type : ($this->isUrl()?'url':pathinfo($file, PATHINFO_EXTENSION)));
 	}
 
     /**
@@ -166,6 +170,17 @@ class VideoFile
     public function getFile()
     {
         return $this->uri;
+    }
+
+    /**
+     * Returns the type of this video file.
+     * This is generally the extension of the file, but could also be something manually set (eg. 'url').
+     *
+     * @return string
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 
     /**

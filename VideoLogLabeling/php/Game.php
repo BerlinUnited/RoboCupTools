@@ -249,6 +249,11 @@ class Game
         return $this->videos;
     }
 
+    public function getVideo($key)
+    {
+        return isset($this->videos[$key]) ? $this->videos[$key] : null;
+    }
+
     /**
      * @return bool
      */

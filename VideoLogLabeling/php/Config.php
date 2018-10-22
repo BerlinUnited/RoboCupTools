@@ -85,6 +85,14 @@ class Config
     }
 
     /**
+     * Returns the event configuration
+     * @return array
+     */
+    public function getEvent() {
+        return $this->event;
+    }
+
+    /**
      * Shorthand function for accessing the game configuration
      * @param $key
      * @return mixed
@@ -94,12 +102,28 @@ class Config
     }
 
     /**
+     * Returns the game configuration
+     * @return array
+     */
+    public function getGame() {
+        return $this->game;
+    }
+
+    /**
      * Shorthand function for accessing the log configuration
      * @param $key
      * @return mixed
      */
     public static function l($key) {
         return self::getInstance()->log[$key];
+    }
+
+    /**
+     * Returns the log configuration
+     * @return array
+     */
+    public function getLog() {
+        return $this->log;
     }
 
     /**

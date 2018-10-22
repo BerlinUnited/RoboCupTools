@@ -62,10 +62,22 @@
         <?php
             // TODO: add ability to select different videos (if available)
             if($game->hasVideos()) {
+                // retrieve the source video file type, which should be used first
+                $default = !empty(Config::getInstance()->getGame()['video_default']) ? Config::getInstance()->getGame()['video_default'] : '';
                 // use the first video to display
-                $video = current($game->getVideos());
-                foreach ($video->getSources() as $source) {
-                    echo '<source src="'.$source->getUrl($basepath).'" type="'.$source->getMimeType().'">';
+                $game_videos = $game->getVideos();
+                $video = reset($game_videos);
+                // sort the sources by the preferred order
+                $sources = $video->getSources();
+                usort($sources, function($a, $b) use ($default){
+                    if($a->getType() === $default && $b->getType() === $default) { return 0; }
+                    elseif ($a->getType() === $default && $b->getType() !== $default) { return -1; }
+                    elseif ($a->getType() !== $default && $b->getType() === $default) { return 1; }
+                    return 1;
+                });
+                // write out the sources
+                foreach ($sources as $source) {
+                    echo '<source src="'.$source->getUrl($basepath).'" type="'.$source->getMimeType().'">'."\n";
                 }
             }
         ?>
