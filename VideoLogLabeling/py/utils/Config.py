@@ -1,8 +1,9 @@
 import json
 import os
 
+# the file to read the config from
 config_file = '../config'
-
+# the default config dict
 config = {
     'paths': [],
     'game': {
@@ -26,7 +27,7 @@ config = {
         'sync': 'game.log.videoanalyzer.properties'
     }
 }
-
+# read the config file and apply the contents to the default config dict
 if os.path.isfile(config_file):
     try:
         config.update(json.load(open(config_file, 'r')))

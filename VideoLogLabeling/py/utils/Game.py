@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import os
 import re
 from urllib.parse import urlparse
@@ -9,7 +10,11 @@ from .Log import Log
 
 
 class Game:
+    """Represents a game, its addtional informations and contained logs."""
+
     def __init__(self, event, dir):
+        """Constructor. Initializes class variables and reads some basic information of the game. Also all available
+        video files are retrieved and available logs were added."""
         self.event = event
         self.directory = dir
 
@@ -29,6 +34,7 @@ class Game:
         self.scan_videos()
 
     def parse_info(self):
+        """Extracts date, playing teams and halftime based on the configuration regular expression."""
         m = re.match(config['game']['regex'], os.path.basename(self.directory))
 
         self.date = datetime.datetime.strptime(m.group(1), '%Y-%m-%d_%H-%M-%S')
@@ -37,6 +43,7 @@ class Game:
         self.half = m.group(4)
 
     def scan_logs(self):
+        """Scans the log directory for matching logs and adds them to the log list."""
         game_logs = os.path.join(self.directory, config['game']['dirs']['nao'])
 
         if os.path.isdir(game_logs):
@@ -47,8 +54,13 @@ class Game:
                 if os.path.isdir(log_dir) and re.match(config['log']['regex'], log):
                     log_data_dir = os.path.join(self.directory, config['game']['dirs']['data'], log)
                     self.logs[log] = Log(self, log_dir, log_data_dir)
+                else:
+                    logging.getLogger('Game').warning("Invalid log directory!", log_dir)
 
     def scan_videos(self):
+        """First it reads the content of the video info file and then scans the video directory for video files. Only
+        configured extensions are used and '.url' files read and the content is added as url source to the video. If the
+        video info data is modified, the 'dirty' flag is set."""
         # read the video info file
         videos_file = self.__get_video_file()
         if os.path.isfile(videos_file):
@@ -96,9 +108,21 @@ class Game:
                         break
 
     def __get_video_file(self):
+        """
+        Returns the path of the video info file - without any existence checks!
+
+        :return:     path of the vidoe info file
+        """
         return os.path.join(self.directory, config['game']['dirs']['data'], config['game']['video_file'])
 
     def __search_video_file(self, files):
+        """
+        Searches all videos sources, if the :files: are already part it and returns only those files, which aren't
+        part of any video source.
+
+        :param files:   list of files to be checked
+        :return:        list of files, which aren't source of a video file
+        """
         for n in self.videos:
             # skip already known sources
             for i,file in enumerate(files):
@@ -107,17 +131,34 @@ class Game:
         return list(filter(None, files))
 
     def has_video_file(self):
+        """
+        Returns True, if a video info file exists, otherwise False
+
+        :return:    True|False
+        """
         return self.videos_file is not None
 
     def has_video_file_changed(self):
+        """
+        Returns True, if the 'dirty' flag of the video data is set - the video data has changed, otherwise False.
+
+        :return:    True|False
+        """
         return self.__dirty_v
 
     def has_videos(self):
+        """
+        Returns True, if videos for this game are available, otherwise False.
+
+        :return:    True|False
+        """
         return len(self.videos) > 0
 
     def create_video_file(self):
+        """Creates/Writes the video info file."""
         json.dump(self.videos, open(self.__get_video_file(), 'w'), indent=4, separators=(',', ': '))
 
     def __repr__(self):
+        """Returns the string representation of this game."""
         return "{} - {} vs. {} #{} [{}]".format(self.date.strftime('%d.%m.%Y, %H:%M'), self.team_1, self.team_2, self.half, len(self.logs))
 

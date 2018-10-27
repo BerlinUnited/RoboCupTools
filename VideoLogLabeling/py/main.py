@@ -14,6 +14,12 @@ from utils import config, Event
 
 
 def parseArguments():
+    """
+    Parses the application arguments and returns the values as Namespace.
+    Errors during parsing and showing the help message is also handled here.
+
+    :return: the Namespace with the parsed arguments
+    """
     parser = argparse.ArgumentParser(
         description='Iterates through the log files and parses events & actions defined in the Action.py file.',
         epilog= "Example:\n"
@@ -46,33 +52,59 @@ def parseArguments():
     return parser.parse_args()
 
 def read_logs(paths):
+    """
+    Iterates over the given log paths and tries to find events (directories) with the correct name pattern.
+
+    :param paths:   a list of or just a single path to events
+    :return:        returns a list of the found events
+    """
     events = []
+    # we expect a list of paths, make it one if its just a string
     if isinstance(paths, str): paths = [paths]
+    # iterate over the given paths
     for p in paths:
         if os.path.isdir(p):
-            print('Reading "{}" ...'.format(os.path.abspath(p)))
+            logging.info('Reading %s', os.path.abspath(p))
             # scan for events
             for event in os.listdir(p):
                 # make sure, the event directory has the correct naming scheme
                 event_dir = os.path.join(p, event)
+                # skip files
+                if not os.path.isdir(event_dir): continue
+                # check directory name
                 event_regex = re.match(config['event']['regex'], event)
-                if os.path.isdir(event_dir) and event_regex is not None:
+                if event_regex is not None:
                     events.append(Event(event_dir))
+                else:
+                    logging.warning('Not a valid event directory: %s', event_dir)
         else:
-            print('ERROR: not a valid path: {}'.format(p))
+            logging.warning('Not a directory: %s', p)
 
     return events
 
 def load_actions():
+    """
+    Loads all functions from the Actions file, which doesn't starts with a '_' and returns all found 'action functions'.
+
+    :return:    a dict of action functions
+    """
     actions = {}
 
     for a in dir(Actions):
+        # ignore functions beginning with an '_'
         if not a.startswith('_'):
             actions[a] = getattr(Actions, a)
 
     return actions
 
 def retrieve_applying_actions(args, actions):
+    """
+    Filters the given :actions: functions based on the application arguments.
+
+    :param args:    parsed application arguments
+    :param actions: the actions which should be filtered
+    :return:        the filtered action functions
+    """
     actions_applying = None
     if args.full:
         actions_applying = list(actions.keys())
@@ -80,18 +112,28 @@ def retrieve_applying_actions(args, actions):
         actions_applying = [a for a in actions.keys() if a in args.action]
         actions_unavailable = [a for a in args.action if a not in actions.keys()]
         if actions_unavailable:
-            print('WARNING: the following action(s) aren\'t available: {}'.format(str(actions_unavailable)))
+            logging.warning('The following action(s) aren\'t available: %s', str(actions_unavailable))
     return actions_applying
 
 def do_work(log, dry=False, apply=None, reparse=False):
+    """
+    Does the actual work. It creates the info file, the syncing info if they doesn't exists and applies the action functions
+    if requested or if necessary.
+
+    :param log: the log file to work on
+    :param dry: True, if run without modifications, False otherwise (default)
+    :param apply:   which action functions should be applied
+    :param reparse: True, if the logs be reparsed with the applying action functions, otherwise False (default)
+    :return:    None
+    """
     try:
         # check if the syncing infos with the video exists
         if not log.has_syncing_info():
-            print("{} / {} / {} - missing syncing file! creating default ...".format(log.game.event, log.game, log))
+            logging.info('%s / %s / %s - missing syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
             if not dry: log.sync_with_videos()
         # check if the default label file exits
         if not log.has_info_file():
-            print("{} / {} / {} - missing info file! creating default ...".format(log.game.event, log.game, log))
+            logging.info('%s / %s / %s - missing info file! creating default ...', str(log.game.event), str(log.game), str(log))
             if not dry: log.create_info_file(actions)
         # check if all actions were parsed
         elif set(actions.keys()) - set(log.parsed_actions()) or reparse:
@@ -101,7 +143,7 @@ def do_work(log, dry=False, apply=None, reparse=False):
                 for a in apply: missing[a] = actions[a]
             else:
                 for a in set(actions.keys()) - set(log.parsed_actions()): missing[a] = actions[a]
-            print("{} / {} / {} - missing actions in label file! re-creating {} ...".format(log.game.event, log.game, log, str(apply)))
+            logging.info('%s / %s / %s - missing actions in label file! re-creating %s ...', str(log.game.event), str(log.game), str(log), str(apply))
             if not dry: log.create_info_file(missing)
     except KeyboardInterrupt:
         # ignore canceled jobs
@@ -114,8 +156,7 @@ if __name__ == "__main__":
     # parse the arguments
     args = parseArguments()
 
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(levelname)s: %(message)s')
 
     # creates the filter for the events/games if there were some given
     event_filter = None if args.event is None else re.compile('|'.join(['(%s)' % e for e in args.event]))
@@ -150,12 +191,12 @@ if __name__ == "__main__":
                         for v in g.videos:
                             print("\t\t\t{}: {}".format(v, ', '.join(g.videos[v]['sources'])))
         else:
-            print('ERROR: Unknown list option! Only the following are recognized: actions, events, games')
+            logging.error('Unknown list option! Only the following are recognized: actions, events, games')
     else:
         actions_applying = retrieve_applying_actions(args, actions)
 
         if args.dry_run:
-            print('Iterate through log files without doing actually something - DRY RUN!\n')
+            logging.info('Iterate through log files without doing actually something - DRY RUN!')
             # iterate through events, their games and the log files
             for e in events:
                 if event_filter is None or event_filter.match(os.path.basename(e.directory)):
@@ -163,7 +204,7 @@ if __name__ == "__main__":
                         if game_filter is None or game_filter.match(os.path.basename(g.directory)):
                             # check, if video info file should be created
                             if args.video_file and not g.has_video_file():
-                                print("{} / {} - missing video info file! creating default ...".format(e, g))
+                                logging.info("%s / %s - missing video info file! creating default ...", str(e), str(g))
                             # check work of logs
                             for l in g.logs.values():
                                 do_work(l, True, actions_applying, args.reparse)
@@ -177,10 +218,10 @@ if __name__ == "__main__":
                         if game_filter is None or game_filter.match(os.path.basename(g.directory)):
                             # check, if video info file should be created or updated
                             if args.video_file and not g.has_video_file():
-                                print("{} / {} - missing video info file! creating default ...".format(e, g))
+                                logging.info("%s / %s - missing video info file! creating default ...", str(e), str(g))
                                 g.create_video_file()
                             elif g.has_video_file() and g.has_video_file_changed():
-                                print("{} / {} - updating video info file.".format(e, g))
+                                logging.info("%s / %s - updating video info file ...", str(e), str(g))
                                 g.create_video_file()
                             # do work of logs
                             for l in g.logs.values():
@@ -189,4 +230,4 @@ if __name__ == "__main__":
             pp.close()
             pp.join()
 
-            print('Done')
+            logging.info('Done')
