@@ -13,7 +13,10 @@ import CommonTypes_pb2, Framework_Representations_pb2, Messages_pb2, Representat
 '''
 
 class Parser:
+    """Parses raw protobuf messages based on their name and returns the parsed data."""
+
     def __init__(self):
+        """Constructor. Initializes all known protobuf messages."""
         self.messages = {}
         self.messages.update(CommonTypes_pb2.DESCRIPTOR.message_types_by_name)
         self.messages.update(Framework_Representations_pb2.DESCRIPTOR.message_types_by_name)
@@ -21,13 +24,25 @@ class Parser:
         self.messages.update(Representations_pb2.DESCRIPTOR.message_types_by_name)
 
     def parse(self, name, data):
+        """
+        Parses the given :data: and uses the :name: for identifying the appropriate protobuf object. Returns None if no
+        protobuf object could be found.
+
+        :param name:    the (protobuf) name of the given :data:
+        :param data:    the raw (bytes) data which should be parsed
+        :return:        the parsed protobuf message
+        """
         if name in self.messages:
             return google.protobuf.reflection.ParseMessage(self.messages[name], data)
         return None
 
 class LogReader:
-    def __init__(self, path, parser=Parser(), filter=lambda x: x):
+    """A log reader for parsing a log file. A log file consist of frames and each frame has multiple (protobuf) messages,
+    which contains the data. A filter can be used to modify the returned data of each frame. For example, the filter can
+    be used to return the frames data in a specific format or just return a specific portion of the frame."""
 
+    def __init__(self, path, parser=Parser(), filter=lambda x: x):
+        """Constructor. Reads the log file from the :path: and creates an index of the contained frames."""
         self.file = open(path, 'r+b')
         self.mm = mmap.mmap(self.file.fileno(), 0)
         self.size = os.stat(path).st_size
@@ -51,25 +66,45 @@ class LogReader:
             self.mm.seek(size, os.SEEK_CUR)
 
     def __iter__(self):
+        """Returns an iterator object for iterating over the log frames."""
         return iter(self.frames)
 
     def __getitem__(self, item):
-        return self.frames[item]
+        """Applies the filter to the data returned by the frame at :item: position of this log and returns its result."""
+        return self.filter(self.frames[item])
 
     def close(self):
+        """Closes the log file and releases all file descriptors."""
         self.mm.close()
         self.file.close()
 
 class Frame:
+    """A Frame represents a container of data (messages) at a certain time frame in a log file."""
+
     def __init__(self, reader, number):
+        """Constructor. Initializes the frame variables."""
         self.reader = reader
         self.number = number
         self.messages = {}
 
     def __getitem__(self, name):
+        """
+        Returns the parsed data of this frame identified by :name:.
+        See :func:`~Frame.getMessage`
+
+        :param name:    the name of the frames message
+        :return:        the data of the frames message
+        """
         return self.getMessage(name)
 
     def getMessage(self, name):
+        """
+        Returns the parsed data of this frame identified by :name:. The data is only parsed once and cached for subsequent
+        requests. If there is no data with :name: in this frame, None is returned
+
+        :param name:    the name of the frames message
+        :return:        the parsed data of the frame message or None
+        """
         if name in self.messages:
             position, size, message = self.messages[name]
 
