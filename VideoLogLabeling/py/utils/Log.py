@@ -96,6 +96,24 @@ class Log:
         """Returns True, if the old syncing info is available, False otherwise."""
         return self.sync_file_old is not None
 
+    def syncing_info_needs_update(self):
+        """
+        Returns True, if the syncing info needs to be updated, otherwise False
+        An update is needed, if the ready state of the video has changed, or if a new video was added.
+
+        :return: True|False
+        """
+        for k,v in self.game.videos.items():
+            if 'events' in v and 'ready' in v['events'] and v['events']['ready']:
+                # is syncing info missing for this video
+                if k not in self.info_data['sync']:
+                    return True
+                # is syncing info outdated for this video
+                elif v['events']['ready'][0] != self.info_data['sync'][k]['video']:
+                    return True
+        # nothing to update
+        return False
+
     def sync_with_videos(self):
         """Syncs the log file with the game videos simply by setting the first ready state of the log file to the first
         ready state of the video."""
@@ -145,8 +163,17 @@ class Log:
         """
         Retrieves the first ready state from the log file.
 
-        :return:    tuple of frame numbe and frame time, if ready state was found, otherwise returns None
+        :return:    tuple of frame number and frame time, if ready state was found, otherwise returns None
         """
+        # get all ready states of the already parsed log file
+        ready = self.get_action('ready')
+        # are the ready states?
+        if ready:
+            # return the first ready state of this log file
+            ready.sort(key=lambda i: i['frame'])
+            return (ready[0]['frame'], ready[0]['begin']*1000.0)
+
+        # ready state not parsed yet - find them
         parser = BehaviorParser.BehaviorParser()
         log = BehaviorParser.LogReader(self.file, parser)
 
@@ -193,7 +220,7 @@ class Log:
 
         if log.size > 0:
             # ignore the first frame and set the second frame time as starting point of this log file
-            self.info_data['start'] = log[1]["FrameInfo"].time / (1000.0 * 60) * 60
+            self.info_data['start'] = log[1]["FrameInfo"].time / 1000.0
 
         # enforce the whole log being parsed (this is necessary for older game logs)
         for frame in log:
@@ -214,7 +241,7 @@ class Log:
                         if a not in tmp or tmp[a] is None:
                             tmp[a] = { 'type': a,
                                        'frame': fi.frameNumber,
-                                       'begin': fi.time / (1000.0 * 60) * 60,
+                                       'begin': fi.time / 1000.0,
                                        "pose": {"x": s["robot_pose.x"], "y": s["robot_pose.y"], "r": s["robot_pose.rotation"] * math.pi / 180},
                                        "ball": {"x": s["ball.position.field.x"], "y": s["ball.position.field.y"]} }
                         elif tmp[a]['frame'] == fi.frameNumber - 1:
@@ -222,13 +249,13 @@ class Log:
                             tmp[a]['frame'] = fi.frameNumber
                     elif a in tmp and tmp[a] is not None:
                         # there's an open interval, close it
-                        tmp[a]['end'] = fi.time / (1000.0 * 60) * 60
+                        tmp[a]['end'] = fi.time / 1000.0
                         interval_id = '{}_{}'.format(tmp[a]['frame'], a)
                         self.info_data['intervals'][interval_id] = tmp[a]
                         del tmp[a]
 
             # update the time of the last frame
-            if fi: self.info_data['end'] = fi.time / (1000.0 * 60) * 60
+            if fi: self.info_data['end'] = fi.time / 1000.0
 
         self.__save_info_data()
 
@@ -244,6 +271,20 @@ class Log:
         """Creates the data directory if necessary."""
         if not os.path.isdir(self.data_directory):
             os.mkdir(self.data_directory)
+
+    def get_action(self, key:str):
+        """
+        Returns all action intervals with type :key:.
+        An empty list could mean, that there's no action of :key: or it wasn't parsed yet!
+
+        :param key: the action type
+        :return:    a list of intervals found in this log file
+        """
+        result = []
+        for a in self.info_data['intervals']:
+            if self.info_data['intervals'][a]['type'] == key:
+                result.append(self.info_data['intervals'][a])
+        return result
 
     def __repr__(self):
         """Returns the string representation of this log."""
