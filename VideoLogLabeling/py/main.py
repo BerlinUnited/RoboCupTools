@@ -23,15 +23,15 @@ def parseArguments():
     parser = argparse.ArgumentParser(
         description='Iterates through the log files and parses events & actions defined in the Action.py file.',
         epilog= "Example:\n"
-                "\t{0}\n"
+                "\t\033[1m{0}\033[0m\n"
                 "\t\tSearches the default directory and parses missing actions.\n\n"
-                "\t{0} -l games\n"
+                "\t\033[1m{0} -l games\033[0m\n"
                 "\t\tLists all found events and their including games.\n\n"
-                "\t{0} -p '/path/to/log/dir' '../../../another/dir'\n"
+                "\t\033[1m{0} -p '/path/to/log/dir' '../../../another/dir'\033[0m\n"
                 "\t\tInstead of the default log directory the given ones are used.\n\n"
-                "\t{0} -e '.*RC.*' '2018-04-06_Iran'\n"
+                "\t\033[1m{0} -e '.*RC.*' '2018-04-06_Iran'\033[0m\n"
                 "\t\tFilters all found events with the given pattern.\n\n"
-                "\t{0} -d -v -p '/path/to/log/dir' -e '.*RC18.*' '2018-04-06_Iran' -r -f\n"
+                "\t\033[1m{0} -d -v -p '/path/to/log/dir' -e '.*RC18.*' '2018-04-06_Iran' -r -f\033[0m\n"
                 "\t\tPerforms a 'dry-run' and uses the given log directory, searches for the event patterns and would fully reparse all found log files.\n\n"
                 "".format(os.path.basename(__file__)),
         formatter_class=argparse.RawDescriptionHelpFormatter
