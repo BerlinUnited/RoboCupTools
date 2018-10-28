@@ -2,6 +2,25 @@
 /* @var Game $game */
 /* @var string $name */
 /* @var string $basepath */
+
+
+// TODO: add ability to select different videos (if available)
+$video_sources = null;
+if($game->hasVideos()) {
+    // retrieve the source video file type, which should be used first
+    $default = !empty(Config::getInstance()->getGame()['video_default']) ? Config::getInstance()->getGame()['video_default'] : '';
+    // use the first video to display
+    $game_videos = $game->getVideos();
+    $video = reset($game_videos);
+    // sort the sources by the preferred order
+    $video_sources = $video->getSources();
+    usort($video_sources, function($a, $b) use ($default){
+        if($a->getType() === $default && $b->getType() === $default) { return 0; }
+        elseif ($a->getType() === $default && $b->getType() !== $default) { return -1; }
+        elseif ($a->getType() !== $default && $b->getType() === $default) { return 1; }
+        return 1;
+    });
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" ng-app="test">
@@ -57,29 +76,15 @@
     </div>
     
     <div class="col-sm-7">
-      <div ng-controller="PlayerController">
+      <div ng-controller="PlayerController" id="video-player-wrapper">
         <video class="video-player" id="player" preload="metadata">
         <?php
-            // TODO: add ability to select different videos (if available)
-            if($game->hasVideos()) {
-                // retrieve the source video file type, which should be used first
-                $default = !empty(Config::getInstance()->getGame()['video_default']) ? Config::getInstance()->getGame()['video_default'] : '';
-                // use the first video to display
-                $game_videos = $game->getVideos();
-                $video = reset($game_videos);
-                // sort the sources by the preferred order
-                $sources = $video->getSources();
-                usort($sources, function($a, $b) use ($default){
-                    if($a->getType() === $default && $b->getType() === $default) { return 0; }
-                    elseif ($a->getType() === $default && $b->getType() !== $default) { return -1; }
-                    elseif ($a->getType() !== $default && $b->getType() === $default) { return 1; }
-                    return 1;
-                });
-                // write out the sources
-                foreach ($sources as $source) {
-                    echo '<source src="'.$source->getUrl($basepath).'" type="'.$source->getMimeType().'">'."\n";
-                }
+        if ($video_sources !== null) {
+            // write out the sources
+            foreach ($video_sources as $source) {
+                echo '<source src="'.$source->getUrl($basepath).'" type="'.$source->getMimeType().'">'."\n";
             }
+        }
         ?>
         </video>
       </div>
@@ -120,6 +125,26 @@
         <div class="panel panel-default">
           <div id="video_configuration" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
             <div class="panel-body">
+                <?php
+                if($game->hasVideos()) {
+
+                ?>
+                <div class="row">
+                    <div class="col-xs-6">
+                        <div class="form-group">
+                            <label for="video_configuration_video">Video/Camera</label>
+                            <select id="video_configuration_video" class="form-control" disabled><option>default</option></select>
+
+                        </div>
+                    </div>
+                    <div class="col-xs-6">
+                        <div class="form-group">
+                            <label for="video_configuration_source">Video source</label>
+                            <select id="video_configuration_source" class="form-control"></select>
+                        </div>
+                    </div>
+                </div><!--.row-->
+                <?php } ?>
                 <div class="row">
                   <div class="col-xs-6">
                     <div class="form-group">
@@ -131,8 +156,8 @@
                       <label for="video_configuration_after">Video offset <i>after</i> the event (in seconds)</label> <input type="number" step="0.1" min="0" class="form-control" id="video_configuration_after" value="3.0">
                     </div>
                   </div>
-                </div>
-            </div>
+                </div><!--.row-->
+            </div><!--.panel-body-->
           </div>
         </div>
         <div id="configuration_control">

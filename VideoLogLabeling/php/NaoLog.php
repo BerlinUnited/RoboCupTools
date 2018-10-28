@@ -220,7 +220,7 @@ class NaoLog
     public function saveLabels($name, $labels) {
         // prepate the save path
         $path = dirname($this->info_file) . DIRECTORY_SEPARATOR . Config::l('labels')[0] . '-' . $name . Config::l('labels')[1];
-        if ( file_put_contents($path, $labels) === FALSE ) {
+        if ( @file_put_contents($path, $labels) === FALSE ) {
             return "ERROR: writing labels file!";
         }
         return true;
