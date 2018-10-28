@@ -16,9 +16,7 @@ class NaoLog
     /** @var string */
     private $body;
     /** @var string */
-    private $sync_file;
-    /** @var array */
-    private $sync_info = [];
+    private $sync_file_old;
     /** @var string */
     private $info_file;
     /** @var string */
@@ -66,27 +64,32 @@ class NaoLog
         }
     }
 
+    /**
+     * @param $msg
+     */
     private function addError($msg) {
         $this->errors[] = $msg;
         $this->is_valid = false;
     }
 
+    /**
+     * @deprecated
+     */
     private function parseOldSync() {
-        //$game_path . DIRECTORY_SEPARATOR . $data_dir . DIRECTORY_SEPARATOR . $path->getFilename() . DIRECTORY_SEPARATOR . Config::l('sync');
-        // TODO!
-        $log_data_file = '';
+        $log_data_file = dirname($this->info_file) . DIRECTORY_SEPARATOR . Config::l('sync');
         if(is_file($log_data_file)) {
-            $this->sync_file = $log_data_file;
-
-            //$this->parseOldSync();
-
+            $this->sync_file_old = $log_data_file;
+            $syncings = parse_ini_file($this->sync_file_old);
+            // only add missing sync info
+            if(!empty($syncings['video-file']) && !isset($this->info['sync'][$syncings['video-file']])) {
+                $this->info['sync'][$syncings['video-file']] = [
+                    'log' => empty($syncings['sync-time-log'])?0:floatval($syncings['sync-time-log']),
+                    'video' => empty($syncings['sync-time-video'])?0:floatval($syncings['sync-time-video'])
+                ];
+            }
         } else {
-            $this->addError('Missing video sync file!');
+            $this->addError('Missing OLD sync file!');
         }
-        $syncings = parse_ini_file($this->sync_file);
-        $this->sync_info['video_offset'] = empty($syncings['sync-time-video'])?0:floatval($syncings['sync-time-video']);
-        $this->sync_info['log_offset'] = empty($syncings['sync-time-log'])?0:floatval($syncings['sync-time-log']);
-        $this->sync_info['video'] = empty($syncings['video-file'])?'':$syncings['video-file'];
     }
 
     /**
