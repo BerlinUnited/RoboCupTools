@@ -131,8 +131,8 @@ def do_work(log:Log, dry=False, apply=None, reparse:bool=False, old_sync:bool=Fa
         # check if the syncing infos with the video exists
         if not log.has_syncing_info() or log.syncing_info_needs_update():
             # print what we do
-            if log.syncing_info_needs_update(): logging.info('%s / %s / %s - updating syncing file ...', str(log.game.event), str(log.game), str(log))
-            else: logging.info('%s / %s / %s - missing syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
+            if not log.has_syncing_info(): logging.info('%s / %s / %s - missing syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
+            else: logging.info('%s / %s / %s - updating syncing file ...', str(log.game.event), str(log.game), str(log))
             # do something, if not 'dry' run
             if not dry:
                 log.sync_with_videos()

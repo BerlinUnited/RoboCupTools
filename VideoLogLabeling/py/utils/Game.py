@@ -36,11 +36,13 @@ class Game:
     def parse_info(self):
         """Extracts date, playing teams and halftime based on the configuration regular expression."""
         m = re.match(config['game']['regex'], os.path.basename(self.directory))
-
-        self.date = datetime.datetime.strptime(m.group(1), '%Y-%m-%d_%H-%M-%S')
-        self.team_1 = m.group(2)
-        self.team_2 = m.group(3)
-        self.half = m.group(4)
+        if m:
+            self.date = datetime.datetime.strptime(m.group(1), '%Y-%m-%d_%H-%M-%S')
+            self.team_1 = m.group(2)
+            self.team_2 = m.group(3)
+            self.half = m.group(4)
+        else:
+            logging.getLogger('Game').debug("Game directory doesn't match regex!", self.directory)
 
     def scan_logs(self):
         """Scans the log directory for matching logs and adds them to the log list."""
@@ -56,6 +58,8 @@ class Game:
                     self.logs[log] = Log(self, log_dir, log_data_dir)
                 else:
                     logging.getLogger('Game').warning("Invalid log directory!", log_dir)
+        else:
+            logging.getLogger('Game').debug("Game has no log directories!")
 
     def scan_videos(self):
         """First it reads the content of the video info file and then scans the video directory for video files. Only
@@ -64,8 +68,11 @@ class Game:
         # read the video info file
         videos_file = self.__get_video_file()
         if os.path.isfile(videos_file):
+            logging.getLogger('Game').debug("Read game's video info file (%s).", videos_file)
             self.videos_file = videos_file
             self.videos = json.load(open(videos_file,'r'))
+        else:
+            logging.getLogger('Game').debug("Game has no video info file (%s)!", videos_file)
 
         # scan for the "real" video files
         videos = os.path.join(self.directory, config['game']['dirs']['video'])
@@ -79,6 +86,7 @@ class Game:
                         # read content of '.url' files
                         # NOTE: could be more general for 'text' files
                         if ext == 'url':
+                            logging.getLogger('Game').debug("Read url video file.")
                             with open(os.path.join(videos, video), 'r') as url_file:
                                 video = list(filter(None, [ (l.strip() if urlparse(l.strip()).scheme in self.__url_schemes else None) for l in url_file.readlines() ]))
                         else:
@@ -91,6 +99,7 @@ class Game:
                         if video:
                             # add new video;
                             if name not in self.videos:
+                                logging.getLogger('Game').debug("Adding video to game (%s)", name)
                                 self.videos[name] = {
                                     'sources': [],
                                     'events': {
@@ -100,12 +109,15 @@ class Game:
                                 }
                             # add all missing video to sources
                             for v in video:
+                                logging.getLogger('Game').debug("Adding source to video (%s -> %s)", name, v)
                                 self.videos[name]['sources'].append(v)
                             # mark as changed
                             self.__dirty_v = True
 
                         # skip the remaining extensions
                         break
+        else:
+            logging.getLogger('Game').debug("Game has video directory!")
 
     def __get_video_file(self):
         """
@@ -154,8 +166,17 @@ class Game:
         """
         return len(self.videos) > 0
 
+    def __create_data_directory(self):
+        """Creates the data directory if necessary."""
+        directory = os.path.join(self.directory, config['game']['dirs']['data'])
+        if not os.path.isdir(directory):
+            logging.getLogger('Game').debug("Create data directory (%s)!", directory)
+            os.mkdir(directory)
+
     def create_video_file(self):
         """Creates/Writes the video info file."""
+        self.__create_data_directory()
+        logging.getLogger('Game').debug("Create video info file")
         json.dump(self.videos, open(self.__get_video_file(), 'w'), indent=4, separators=(',', ': '))
 
     def __repr__(self):

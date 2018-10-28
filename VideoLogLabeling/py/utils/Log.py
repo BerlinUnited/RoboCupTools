@@ -50,39 +50,52 @@ class Log:
         """
         return os.path.join(self.data_directory, config['log'][key])
 
+    def __set_default_info_data(self):
+        """Sets the default data for the info variable."""
+        self.info_data = {'parsed_actions': [], 'intervals': {}, 'start': 0, 'end': 0, 'sync': {}}
+
     def parse_info(self):
         """Sets the log file path and extracts player number, robot number and an robot id from the log path based on the
         configuration regular expression."""
         log_file = self.__get_file('name')
         if os.path.isfile(log_file):
             self.file = log_file
+        else:
+            logging.getLogger('Log').debug("Missing log file (%s)!", log_file)
 
         m = re.match(config['log']['regex'], os.path.basename(self.directory))
-
-        self.player_number = m.group(1)
-        self.nao = m.group(2)
-        self.robot = m.group(3)
+        if m:
+            self.player_number = m.group(1)
+            self.nao = m.group(2)
+            self.robot = m.group(3)
+        else:
+            logging.getLogger('Log').debug("Log directory doesn't match regex (%s)!", self.directory)
 
     def scan_data(self):
         """Reads the info file of this log and retrieves all label files of this log."""
         if os.path.isdir(self.data_directory):
-            # set the sync information
-            sync_file = self.__get_data_file('sync')
-            if os.path.isfile(sync_file):
-                self.sync_file_old = sync_file
+            # set the OLD sync information
+            sync_file_old = self.__get_data_file('sync')
+            if os.path.isfile(sync_file_old):
+                self.sync_file_old = sync_file_old
             # set the info file of this log
             info_file = self.__get_data_file('info')
             if os.path.isfile(info_file): self.info_file = info_file
             self.__read_info_file()
             # retrieve all label files
             self.labels = glob.glob(self.data_directory+'/'+config['log']['labels'][0]+'*'+config['log']['labels'][1])
+        else:
+            logging.getLogger('Log').debug("Data directory doesn't exist (%s)!", self.data_directory)
+            self.__set_default_info_data()
 
     def __read_info_file(self):
         """Reads the content of the info file or creates the default dict, if the info file doesn't exists."""
         if self.info_data is None and self.info_file is not None and os.path.isfile(self.info_file):
+            logging.getLogger('Log').debug("Read log's info file (%s).", self.info_file)
             self.info_data = json.load(io.open(self.info_file, 'r', encoding='utf-8'))
         else:
-            self.info_data = {'parsed_actions': [], 'intervals': {}, 'start': 0, 'end': 0, 'sync': {}}
+            logging.getLogger('Log').debug("No log info file available (%s)!", self.info_file)
+            self.__set_default_info_data()
 
     def parsed_actions(self):
         """Returns the parsed actions of this log."""
@@ -170,6 +183,7 @@ class Log:
         # are the ready states?
         if ready:
             # return the first ready state of this log file
+            logging.getLogger('Log').debug("Use already parsed ready state for retrieving first one.")
             ready.sort(key=lambda i: i['frame'])
             return (ready[0]['frame'], ready[0]['begin']*1000.0)
 
@@ -264,12 +278,14 @@ class Log:
     def __save_info_data(self):
         """Saves the info data to the info file and creates the parent directory if necessary."""
         self.__create_data_directory()
+        logging.getLogger('Log').debug("Save log info file (%s)!", self.data_directory)
         info_file = self.__get_data_file('info')
         json.dump(self.info_data, open(info_file, 'w'), indent=4, separators=(',', ': '))
 
     def __create_data_directory(self):
         """Creates the data directory if necessary."""
         if not os.path.isdir(self.data_directory):
+            logging.getLogger('Log').debug("Create data directory for log (%s)!", self.data_directory)
             os.mkdir(self.data_directory)
 
     def get_action(self, key:str):
