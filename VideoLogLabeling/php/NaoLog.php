@@ -26,7 +26,7 @@ class NaoLog
     /** @var array */
     private $errors = [];
 
-    function __construct(SplFileInfo $path, $game_path, $data_dir) {
+    function __construct(SplFileInfo $path) {
         $this->is_valid = preg_match('/'.Config::l('regex').'/', $path->getFilename(), $matches) === 1;
         if ($this->is_valid && $path->isReadable()) {
             $this->path = $path->getRealPath();
@@ -35,29 +35,17 @@ class NaoLog
             $this->head = $matches[2];
             $this->body = $matches[3];
 
-            $data_path = $game_path . DIRECTORY_SEPARATOR . $data_dir;
-            if(is_dir($game_path) && is_dir($data_path)) {
-                $log_data_path = $data_path . DIRECTORY_SEPARATOR . $path->getFilename();
-                if(is_dir($log_data_path)) {
-
-                    $log_info_file = $log_data_path . DIRECTORY_SEPARATOR . Config::l('info');
-                    if(is_file($log_info_file)) {
-                        $this->info_file = $log_info_file;
-                        foreach (glob($log_data_path . DIRECTORY_SEPARATOR . implode('*',Config::l('labels'))) as $label) {
-                            // extract label name
-                            if(preg_match('/'.Config::l('labels')[0].'-(.+)'.Config::l('labels')[1].'/', basename($label), $matches) === 1) {
-                                $this->labels[$matches[1]] = $label;
-                            }
-                        }
-                    } else {
-                        $this->addError('Missing log info file!');
+            $log_info_file = $this->path . DIRECTORY_SEPARATOR . Config::l('info');
+            if(is_file($log_info_file)) {
+                $this->info_file = $log_info_file;
+                foreach (glob($this->path . DIRECTORY_SEPARATOR . implode('*',Config::l('labels'))) as $label) {
+                    // extract label name
+                    if(preg_match('/'.Config::l('labels')[0].'-(.+)'.Config::l('labels')[1].'/', basename($label), $matches) === 1) {
+                        $this->labels[$matches[1]] = $label;
                     }
-
-                } else {
-                    $this->addError('Missing data directory!');
                 }
             } else {
-                $this->addError('Invalid path to meta data!');
+                $this->addError('Missing log info file!');
             }
         } else {
             $this->addError('Invalid or not readable log path');
@@ -76,7 +64,7 @@ class NaoLog
      * @deprecated
      */
     private function parseOldSync() {
-        $log_data_file = dirname($this->info_file) . DIRECTORY_SEPARATOR . Config::l('sync');
+        $log_data_file = $this->path. DIRECTORY_SEPARATOR . Config::l('sync');
         if(is_file($log_data_file)) {
             $this->sync_file_old = $log_data_file;
             $syncings = parse_ini_file($this->sync_file_old);

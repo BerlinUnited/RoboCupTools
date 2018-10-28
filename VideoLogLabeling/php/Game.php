@@ -47,12 +47,12 @@ class Game
      *
      */
     private function init() {
-        $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['nao'];
+        $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['data'];
         if (is_dir($path)) {
             $it = new DirectoryIterator($path);
             foreach($it as $file) {
                 if (!$file->isDot() && $file->isDir()) {
-                    $log = new NaoLog($file, $this->path, Config::g('dirs')['data']);
+                    $log = new NaoLog($file);
                     if ($log->isValid()) {
                         $this->logs[$log->getId()] = $log;
                     } else {
