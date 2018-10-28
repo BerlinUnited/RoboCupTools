@@ -33,6 +33,7 @@ $( document ).ready(function() {
         playerGlobal = new PeriodicPlayer(player);
       });
     }
+    //, youtube:{ nocookie: true }
   });
 });
 
@@ -170,7 +171,7 @@ app.controller('PlayerController', function($scope) {
     // add video sources to source selector
     var sourceSelect = $('#video_configuration_source');
     $('#player').children().each(function (i,s) {
-        sourceSelect.append('<option value="'+this.src+'">'+this.type+'</option>');
+        sourceSelect.append('<option value="'+this.src+'">'+(this.type?this.type:mejs.Utils.getTypeFromFile(this.src))+'</option>');
     });
     // switch source listener
     sourceSelect.change(function (e) {
