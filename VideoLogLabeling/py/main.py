@@ -10,7 +10,7 @@ import traceback
 sys.path.append(os.path.join(os.path.abspath('.'), 'parsers'))
 
 import Actions
-from utils import config, Event
+from utils import config, Event, Log
 
 
 def parseArguments():
@@ -40,6 +40,7 @@ def parseArguments():
     parser.add_argument('-l', '--list', action='store', help="Lists some information ('actions', 'events', 'games', 'videos').")
     parser.add_argument('-vf', '--video-file', action='store_true', help="Creates the default video info file, if it doesn't exists.")
     parser.add_argument('-r', '--reparse', action='store_true', help='If used with the "--full" or "--action" option, those actions gets reparsed.')
+    parser.add_argument('--old-sync', action='store_true', help='Enables creating the old sync file format.')
     action_group = parser.add_mutually_exclusive_group()
     action_group.add_argument('-f', '--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
     action_group.add_argument('-a', '--action', action='store', nargs='+', help='Specifies the action(s) which should be used while parsing.')
@@ -115,7 +116,7 @@ def retrieve_applying_actions(args, actions):
             logging.warning('The following action(s) aren\'t available: %s', str(actions_unavailable))
     return actions_applying
 
-def do_work(log, dry=False, apply=None, reparse=False):
+def do_work(log:Log, dry=False, apply=None, reparse:bool=False, old_sync:bool=False):
     """
     Does the actual work. It creates the info file, the syncing info if they doesn't exists and applies the action functions
     if requested or if necessary.
@@ -130,7 +131,13 @@ def do_work(log, dry=False, apply=None, reparse=False):
         # check if the syncing infos with the video exists
         if not log.has_syncing_info():
             logging.info('%s / %s / %s - missing syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
-            if not dry: log.sync_with_videos()
+            if not dry:
+                log.sync_with_videos()
+        # check if old syncing file should be created and currently doesn't exists
+        if old_sync and not log.has_syncing_info_old():
+            logging.info('%s / %s / %s - missing OLD syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
+            if not dry:
+                log.sync_with_videos_old()
         # check if the default label file exits
         if not log.has_info_file():
             logging.info('%s / %s / %s - missing info file! creating default ...', str(log.game.event), str(log.game), str(log))
@@ -207,7 +214,7 @@ if __name__ == "__main__":
                                 logging.info("%s / %s - missing video info file! creating default ...", str(e), str(g))
                             # check work of logs
                             for l in g.logs.values():
-                                do_work(l, True, actions_applying, args.reparse)
+                                do_work(l, True, actions_applying, args.reparse, args.old_sync)
         else:
             # do the hard work
             pp = multiprocessing.Pool()
@@ -225,7 +232,7 @@ if __name__ == "__main__":
                                 g.create_video_file()
                             # do work of logs
                             for l in g.logs.values():
-                                pp.apply_async(do_work, (l,False,actions_applying,args.reparse))
+                                pp.apply_async(do_work, (l, False, actions_applying, args.reparse, args.old_sync))
             # wait for workers to finish
             pp.close()
             pp.join()
