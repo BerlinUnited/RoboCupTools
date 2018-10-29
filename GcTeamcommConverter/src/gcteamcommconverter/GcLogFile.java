@@ -229,7 +229,7 @@ public class GcLogFile
      * Writes the converted data as json to the output file.
      * 
      * @param c the FileConverter, which should be applied.
-     * @return number of successfull 'converted' log objects
+     * @return number of successful 'converted' log objects
      */
     public int writeFile(FileConverter c) {
         // use JsonWriter to write the enclosing Json-Array ...
