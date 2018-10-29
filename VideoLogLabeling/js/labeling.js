@@ -11,10 +11,14 @@ function PeriodicPlayer(player)
     }
     
     this.currentStopListener = function(event) {
-     if (player.node.currentTime > end) {
-          player.setCurrentTime(start);
-          player.pause();
-      }
+        // if the user sets the current time (eg. via slider), we don't want to reset it
+        // assuming that the user sets the time "obviously" different than the current interval
+        if (player.node.currentTime < (start - 4.0) || player.node.currentTime > (end + 4.0)) {
+            player.media.removeEventListener("timeupdate", playerGlobal.currentStopListener, false);
+        } else if (player.node.currentTime > end) {
+            player.setCurrentTime(start);
+            player.pause();
+        }
     };
     
     player.media.addEventListener("timeupdate", this.currentStopListener, false);
@@ -181,8 +185,8 @@ app.controller('PlayerController', function($scope) {
     });
 
     $scope.$on('setPeriod', function(event, log_id, interval_id, offset) {
-        var t_begin = $scope.logs[log_id].intervals[interval_id].begin + offset - $('#video_configuration_before').val();
-        var t_end = $scope.logs[log_id].intervals[interval_id].end + offset + $('#video_configuration_after').val();
+        var t_begin = $scope.logs[log_id].intervals[interval_id].begin + offset - parseFloat($('#video_configuration_before').val());
+        var t_end = $scope.logs[log_id].intervals[interval_id].end + offset + parseFloat($('#video_configuration_after').val());
         playerGlobal.setPeriod(t_begin, t_end);
     });
 });
