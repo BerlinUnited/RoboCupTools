@@ -98,37 +98,45 @@ public class GcTeamcommConverter
     public static void main(String[] args) {
         // create class loaders for gamecontroller jars
         List<ClassLoader> gc = loadGameControllers();
+        // vars set by the given arguments
+        ArrayList<String> args_files = new ArrayList<>();
+        boolean convertAll = false;
         // init converter & file container
         ArrayList<Class<? extends FileConverter>> converter = new ArrayList<>();
         ArrayList<File> files = new ArrayList<>();
         
+        // parse arguments
         for (String arg : args) {
             // parse application options
             if(arg.equals("--raw")) {
                 converter.add(FileConverterRaw.class);
-                continue;
             } else if(arg.equals("--tc")) {
                 converter.add(FileConverterTC.class);
-                continue;
             } else if(arg.equals("--gtc")) {
                 converter.add(FileConverterGTC.class);
-                continue;
             } else if(arg.equals("--help")||arg.equals("-h")) {
-                files.clear();
-                converter.clear();
-                break;
+                printHelp();
+                return;
+            } else if(arg.equals("--all")) {
+                convertAll = true;
+            } else {
+                // treat argument as file/directory
+                args_files.add(arg);
             }
-            
-            // treat argument as file/directory
-            File f = new File(arg);
+        }
+        
+        final boolean convertAllTmp = convertAll;
+        // retrieve 'correct' files from the arguments files/directories
+        args_files.forEach((file) -> {
+            File f = new File(file);
             if(f.exists()) {
                 if(f.isDirectory()) {
                     try (Stream<Path> paths = Files.walk(f.toPath())) {
                         paths.forEach((Path t) -> {
                             File df = t.toFile();
                             if(df.exists() && df.isFile() && df.getName().endsWith(".log")) {
-                                //don't convert initial and finished logs
-                                if(!(df.getName().contains("initial") || df.getName().contains("finished"))){
+                                // don't convert initial and finished logs, except it was explicitly set via argument
+                                if(convertAllTmp || !(df.getName().contains("initial") || df.getName().contains("finished"))){
                                     files.add(df);
                                 }                                
                             }
@@ -143,7 +151,7 @@ public class GcTeamcommConverter
             } else {
                 System.err.println("File doesn't exists! (" + f.getName() + ") or unknown Argument.");
             }
-        }
+        });
         
         if(files.isEmpty() || converter.isEmpty()) {
             printHelp();
@@ -203,8 +211,7 @@ public class GcTeamcommConverter
                 + "\t--raw\tconverts log file 'as-is' to json with extension '.raw.json'\n"
                 + "\t--tc\tconverts log file team communication to json (specific data only) with extension '.tc.json'\n"
                 + "\t--gtc\tconverts log file gamecontroller and team communication to json (specific data only) with extension '.gtc.json'\n"
-                + "\n"
-                + "Note: files containing the substrings 'initial' and 'finished' are not converted"
+                + "\t--all\tby default files containing the substrings 'initial' and 'finished' are not converted, with this option they get converted too\n"
         );
     } // END printHelp()
     
