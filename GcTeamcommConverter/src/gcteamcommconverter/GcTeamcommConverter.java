@@ -6,7 +6,9 @@ import gcteamcommconverter.FileConverter.FileConverter;
 import gcteamcommconverter.FileConverter.FileConverterGTC;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,63 +35,7 @@ public class GcTeamcommConverter
      */
     public static final Map<Integer, String> TEAM_NAMES;
     static {
-        Map<Integer, String> a = new HashMap<>();
-        a.put(0, "Invisibles");
-        a.put(1, "UT Austin Villa");
-        a.put(2, "Austrian Kangaroos");
-        a.put(3, "Bembelbots");
-        a.put(4, "Berlin United");
-        a.put(5, "B-Human");
-        a.put(6, "Cerberus");
-        a.put(7, "DAInamite");
-        a.put(8, "Dutch Nao Team");
-        a.put(9, "Edinferno");
-        a.put(10, "Kouretes");
-        a.put(11, "MiPal");
-        a.put(12, "Nao Devils Dortmund");
-        a.put(13, "Nao-Team HTWK");
-        a.put(14, "Northern Bites");
-        a.put(15, "NTU RoboPAL");
-        a.put(16, "RoboCanes");
-        a.put(17, "RoboEireann");
-        a.put(18, "UNSW Sydney");
-        a.put(19, "SPQR Team");
-        a.put(20, "TJArk");
-        a.put(21, "UChile Robotics Team");
-        a.put(22, "UPennalizers");
-        a.put(23, "Crude Scientists");
-        a.put(24, "HULKs");
-        a.put(26, "MRL-SPL");
-        a.put(27, "Philosopher");
-        a.put(28, "Rimal Team");
-        a.put(29, "SpelBots");
-        a.put(30, "Team-NUST");
-        a.put(31, "UnBeatables");
-        a.put(32, "UTH-CAR");
-        a.put(33, "NomadZ");
-        a.put(34, "SPURT");
-        a.put(35, "Blue Spider");
-        a.put(36, "Camellia Dragons");
-        a.put(37, "JoiTech-SPL");
-        a.put(38, "Linköping Humanoids");
-        a.put(39, "WrightOcean");
-        a.put(40, "Mars");
-        a.put(41, "Aztlan Team");
-        a.put(42, "CMSingle");
-        a.put(43, "TeamSP");
-        a.put(44, "Luxembourg United");
-        a.put(45, "Naova ETS");
-        a.put(46, "Recife Soccer");
-        a.put(47, "Rinobot");
-  
-        a.put(90, "DoBerMan");
-        a.put(91, "B-HULKs");
-        a.put(92, "Swift-Ark");
-        a.put(93, "Team USA");
-        a.put(94, "B-Swift");
-        a.put(95, "AstroNAOtas");
-        a.put(96, "Team-Team");
-        TEAM_NAMES = Collections.unmodifiableMap(a);
+        TEAM_NAMES = Collections.unmodifiableMap(loadTeams("gc/teams.cfg"));
     }
     
     /**
@@ -119,6 +65,16 @@ public class GcTeamcommConverter
                 return;
             } else if(arg.equals("--all")) {
                 convertAll = true;
+            } else if(arg.equals("--list-gc")) {
+                gc.forEach((t) -> {
+                    System.out.println("Found GameController: " + ((GcClassLoader)t).getName());
+                });
+                return;
+            } else if(arg.equals("--list-teams")) {
+                TEAM_NAMES.forEach((id, name) -> {
+                    System.out.println(String.format("%3d - %s", id, name));
+                });
+                return;
             } else {
                 // treat argument as file/directory
                 args_files.add(arg);
@@ -138,7 +94,7 @@ public class GcTeamcommConverter
                                 // don't convert initial and finished logs, except it was explicitly set via argument
                                 if(convertAllTmp || !(df.getName().contains("initial") || df.getName().contains("finished"))){
                                     files.add(df);
-                                }                                
+                                }
                             }
                         }
                         );
@@ -212,6 +168,8 @@ public class GcTeamcommConverter
                 + "\t--tc\tconverts log file team communication to json (specific data only) with extension '.tc.json'\n"
                 + "\t--gtc\tconverts log file gamecontroller and team communication to json (specific data only) with extension '.gtc.json'\n"
                 + "\t--all\tby default files containing the substrings 'initial' and 'finished' are not converted, with this option they get converted too\n"
+                + "\t--list-gc\tlists the found gamecontroller jars\n"
+                + "\t--list-teams\tlists the found teams from the team config\n"
         );
     } // END printHelp()
     
@@ -230,7 +188,6 @@ public class GcTeamcommConverter
                 if(jar.isFile() && jar.getAbsolutePath().endsWith(".jar")) {
                     try {
                         gamecontrollers.add(new GcClassLoader(jar));
-                        System.out.println("Found GameController: " + jar.getName());
                     } catch (SecurityException | IllegalArgumentException ex) {
                         Logger.getLogger(GcTeamcommConverter.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -239,7 +196,51 @@ public class GcTeamcommConverter
         }
         return gamecontrollers;
     } // END loadGameControllers()
-    
+
+    /**
+     * Reads the names of all teams in the config file and returns a map of team id and team name.
+     * NOTE: This was copied from "Gamecontroller.data.Teams".
+     * 
+     * @param file the config file with team names to read
+     * @return the id/name map of the teams
+     */
+    private static Map<Integer, String> loadTeams(String file) {
+        Map<Integer, String> teams = new HashMap<>();
+        BufferedReader br = null;
+        try {
+            InputStream inStream = new FileInputStream(file);
+            br = new BufferedReader(new InputStreamReader(inStream, "UTF-8"));
+            String line;
+            while ((line = br.readLine()) != null) {
+                final String[] entry = line.split("=", 2);
+                if (entry.length == 2) {
+                    int key = -1;
+                    try {
+                        key = Integer.valueOf(entry[0]);
+                    } catch (NumberFormatException e) { /* ignore */ }
+                    if (key >= 0) {
+                        final String[] values = entry[1].split(",");
+                        teams.put(key, values[0]);
+                    } else {
+                        System.err.println("error in teams.cfg: \"" + entry[0] + "\" is not a valid team number");
+                    }
+                } else if (!line.trim().isEmpty()) {
+                    System.err.println("malformed entry in teams.cfg: \"" + line + "\"");
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("cannot load " + file);
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) { /* ignore */ }
+            }
+        }
+
+        return teams;
+    }
+
     /**
      * Asks the user to select team numbers from the given set.
      * 
