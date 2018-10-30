@@ -25,11 +25,20 @@ config = {
         'labels': ['labels', '.json'],
         'name': 'game.log',
         'sync': 'game.log.videoanalyzer.properties'
+    },
+    'gc': {
+        'regex': 'teamcomm_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}-\\d{3}_(.+)_(.+)_\\d.{2}Half.log',
+        'file': 'gc.json',
+        'conv_ext': 'json',
+        'conv_options': ['--gtc']
     }
 }
+
 # read the config file and apply the contents to the default config dict
 if os.path.isfile(config_file):
     try:
-        config.update(json.load(open(config_file, 'r')))
+        _config = json.load(open(config_file, 'r'))
+        # TODO: update recursively
+        config.update(_config)
     except:
         pass

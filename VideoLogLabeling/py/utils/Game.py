@@ -5,6 +5,7 @@ import os
 import re
 from urllib.parse import urlparse
 
+from .GcLog import GcLog
 from .Config import config
 from .Log import Log
 
@@ -25,6 +26,7 @@ class Game:
         self.logs = {}
         self.videos_file = None
         self.videos = {}
+        self.gc = None
 
         self.__dirty_v = False
         self.__url_schemes = ['http', 'https']
@@ -32,6 +34,7 @@ class Game:
         self.parse_info()
         self.scan_logs()
         self.scan_videos()
+        self.scan_gc_logs()
 
     def parse_info(self):
         """Extracts date, playing teams and halftime based on the configuration regular expression."""
@@ -119,6 +122,27 @@ class Game:
         else:
             logging.getLogger('Game').debug("Game has video directory!")
 
+    def scan_gc_logs(self):
+        """Scans the log directory for matching gamecontroller logs."""
+        gc_logs = os.path.join(self.directory, config['game']['dirs']['gc'])
+        if os.path.isdir(gc_logs):
+            # scan for matching file
+            for log in os.listdir(gc_logs):
+                gc_log_file = os.path.join(gc_logs, log)
+                # does it match
+                if os.path.isfile(gc_log_file) and re.fullmatch(config['gc']['regex'], log):
+                    # already have a gamecontroller log file?
+                    if self.gc is None:
+                        log_data_dir = os.path.join(self.directory, config['game']['dirs']['data'])
+                        self.gc = GcLog(gc_log_file, log_data_dir)
+                    else:
+                        logging.getLogger('Game').warning("Found multiple gamecontroller log files, the should only be one! (ignoring the others)")
+            # some debug output
+            if not self.gc:
+                logging.getLogger('Game').debug("No gamecontroller log file found.")
+        else:
+            logging.getLogger('Game').debug("Game has no gamecontroller log directory!")
+
     def __get_video_file(self):
         """
         Returns the path of the video info file - without any existence checks!
@@ -178,6 +202,15 @@ class Game:
         self.__create_data_directory()
         logging.getLogger('Game').debug("Create video info file")
         json.dump(self.videos, open(self.__get_video_file(), 'w'), indent=4, separators=(',', ': '))
+
+    def has_gc_file(self):
+        """
+        Returns True, if a gamecontroller log file exits, otherwise False.
+
+        :return:    True|False
+        """
+        return self.gc is not None
+
 
     def __repr__(self):
         """Returns the string representation of this game."""

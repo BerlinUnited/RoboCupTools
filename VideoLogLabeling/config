@@ -28,5 +28,11 @@
             "labels",
             ".json"
         ]
+    },
+    "gc": {
+        "regex": "teamcomm_\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}-\\d{3}_(.+)_(.+)_\\d.{2}Half.log",
+        "file": "gc.json",
+        "conv_ext": "json",
+        "conv_options": ["--gtc"]
     }
 }

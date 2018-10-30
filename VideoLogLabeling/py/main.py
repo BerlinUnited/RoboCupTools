@@ -1,15 +1,18 @@
 #!/usr/bin/python3
 import argparse
+import inspect
 import logging
 import multiprocessing
 import os
 import re
+import subprocess
 import sys
 import traceback
 
 sys.path.append(os.path.join(os.path.abspath('.'), 'parsers'))
 
 import Actions
+import ActionsGc
 from utils import config, Event, Log
 
 
@@ -20,6 +23,7 @@ def parseArguments():
 
     :return: the Namespace with the parsed arguments
     """
+    gc_converter = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../GcTeamcommConverter/dist/GcTeamcommConverter.jar'))
     parser = argparse.ArgumentParser(
         description='Iterates through the log files and parses events & actions defined in the Action.py file.',
         epilog= "Example:\n"
@@ -41,6 +45,7 @@ def parseArguments():
     parser.add_argument('-vf', '--video-file', action='store_true', help="Creates the default video info file, if it doesn't exists.")
     parser.add_argument('-r', '--reparse', action='store_true', help='If used with the "--full" or "--action" option, those actions gets reparsed.')
     parser.add_argument('--old-sync', action='store_true', help='Enables creating the old sync file format.')
+    parser.add_argument('--gc', default=gc_converter, action='store', help='Sets the converter for the gamecontroller log files. By default the converter of the naoth rc toolbox is used.')
     action_group = parser.add_mutually_exclusive_group()
     action_group.add_argument('-f', '--full', action='store_true', help='If a label file is missing some actions, it gets fully parsed, otherwise only the missing actions are parsed (default).')
     action_group.add_argument('-a', '--action', action='store', nargs='+', help='Specifies the action(s) which should be used while parsing.')
@@ -98,6 +103,23 @@ def load_actions():
 
     return actions
 
+def load_gc_actions():
+    actions = { 'gtc': {} }
+
+    for a in dir(ActionsGc):
+        # ignore functions beginning with an '_'
+        if not a.startswith('_'):
+            fun = getattr(ActionsGc, a)
+            _, defaults = list(filter(lambda m: m[0] == '__defaults__', inspect.getmembers(fun)))[0]
+            if defaults:
+                for d in defaults:
+                    if d not in actions: actions[d] = {}
+                    actions[d][a] = fun
+            else:
+                actions['gtc'][a] = fun
+
+    return actions
+
 def retrieve_applying_actions(args, actions):
     """
     Filters the given :actions: functions based on the application arguments.
@@ -115,6 +137,23 @@ def retrieve_applying_actions(args, actions):
         if actions_unavailable:
             logging.warning('The following action(s) aren\'t available: %s', str(actions_unavailable))
     return actions_applying
+
+def check_gc_converter(converter:str):
+    """
+    Checks, whether the given :converter: is a valid file and can be executed as java application.
+
+    :param converter:   the converter to test
+    :return:            True|False
+    """
+    # check existence
+    if not os.path.isfile(converter):
+        return False
+    # try to execute
+    result = subprocess.run(['java', '-jar', converter, '-h'], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    if result.returncode != 0:
+        # execution failed!
+        return False
+    return True
 
 def do_work(log:Log, dry=False, apply=None, reparse:bool=False, old_sync:bool=False):
     """
@@ -175,6 +214,12 @@ if __name__ == "__main__":
     # init global vars
     events = read_logs(args.path)
     actions = load_actions()
+    actions_gc = load_gc_actions()
+
+    # checks the gc converter and 'disables' conversion, if the converter doesn't exist
+    if not check_gc_converter(args.gc):
+        logging.info("Invalid GameController converter! GC files aren't converted.")
+        args.gc = None
 
     if args.list:
         if args.list == 'actions':
@@ -233,6 +278,19 @@ if __name__ == "__main__":
                             elif g.has_video_file() and g.has_video_file_changed():
                                 logging.info("%s / %s - updating video info file ...", str(e), str(g))
                                 g.create_video_file()
+                            # check if the gamecontroller file needs to be converted
+                            if g.has_gc_file():
+                                # convert gamecontroller file first
+                                if not g.gc.has_converted() and args.gc:
+                                    g.gc.convert(args.gc)
+                                # retrieve all action names
+                                actions_gc_keys = set()
+                                for a in actions_gc.values():
+                                    actions_gc_keys = actions_gc_keys.union(a.keys())
+                                # check if gamecontroller file needs to be re-created
+                                if actions_gc_keys - set(g.gc.parsed_actions()) or args.reparse:
+                                    logging.info('%s / %s - missing actions in gamecontroller file! re-creating ...', str(g.event), str(g))
+                                    g.gc.create_info_file(actions_gc)
                             # do work of logs
                             for l in g.logs.values():
                                 pp.apply_async(do_work, (l, False, actions_applying, args.reparse, args.old_sync))
