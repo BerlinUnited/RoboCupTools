@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -34,8 +36,14 @@ public class GcTeamcommConverter
      * The id and the names of all known teams.
      */
     public static final Map<Integer, String> TEAM_NAMES;
+    private static final String applicationPath;
     static {
-        TEAM_NAMES = Collections.unmodifiableMap(loadTeams("gc/teams.cfg"));
+        // retrieve application path; jar file and netbeans execution are "detected"
+        Matcher mt = Pattern.compile("(jar:)?(file:)?(.+)((/build/.+)|(/.+\\.jar!.+))GcTeamcommConverter.class", Pattern.CASE_INSENSITIVE)
+                            .matcher(GcTeamcommConverter.class.getResource("GcTeamcommConverter.class").getPath());
+        applicationPath = mt.matches() ? mt.group(3)+"/" : "";
+        // load team config
+        TEAM_NAMES = Collections.unmodifiableMap(loadTeams(applicationPath + "gc/teams.cfg"));
     }
     
     /**
@@ -66,14 +74,22 @@ public class GcTeamcommConverter
             } else if(arg.equals("--all")) {
                 convertAll = true;
             } else if(arg.equals("--list-gc")) {
-                gc.forEach((t) -> {
-                    System.out.println("Found GameController: " + ((GcClassLoader)t).getName());
-                });
+                if(gc.isEmpty()) {
+                    System.err.println("No GameController found!");
+                } else {
+                    gc.forEach((t) -> {
+                        System.out.println("Found GameController: " + ((GcClassLoader)t).getName());
+                    });
+                }
                 return;
             } else if(arg.equals("--list-teams")) {
-                TEAM_NAMES.forEach((id, name) -> {
-                    System.out.println(String.format("%3d - %s", id, name));
-                });
+                if(TEAM_NAMES.isEmpty()) {
+                    System.err.println("No team infos available!");
+                } else {
+                    TEAM_NAMES.forEach((id, name) -> {
+                        System.out.println(String.format("%3d - %s", id, name));
+                    });
+                }
                 return;
             } else {
                 // treat argument as file/directory
@@ -179,7 +195,7 @@ public class GcTeamcommConverter
      * @return a list of class loaders
      */
     private static List<ClassLoader> loadGameControllers() {
-        File gc = new File("gc");
+        File gc = new File(applicationPath + "gc");
         List<ClassLoader> gamecontrollers = new ArrayList<>();
         if(gc.isDirectory()) {
             // iterate through files
