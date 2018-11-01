@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.path.abspath('.'), 'parsers'))
 
 import Actions
 import ActionsGc
-from utils import config, Event, Log
+from utils import config, Event, Log, Game
 
 
 def parseArguments():
@@ -155,7 +155,36 @@ def check_gc_converter(converter:str):
         return False
     return True
 
-def do_work(log:Log, dry=False, apply=None, reparse:bool=False, old_sync:bool=False):
+def do_work_game(game:Game, args, actions_gc, applying):
+    try:
+        # check, if video info file should be created or updated
+        if args.video_file and not game.has_video_file():
+            logging.info("%s / %s - missing video info file! creating default ...", str(game.event), str(game))
+            game.create_video_file()
+        elif game.has_video_file() and game.has_video_file_changed():
+            logging.info("%s / %s - updating video info file ...", str(game.event), str(game))
+            game.create_video_file()
+        # check if the gamecontroller file needs to be converted
+        if game.has_gc_file():
+            # convert gamecontroller file first
+            if not game.gc.has_converted() and args.gc:
+                game.gc.convert(args.gc)
+            # retrieve all action names
+            actions_gc_keys = set()
+            for a in actions_gc.values():
+                actions_gc_keys = actions_gc_keys.union(a.keys())
+            # check if gamecontroller file needs to be re-created
+            if actions_gc_keys - set(game.gc.parsed_actions()) or args.reparse:
+                logging.info('%s / %s - missing actions in gamecontroller file! re-creating ...', str(game.event), str(game))
+                game.gc.create_info_file(actions_gc)
+        return game
+    except KeyboardInterrupt:
+        # ignore canceled jobs
+        pass
+    except Exception:
+        traceback.print_exc()
+
+def do_work_log(log:Log, dry=False, apply=None, reparse:bool=False, old_sync:bool=False):
     """
     Does the actual work. It creates the info file, the syncing info if they doesn't exists and applies the action functions
     if requested or if necessary.
@@ -250,6 +279,30 @@ if __name__ == "__main__":
     else:
         actions_applying = retrieve_applying_actions(args, actions)
 
+        # do the hard work
+        pp = multiprocessing.Pool(1 if args.dry_run else None)
+        pp_results = []
+        # iterate through events, their games and the log files
+        for e in events:
+            if event_filter is None or event_filter.match(os.path.basename(e.directory)):
+                for g in e.games:
+                    if game_filter is None or game_filter.match(os.path.basename(g.directory)):
+                        pp_results.append(pp.apply_async(do_work_game, (g, args, actions_gc, actions_applying)))
+        # wait for the games to be ready
+        while len(pp_results) > 0:
+            for r in pp_results:
+                if r.ready():
+                    # get the result
+                    result = r.get()
+                    # remove from result list
+                    pp_results.remove(r)
+                    if isinstance(result, Game):
+                        # do work of logs
+                        for l in result.logs.values():
+                            pp.apply_async(do_work_log, (l, args.dry_run, actions_applying, args.reparse, args.old_sync))
+
+
+        '''
         if args.dry_run:
             logging.info('Iterate through log files without doing actually something - DRY RUN!')
             # iterate through events, their games and the log files
@@ -262,7 +315,7 @@ if __name__ == "__main__":
                                 logging.info("%s / %s - missing video info file! creating default ...", str(e), str(g))
                             # check work of logs
                             for l in g.logs.values():
-                                do_work(l, True, actions_applying, args.reparse, args.old_sync)
+                                do_work_log(l, True, actions_applying, args.reparse, args.old_sync)
         else:
             # do the hard work
             pp = multiprocessing.Pool()
@@ -293,9 +346,10 @@ if __name__ == "__main__":
                                     g.gc.create_info_file(actions_gc)
                             # do work of logs
                             for l in g.logs.values():
-                                pp.apply_async(do_work, (l, False, actions_applying, args.reparse, args.old_sync))
-            # wait for workers to finish
-            pp.close()
-            pp.join()
+                                pp.apply_async(do_work_log, (l, False, actions_applying, args.reparse, args.old_sync))
+        '''
+        # wait for workers to finish
+        pp.close()
+        pp.join()
 
-            logging.info('Done')
+        logging.info('Done')
