@@ -88,7 +88,7 @@ def read_logs(paths):
 
     return events
 
-def load_actions():
+def load_actions(mod):
     """
     Loads all functions from the Actions file, which doesn't starts with a '_' and returns all found 'action functions'.
 
@@ -96,27 +96,10 @@ def load_actions():
     """
     actions = {}
 
-    for a in dir(Actions):
+    for a in dir(mod):
         # ignore functions beginning with an '_'
         if not a.startswith('_'):
-            actions[a] = getattr(Actions, a)
-
-    return actions
-
-def load_gc_actions():
-    actions = { 'gtc': {} }
-
-    for a in dir(ActionsGc):
-        # ignore functions beginning with an '_'
-        if not a.startswith('_'):
-            fun = getattr(ActionsGc, a)
-            _, defaults = list(filter(lambda m: m[0] == '__defaults__', inspect.getmembers(fun)))[0]
-            if defaults:
-                for d in defaults:
-                    if d not in actions: actions[d] = {}
-                    actions[d][a] = fun
-            else:
-                actions['gtc'][a] = fun
+            actions[a] = getattr(mod, a)
 
     return actions
 
@@ -155,36 +138,50 @@ def check_gc_converter(converter:str):
         return False
     return True
 
-def do_work_game(game:Game, args, actions_gc, applying):
+def filter_games(events, event_filter, game_filter):
+    games = []
+    # iterate through events, their games and the log files
+    for e in events:
+        if event_filter is None or event_filter.match(os.path.basename(e.directory)):
+            for g in e.games:
+                if game_filter is None or game_filter.match(os.path.basename(g.directory)):
+                    games.append(g)
+    return games
+
+
+def do_game_video(game:Game, create:bool):
     try:
         # check, if video info file should be created or updated
-        if args.video_file and not game.has_video_file():
+        if create and not game.has_video_file():
             logging.info("%s / %s - missing video info file! creating default ...", str(game.event), str(game))
             game.create_video_file()
         elif game.has_video_file() and game.has_video_file_changed():
             logging.info("%s / %s - updating video info file ...", str(game.event), str(game))
             game.create_video_file()
-        # check if the gamecontroller file needs to be converted
-        if game.has_gc_file():
-            # convert gamecontroller file first
-            if not game.gc.has_converted() and args.gc:
-                game.gc.convert(args.gc)
-            # retrieve all action names
-            actions_gc_keys = set()
-            for a in actions_gc.values():
-                actions_gc_keys = actions_gc_keys.union(a.keys())
-            # check if gamecontroller file needs to be re-created
-            if actions_gc_keys - set(game.gc.parsed_actions()) or args.reparse:
-                logging.info('%s / %s - missing actions in gamecontroller file! re-creating ...', str(game.event), str(game))
-                game.gc.create_info_file(actions_gc)
-        return game
     except KeyboardInterrupt:
         # ignore canceled jobs
         pass
     except Exception:
         traceback.print_exc()
 
-def do_work_log(log:Log, dry=False, apply=None, reparse:bool=False, old_sync:bool=False):
+def do_game_gc(game:Game, reparse:bool, actions_gc:dict, converter:str=None):
+    try:
+        # check if the gamecontroller file needs to be converted
+        if game.has_gc_file():
+            # convert gamecontroller file first
+            if not game.gc.has_converted() and converter:
+                game.gc.convert(converter)
+            # check if gamecontroller file needs to be re-created
+            if reparse or set(actions_gc.keys()) - set(game.gc.parsed_actions()):
+                logging.info('%s / %s - missing actions in gamecontroller file! re-creating ...', str(game.event), str(game))
+                game.gc.create_info_file(actions_gc)
+    except KeyboardInterrupt:
+        # ignore canceled jobs
+        pass
+    except Exception:
+        traceback.print_exc()
+
+def do_log(log:Log, dry=False, apply=None, reparse:bool=False):
     """
     Does the actual work. It creates the info file, the syncing info if they doesn't exists and applies the action functions
     if requested or if necessary.
@@ -196,19 +193,6 @@ def do_work_log(log:Log, dry=False, apply=None, reparse:bool=False, old_sync:boo
     :return:    None
     """
     try:
-        # check if the syncing infos with the video exists
-        if not log.has_syncing_info() or log.syncing_info_needs_update():
-            # print what we do
-            if not log.has_syncing_info(): logging.info('%s / %s / %s - missing syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
-            else: logging.info('%s / %s / %s - updating syncing file ...', str(log.game.event), str(log.game), str(log))
-            # do something, if not 'dry' run
-            if not dry:
-                log.sync_with_videos()
-        # check if old syncing file should be created and currently doesn't exists
-        if old_sync and not log.has_syncing_info_old():
-            logging.info('%s / %s / %s - missing OLD syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
-            if not dry:
-                log.sync_with_videos_old()
         # check if the default label file exits
         if not log.has_info_file():
             logging.info('%s / %s / %s - missing info file! creating default ...', str(log.game.event), str(log.game), str(log))
@@ -242,8 +226,8 @@ if __name__ == "__main__":
 
     # init global vars
     events = read_logs(args.path)
-    actions = load_actions()
-    actions_gc = load_gc_actions()
+    actions = load_actions(Actions)
+    actions_gc = load_actions(ActionsGc)
 
     # checks the gc converter and 'disables' conversion, if the converter doesn't exist
     if not check_gc_converter(args.gc):
@@ -278,31 +262,43 @@ if __name__ == "__main__":
             logging.error('Unknown list option! Only the following are recognized: actions, events, games')
     else:
         actions_applying = retrieve_applying_actions(args, actions)
+        games = filter_games(events, event_filter, game_filter)
 
         # do the hard work
         pp = multiprocessing.Pool(1 if args.dry_run else None)
-        pp_results = []
-        # iterate through events, their games and the log files
-        for e in events:
-            if event_filter is None or event_filter.match(os.path.basename(e.directory)):
-                for g in e.games:
-                    if game_filter is None or game_filter.match(os.path.basename(g.directory)):
-                        pp_results.append(pp.apply_async(do_work_game, (g, args, actions_gc, actions_applying)))
-        # wait for the games to be ready
-        while len(pp_results) > 0:
-            for r in pp_results:
-                if r.ready():
-                    # get the result
-                    result = r.get()
-                    # remove from result list
-                    pp_results.remove(r)
-                    if isinstance(result, Game):
-                        # do work of logs
-                        for l in result.logs.values():
-                            pp.apply_async(do_work_log, (l, args.dry_run, actions_applying, args.reparse, args.old_sync))
+        for g in games:
+            pp.apply_async(do_game_video, (g, args.video_file))
+            pp.apply_async(do_game_gc, (g, args.reparse, actions_gc, args.gc))
+            # do work of logs
+            for l in g.logs.values():
+                pp.apply_async(do_log, (l, args.dry_run, actions_applying, args.reparse))
+        # wait for workers to finish
+        pp.close()
+        pp.join()
+
+        # TODO: do the syncing!
+        for g in games:
+            g.sync()
 
 
         '''
+        
+        # check if the syncing infos with the video exists
+        if not log.has_syncing_info() or log.syncing_info_needs_update():
+            # print what we do
+            if not log.has_syncing_info(): logging.info('%s / %s / %s - missing syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
+            else: logging.info('%s / %s / %s - updating syncing file ...', str(log.game.event), str(log.game), str(log))
+            # do something, if not 'dry' run
+            if not dry:
+                log.sync_with_videos()
+        # check if old syncing file should be created and currently doesn't exists
+        if old_sync and not log.has_syncing_info_old():
+            logging.info('%s / %s / %s - missing OLD syncing file! creating default ...', str(log.game.event), str(log.game), str(log))
+            if not dry:
+                log.sync_with_videos_old()
+        
+        
+        
         if args.dry_run:
             logging.info('Iterate through log files without doing actually something - DRY RUN!')
             # iterate through events, their games and the log files
@@ -348,8 +344,5 @@ if __name__ == "__main__":
                             for l in g.logs.values():
                                 pp.apply_async(do_work_log, (l, False, actions_applying, args.reparse, args.old_sync))
         '''
-        # wait for workers to finish
-        pp.close()
-        pp.join()
 
         logging.info('Done')

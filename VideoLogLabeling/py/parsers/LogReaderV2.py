@@ -3,7 +3,7 @@ import struct
 import mmap
 
 import google.protobuf.reflection
-import CommonTypes_pb2, Framework_Representations_pb2, Messages_pb2, Representations_pb2
+import CommonTypes_pb2, Framework_Representations_pb2, Messages_pb2, Representations_pb2, TeamMessage_pb2
 
 '''
 # Log file structure:
@@ -22,6 +22,7 @@ class Parser:
         self.messages.update(Framework_Representations_pb2.DESCRIPTOR.message_types_by_name)
         self.messages.update(Messages_pb2.DESCRIPTOR.message_types_by_name)
         self.messages.update(Representations_pb2.DESCRIPTOR.message_types_by_name)
+        self.messages.update(TeamMessage_pb2.DESCRIPTOR.message_types_by_name)
 
     def parse(self, name, data):
         """
@@ -45,6 +46,7 @@ class LogReader:
         """Constructor. Reads the log file from the :path: and creates an index of the contained frames."""
         self.file = open(path, 'r+b')
         self.mm = mmap.mmap(self.file.fileno(), 0)
+        #self.mm.find()
         self.size = os.stat(path).st_size
 
         self.parser = parser
@@ -59,7 +61,13 @@ class LogReader:
             # extract frameNumber, name and data size; ignore NULL-byte (\0)
             fn, name, size = struct.unpack('=l'+str(str_size-4)+'sxl', self.mm.read(str_size+5))
             # create new frame, if the frameNumber doesn't exists
-            if not self.frames or self.frames[-1].number != fn: self.frames.append(Frame(self, fn))
+            if not self.frames or self.frames[-1].number != fn:
+                # get the starting log offset for the new frame
+                offset = self.mm.tell()-(str_size+5)
+                # set the ending offset for the previous frame
+                if self.frames: self.frames[-1].offset['end'] = offset
+                # add the new frame
+                self.frames.append(Frame(self, fn, offset))
             # add representation to frame
             self.frames[-1].messages[name.decode('utf8')] = (self.mm.tell(), size, None)
             # advance file pointer
@@ -81,10 +89,11 @@ class LogReader:
 class Frame:
     """A Frame represents a container of data (messages) at a certain time frame in a log file."""
 
-    def __init__(self, reader, number):
+    def __init__(self, reader, number, offset_start):
         """Constructor. Initializes the frame variables."""
         self.reader = reader
         self.number = number
+        self.offset = {'start':offset_start, 'end':offset_start}
         self.messages = {}
 
     def __getitem__(self, name):
@@ -118,3 +127,6 @@ class Frame:
             self.messages[name] = (position, size, message)
             return message
         return None
+
+    def __contains__(self, item):
+        return item in self.messages

@@ -52,7 +52,7 @@ class Log:
 
     def __set_default_info_data(self):
         """Sets the default data for the info variable."""
-        self.info_data = {'parsed_actions': [], 'intervals': {}, 'start': 0, 'end': 0, 'sync': {}}
+        self.info_data = {'parsed_actions': [], 'intervals': {}, 'start': 0, 'end': 0, 'sync': 0.0}
 
     def parse_info(self):
         """Sets the log file path and extracts player number, robot number and an robot id from the log path based on the
@@ -103,46 +103,15 @@ class Log:
 
     def has_syncing_info(self):
         """Returns True, if the syncing info is available, False otherwise."""
-        return True if 'sync' in self.info_data and self.info_data['sync'] else False
+        return True if 'sync' in self.info_data else False
 
     def has_syncing_info_old(self):
         """Returns True, if the old syncing info is available, False otherwise."""
         return self.sync_file_old is not None
 
-    def syncing_info_needs_update(self):
-        """
-        Returns True, if the syncing info needs to be updated, otherwise False
-        An update is needed, if the ready state of the video has changed, or if a new video was added.
-
-        :return: True|False
-        """
-        for k,v in self.game.videos.items():
-            if 'events' in v and 'ready' in v['events'] and v['events']['ready']:
-                # is syncing info missing for this video
-                if k not in self.info_data['sync']:
-                    return True
-                # is syncing info outdated for this video
-                elif v['events']['ready'][0] != self.info_data['sync'][k]['video']:
-                    return True
-        # nothing to update
-        return False
-
-    def sync_with_videos(self):
-        """Syncs the log file with the game videos simply by setting the first ready state of the log file to the first
-        ready state of the video."""
-        # TODO: this can be better if we have more events for the video!
-        #       Then we can determine the correct syncing point, based on the time intervals between the events in the
-        #       video and log!
-        if self.file:
-            point = self.__find_first_ready_state()
-            if point:
-                for k,v in self.game.videos.items():
-                    if 'events' in v and 'ready' in v['events'] and v['events']['ready']:
-                        if 'sync' not in self.info_data: self.info_data['sync'] = {}
-                        self.info_data['sync'][k] = { "log": point[1]/1000.0, "video": v['events']['ready'][0] }
-                self.__save_info_data()
-            else:
-                logging.getLogger('Log').warning("There's no ready state in this log file (%s)!", self.file)
+    def set_sync_point(self, time:float):
+        self.info_data['sync'] = time
+        self.__save_info_data()
 
     def sync_with_videos_old(self):
         """
@@ -152,9 +121,6 @@ class Log:
         NOTE: This is the old syncing variant and should be deprecated.
         """
         if self.file:
-            # if there isn't any sync info, create it
-            if not self.has_syncing_info():
-                self.sync_with_videos()
             # if there's still no sync info, it couldn't found some
             if self.has_syncing_info():
                 self.__create_data_directory()
@@ -172,7 +138,7 @@ class Log:
             else:
                 logging.getLogger('Log').warning("Couldn't create old syncing file - no syncing info available.")
 
-    def __find_first_ready_state(self):
+    def find_first_ready_state(self):
         """
         Retrieves the first ready state from the log file.
 

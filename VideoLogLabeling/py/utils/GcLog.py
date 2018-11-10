@@ -17,6 +17,7 @@ class GcLog:
         self.data_directory = data_dir
         self.info_file = None
         self.info_data = None
+        self.__data = None
         self.converted = {}
 
         # search for converted gamecontroller log files
@@ -26,6 +27,8 @@ class GcLog:
             self.converted[_] = c
         if not self.converted:
             logging.getLogger(__class__.__name__).debug("There are unconverted gamecontroller log files.")
+        elif 'gtc' not in self.converted:
+            logging.getLogger(__class__.__name__).debug("The 'gtc' converted gamecontroller log file is required.")
 
         # check gamecontroller info file
         info_file = os.path.join(data_dir, config['gc']['file'])
@@ -41,7 +44,7 @@ class GcLog:
             self.info_data = json.load(io.open(self.info_file, 'r', encoding='utf-8'))
         else:
             logging.getLogger(__class__.__name__).debug("No gamecontroller info file available (%s)!", self.info_file)
-            self.info_data = { 'parsed_actions': [], 'intervals': {} }
+            self.info_data = { 'parsed_actions': [], 'intervals': {}, 'sync': 0.0 }
 
     def has_converted(self):
         """
@@ -50,6 +53,9 @@ class GcLog:
         :return:    True|False
         """
         return True if self.converted else False
+
+    def is_converted(self):
+        return 'gtc' in self.converted
 
     def convert(self, converter:str):
         """
@@ -70,35 +76,44 @@ class GcLog:
         return self.info_file is not None
 
     def create_info_file(self, actions):
-        if self.converted:
+        # load converted gamecontroller log file
+        self.__read_log()
+        if self.__data:
             tmp = {}
-            for a in actions:
-                # skip empty actions or actions which require an non-existence converted gamecontroller log file
-                if not actions[a] or a not in self.converted: continue
-                # load converted gamecontroller log file
-                data = json.load(io.open(self.converted[a], 'r', encoding='utf-8'))
-                # iterate over messages from the gamecontroller log file
-                for msg in data:
-                    # execute each action
-                    for a_name in actions[a]:
-                        if actions[a][a_name](msg):
-                            # begin an interval for this action
-                            if a_name not in tmp or tmp[a_name] is None:
-                                tmp[a_name] = { 'type': a_name, 'begin': msg['timestamp'], 'end': msg['timestamp'] }
-                            else:
-                                tmp[a_name]['end'] = msg['timestamp']
-                        elif a_name in tmp and tmp[a_name] is not None and tmp[a_name]['end'] + 1000 < msg['timestamp']:
-                            # there's an open interval, close it, if it didn't got updated over 1 second
-                            interval_id = '{}_{}'.format(tmp[a_name]['begin'], a_name)
-                            self.info_data['intervals'][interval_id] = tmp[a_name]
-                            del tmp[a_name]
-                # update parsed actions
-                self.info_data['parsed_actions'] = list(set(self.info_data['parsed_actions']) | set(actions[a].keys()))
+            # iterate over messages from the gamecontroller log file
+            for msg in self.__data:
+                # execute each action
+                for a_name in actions:
+                    if actions[a_name](msg):
+                        # begin an interval for this action
+                        if a_name not in tmp or tmp[a_name] is None:
+                            tmp[a_name] = { 'type': a_name, 'begin': msg['timestamp'], 'end': msg['timestamp'] }
+                        else:
+                            tmp[a_name]['end'] = msg['timestamp']
+                    elif a_name in tmp and tmp[a_name] is not None and tmp[a_name]['end'] + 1000 < msg['timestamp']:
+                        # there's an open interval, close it, if it didn't got updated over 1 second
+                        interval_id = '{}_{}'.format(tmp[a_name]['begin'], a_name)
+                        self.info_data['intervals'][interval_id] = tmp[a_name]
+                        del tmp[a_name]
+            # update parsed actions
+            self.info_data['parsed_actions'] = list(set(self.info_data['parsed_actions']) | set(actions.keys()))
             # close open intervals
             for t in tmp:
                 interval_id = '{}_{}'.format(tmp[t]['begin'], t)
                 self.info_data['intervals'][interval_id] = tmp[t]
 
+        self.__save_info_data()
+
+    def __read_log(self):
+        if self.__data is None and 'gtc' in self.converted:
+            self.__data = json.load(io.open(self.converted['gtc'], 'r', encoding='utf-8'))
+
+    def data(self):
+        self.__read_log()
+        return self.__data
+
+    def set_sync_point(self, time):
+        self.info_data['sync'] = time
         self.__save_info_data()
 
     def __save_info_data(self):
