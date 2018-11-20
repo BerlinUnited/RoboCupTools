@@ -5,11 +5,11 @@ import shutil
 
 # simplify matching during file-game-matching with a unique list of characteristic names for each team
 search_keys = {
-    'AstroNAOtas'         : ['astra'],
+    'AstroNAOtas'         : ['astro'],
     'Aztlan'              : ['aztlan'],
     'B-Human'             : ['human'],
     'B-Swift'             : ['b-swift'],
-    'Bembelbots'          : ['bemble'],
+    'Bembelbots'          : ['bembel'],
     'Berlin United'       : ['berlin'],
     'Camellia Dragons'    : ['dragon'],
     'DoBerMan'            : ['doberman'],
@@ -24,7 +24,7 @@ search_keys = {
     'Rinobot'             : ['rino'],
     'SPQR'                : ['spqr'],
     'TJArk'               : ['tjark'],
-    'Team-Team'           : ['team'],
+    'Team-Team'           : ['team-team'],
     'UChile'              : ['uchile'],
     'UPennalizers'        : ['upenn'],
     'UT Austin Villa'     : ['austin'],
@@ -158,13 +158,12 @@ def create_rudimentary_structure(dest, game):
 
 # checks it the candidate file belongs to game by checking the date first and then for characteristic names for each team in file name
 def candiate_matches(candidate, game):
-    if not game[0] in candidate:
-        return False
-    try:
-        if all(x in candidate.casefold() for x in search_keys[game[2]]) and all(x in candidate.casefold() for x in search_keys[game[3]]):
-            return True
-    except KeyError as e:
-        print("Error: can't get search key for team " + str(e), file=sys.stderr)
+    if game[0] in candidate:
+        try:
+            if all(x in candidate.casefold() for x in search_keys[game[2]]) and all(x in candidate.casefold() for x in search_keys[game[3]]):
+                return True
+        except KeyError as e:
+            print("Error: can't get search key for team " + str(e), file=sys.stderr)
     return False
 
 # test if candidate matches and moves file if it does
