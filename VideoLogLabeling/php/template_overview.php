@@ -64,6 +64,7 @@ foreach ($events as $event) {
                             . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2()
                             . ' #' . $game->getHalf()
                             . ' (' . $game->getSize() . ')'
+                            . ($game->hasVideos() ? '' : ' <span class="glyphicon glyphicon-alert" title="Missing video"></span>')
                         .'</td>'
                         .'<td>'
                     //.'<a href="./index.php?game='.$game->getId().'&name=New">[New]</a>'

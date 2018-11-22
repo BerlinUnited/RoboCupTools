@@ -63,7 +63,10 @@ class Game
                 }
             }
             uasort($this->logs, function($a, $b){ return $a->getPlayer() - $b->getPlayer(); });
-        } else {
+        }
+
+        // add error message if no logs are available
+        if(empty($this->logs)){
             $this->errors[] = 'No log files!';
         }
 
@@ -80,7 +83,7 @@ class Game
 
         // add error message if no videos are available
         if(empty($this->videos)){
-            $this->errors[] = 'No video files!';
+            $this->warnings[] = 'No video files!';
         }
 
         if (is_dir($this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['gc'])) {
