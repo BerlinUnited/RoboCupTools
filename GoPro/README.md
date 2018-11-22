@@ -201,3 +201,7 @@ And some handles from the GoPro bluetooth:
     handle: 0x0045, uuid: 00002803-0000-1000-8000-00805f9b34fb
     handle: 0x0046, uuid: b5f90092-aa8d-11e3-9046-0002a5d5c51b
     handle: 0x0047, uuid: 00002902-0000-1000-8000-00805f9b34fb
+
+
+#### Video Tutorial
+A Video explaining the setup and handling of the GoPro - Pi Setup can be found at https://www2.informatik.hu-berlin.de/~naoth/ressources/howto-robocup-gopro-small.mp4
