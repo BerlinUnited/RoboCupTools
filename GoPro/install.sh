@@ -3,6 +3,8 @@
 # determine path
 GOPRO_HOME=$(dirname "$(readlink -f -- "$0")")
 DHCP_CONFIG="/etc/dhcpcd.conf"
+HOST_CONFIG="/etc/hostname"
+HOSTS_CONFIG="/etc/hosts"
 REBOOT=false
 
 #check if root first
@@ -100,7 +102,7 @@ setup_static_ip() {
 
 setup_hostname() {
     if [[ "$1" == "" ]]; then
-        NAME=`cat /etc/hostname`
+        NAME=`cat $HOST_CONFIG`
         # ask for hostname
         read -p "hostname [$NAME]: " -r INPUT
         if [[ ! -z $INPUT ]]; then
@@ -109,7 +111,11 @@ setup_hostname() {
     else
         NAME="$1"
     fi
-	echo -e "$NAME" > /etc/hostname
+	echo -e "$NAME" > $HOST_CONFIG
+
+	sed -i '/^\s*127.0.1.1/ d' $HOSTS_CONFIG
+	echo -e "127.0.1.1\t$NAME" >> $HOSTS_CONFIG
+
 	REBOOT=true
 }
 
