@@ -26,7 +26,7 @@ function PeriodicPlayer(player)
   }
 }
 
-var playerGlobal;
+var playerGlobal = null;
 $( document ).ready(function() {
   $('#player').mediaelementplayer({
     stretching: 'responsive',
@@ -51,6 +51,8 @@ app.controller('MainController', ['$rootScope','$scope','$http', function($rootS
     // init log model
     $scope.logs = {};
     $scope.logs_max_duration = 0;
+    $scope.zoom = "%";
+
     // retrieve logs
     $http.get(url.pathname + url.search + '&logs='+$scope.widget.title).then(function(response) {
         if (angular.isObject(response.data)) {
@@ -72,9 +74,8 @@ app.controller('MainController', ['$rootScope','$scope','$http', function($rootS
         if(typeof data.labels === 'undefined') { data.labels = {}; }
         if(typeof data.sync === 'undefined') { data.sync = 0.0; }
         // show the timeline and player number
-        var timeline = $('<div id="'+id+'" class="timeline"><div class="info">#'+data.number+'</div></div>');
+        var timeline = $('<div id="'+id+'" class="timeline"><div class="info">#'+data.number+'</div></div>').css('width', $scope.zoom === '%' ? '100%' : ($scope.logs_max_duration*$scope.zoom)+'px');
 
-        console.log(data);
         // iterate through the actions and add the interval to the timeline
         for(var interval_id in data.intervals) {
             var v = data.intervals[interval_id];
@@ -90,15 +91,15 @@ app.controller('MainController', ['$rootScope','$scope','$http', function($rootS
     };
 
     $scope.addPeriod = function (timeline, interval_id) {
-        var zoom = 100;
+        var isRelative = $scope.zoom === '%';
         var model = $scope.logs[timeline.attr('id')];
         var interval = model.intervals[interval_id];
-        var width = (interval.end - interval.begin) / $scope.logs_max_duration * 100; //*zoom
-        var starting_at = (interval.begin - model.sync) / $scope.logs_max_duration * 100; //*zoom
+        var width = (interval.end - interval.begin)*(isRelative?(1/$scope.logs_max_duration*100):$scope.zoom);
+        var starting_at = (interval.begin - model.sync)*(isRelative?(1/$scope.logs_max_duration*100):$scope.zoom);
 
         var o = $('<a href="#" id="' + interval_id + '" class="button ' + interval.type + '" data-toggle="tooltip" title="' + interval.type + '"></a>')
-                .css("width", width + "%")
-                .css("left", starting_at + "%");
+                .css("width", width + (isRelative?"%":"px"))
+                .css("left", starting_at + (isRelative?"%":"px"));
 
         o[0].onclick = function (i, e) {
             $rootScope.$broadcast('setPeriod', $(this).parent().attr('id'), interval_id);
@@ -112,7 +113,7 @@ app.controller('MainController', ['$rootScope','$scope','$http', function($rootS
         timeline.append(o);
     };
   
-  $scope.save = function(event) {
+    $scope.save = function(event) {
       var name = $scope.widget.title.trim();
         if(name.length === 0 || name.toLowerCase() === 'new') {
             showSavingAlert('<b>WARNING: you need to set a tag!</b>', 'alert alert-warning', 1000, true);
@@ -154,6 +155,15 @@ app.controller('MainController', ['$rootScope','$scope','$http', function($rootS
           showSavingAlert('<b>Nothing to save!</b>', 'alert alert-warning', 600, true);
         }
   };
+
+    $scope.$watch('zoom', function(newValue, oldValue) {
+        // remove old timelines before adding new ones
+        $("#timelines").children().remove();
+        // add timelines of logs
+        for(var log in $scope.logs) {
+            $scope.addTimeline(log);
+        }
+    });
 }]);
 
 app.controller('FormController', function($scope) {
@@ -207,18 +217,22 @@ app.controller('PlayerController', function($scope) {
     });
     // switch source listener
     sourceSelect.change(function (e) {
-        playerGlobal.player.setSrc(this.value);
-        playerGlobal.player.setPoster('');
-        playerGlobal.player.load();
+        if(playerGlobal !== null) {
+            playerGlobal.player.setSrc(this.value);
+            playerGlobal.player.setPoster('');
+            playerGlobal.player.load();
+        }
     });
     // retrieve the video's offset
     $scope.video_offset = $('#player').data('offset');
 
     $scope.$on('setPeriod', function(event, log_id, interval_id) {
-        offset = $scope.video_offset - $scope.logs[log_id].sync;
-        var t_begin = $scope.logs[log_id].intervals[interval_id].begin + offset - parseFloat($('#video_configuration_before').val());
-        var t_end = $scope.logs[log_id].intervals[interval_id].end + offset + parseFloat($('#video_configuration_after').val());
-        playerGlobal.setPeriod(t_begin, t_end);
+        if(playerGlobal !== null) {
+            offset = $scope.video_offset - $scope.logs[log_id].sync;
+            var t_begin = $scope.logs[log_id].intervals[interval_id].begin + offset - parseFloat($('#video_configuration_before').val());
+            var t_end = $scope.logs[log_id].intervals[interval_id].end + offset + parseFloat($('#video_configuration_after').val());
+            playerGlobal.setPeriod(t_begin, t_end);
+        }
     });
 });
 
@@ -253,7 +267,12 @@ $("#label_title_form .alert").removeClass('hidden');
 
 // update/show the current open state of the configuration panel
 $('#configuration .panel-collapse').on('show.bs.collapse', function () {
-  $('#configuration_control a[href="#'+this.id+'"] .glyphicon').toggleClass('glyphicon-plus glyphicon-minus');
+  $('#event_configuration_ctrl a[href="#'+this.id+'"] .glyphicon').toggleClass('glyphicon-plus glyphicon-minus');
 }).on('hide.bs.collapse', function () {
-  $('#configuration_control a[href="#'+this.id+'"] .glyphicon').toggleClass('glyphicon-plus glyphicon-minus');
+  $('#event_configuration_ctrl a[href="#'+this.id+'"] .glyphicon').toggleClass('glyphicon-plus glyphicon-minus');
 });
+
+// show/hide configuration
+$("#configuration_opener").click(function () { $("#configuration_control").fadeIn(); });
+$("#configuration_closer").click(function () { $("#configuration_control").fadeOut(); });
+document.addEventListener('keyup', (e) => { if(e.key === "Escape" && $("#configuration_control").is(":visible")) { $("#configuration_control").fadeOut(); }});

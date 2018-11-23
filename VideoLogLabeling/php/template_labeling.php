@@ -66,6 +66,7 @@ if($game->hasVideos()) {
             <h3><a href="./index.php"><< BACK</a></h3>
         </div>
         <div class="col-sm-10">
+            <a href="#" id="configuration_opener" class="pull-right" title="Show configuration"><span class="glyphicon glyphicon-cog"></span></a>
             <h3><?= $game->getEvent()->getName() ?> | <?= $game->getDateString() ?> - <?= $game->getTeam1() ?> vs. <?= $game->getTeam2() ?> #<?= $game->getHalf() ?></h3>
         </div>
     </div>
@@ -105,45 +106,8 @@ if($game->hasVideos()) {
             <div class="panel-body"><div class="row"></div></div>
           </div>
         </div>
-        <div class="panel panel-default">
-          <div id="video_configuration" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
-            <div class="panel-body">
-<?php if($game->hasVideos()) { ?>
-                <div class="row">
-                    <div class="col-xs-6">
-                        <div class="form-group">
-                            <label for="video_configuration_video">Video/Camera</label>
-                            <select id="video_configuration_video" class="form-control" disabled><option>default</option></select>
-
-                        </div>
-                    </div>
-                    <div class="col-xs-6">
-                        <div class="form-group">
-                            <label for="video_configuration_source">Video source</label>
-                            <select id="video_configuration_source" class="form-control"></select>
-                        </div>
-                    </div>
-                </div><!--.row-->
-<?php } ?>
-                <div class="row">
-                  <div class="col-xs-6">
-                    <div class="form-group">
-                      <label for="video_configuration_before">Video offset <i>before</i> the event (in seconds)</label> <input type="number" step="0.1" min="0" class="form-control" id="video_configuration_before" value="3.0">
-                    </div>
-                  </div>
-                  <div class="col-xs-6">
-                    <div class="form-group">
-                      <label for="video_configuration_after">Video offset <i>after</i> the event (in seconds)</label> <input type="number" step="0.1" min="0" class="form-control" id="video_configuration_after" value="3.0">
-                    </div>
-                  </div>
-                </div><!--.row-->
-            </div><!--.panel-body-->
-          </div>
-        </div>
-        <div id="configuration_control">
+        <div id="event_configuration_ctrl">
           <a role="button" data-toggle="collapse" data-parent="#configuration" href="#event_configuration" aria-expanded="false" aria-controls="event_configuration"><span class="glyphicon glyphicon-plus"></span> Select events</a>
-          &nbsp;|&nbsp;
-          <a role="button" data-toggle="collapse" data-parent="#configuration" href="#video_configuration" aria-expanded="false" aria-controls="video_configuration"><span class="glyphicon glyphicon-plus"></span> Video configuration</a>
         </div>
       </div>
 
@@ -159,6 +123,56 @@ if($game->hasVideos()) {
       </form>
     </div>
 
+    <div id="configuration_control" class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <span id="configuration_closer" class="close" title="Close (Esc)">×</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12"><h4>Timeline</h4></div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label for="timeline_zoom">Timeline Zoom</label>
+                    <select ng-model="zoom" id="timeline_zoom" class="form-control">
+                        <option value="%">100%</option>
+                        <option value="1">1x</option>
+                        <option value="10">10x</option>
+                        <option value="100">100x</option>
+                        <option value="10000">1000x</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12"><h4>Video</h4></div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label for="video_configuration_before">Video offset <i>before</i> the event (in seconds)</label> <input type="number" step="0.1" min="0" class="form-control" id="video_configuration_before" value="3.0">
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label for="video_configuration_after">Video offset <i>after</i> the event (in seconds)</label> <input type="number" step="0.1" min="0" class="form-control" id="video_configuration_after" value="3.0">
+                </div>
+            </div>
+        <?php if($game->hasVideos()) { ?>
+                <div class="col-xs-12">
+                    <div class="form-group">
+                        <label for="video_configuration_video">Video/Camera</label>
+                        <select id="video_configuration_video" class="form-control" disabled><option>default</option></select>
+
+                    </div>
+                </div>
+                <div class="col-xs-12">
+                    <div class="form-group">
+                        <label for="video_configuration_source">Video source</label>
+                        <select id="video_configuration_source" class="form-control"></select>
+                    </div>
+                </div>
+        <?php } ?>
+        </div><!--.row-->
+    </div><!-- configuration_control -->
   
 </div>
 
