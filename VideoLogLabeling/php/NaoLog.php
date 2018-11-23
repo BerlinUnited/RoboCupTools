@@ -83,9 +83,10 @@ class NaoLog
     /**
      * @return array|null
      */
-    private function getInfo() {
+    public function getInfo() {
         if($this->info === null && is_file($this->info_file)) {
             $this->info = json_decode(file_get_contents($this->info_file), true);
+            $this->info['number'] = $this->getPlayer();
         }
         return $this->info;
     }
@@ -173,28 +174,37 @@ class NaoLog
     }
 
     /**
-     * @return array
+     * @return float
      */
-    public function getSyncInfo($name)
+    public function getSyncInfo()
     {
-        if($this->getInfo() !== null && isset($this->getInfo()['sync'][$name])) {
-            return $this->getInfo()['sync'][$name];
+        if($this->getInfo() !== null && isset($this->getInfo()['sync'])) {
+            return $this->getInfo()['sync'];
         }
-        return [ 'log' => 0.0, 'video' => 0.0 ];
+        return 0.0;
     }
 
     /**
      * Returns the event data as JSON string.
      * @return string
      */
-    public function getLabelsAsJson() {
+    public function getLabelsAsJson($label = null) {
+        $info = $this->getInfo();
         // add the label entry if not already set
-        if(!isset($this->info['labels'])) { $this->info['labels'] = []; }
-        // add all labels
-        foreach ($this->labels as $key => $value) {
-            $this->info['labels'][$key] = json_decode(file_get_contents($value), true);
+        if(!isset($info['labels'])) { $info['labels'] = []; }
+        //
+        if ($label !== null) {
+            // add only a specific label, if available
+            if(isset($this->labels[$label])) {
+                $info['labels'] = json_decode(file_get_contents($this->labels[$label]), true);
+            }
+        } else {
+            // add all labels
+            foreach ($this->labels as $key => $value) {
+                $info['labels'][$key] = json_decode(file_get_contents($value), true);
+            }
         }
-        return json_encode($this->info);
+        return json_encode($info);
     }
 
     /**

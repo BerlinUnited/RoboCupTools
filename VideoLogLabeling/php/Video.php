@@ -11,6 +11,8 @@ class Video
 	private $game;
     /** @var array Container for the sources of this video. */
 	private $sources = [];
+	/** @var float The synchronisation point for this video. */
+	private $syncpoint = 0.0;
 
     /**
      * Video constructor.
@@ -26,6 +28,9 @@ class Video
 				foreach ($info['sources'] as $file) {
 					$this->sources[] = new VideoFile($this, $file);
 				}
+			}
+			if (isset($info['sync'])) {
+				$this->syncpoint = $info['sync'];
 			}
 		} else {
 			$this->sources[] = new VideoFile($this, $info);
@@ -134,6 +139,14 @@ class Video
     public function getPath()
     {
     	return $this->game->getPath() . DIRECTORY_SEPARATOR . Config::g('dirs')['video'];
+    }
+
+    /**
+     * @return float
+     */
+    public function getSyncPoint()
+    {
+    	return $this->syncpoint;
     }
 }
 

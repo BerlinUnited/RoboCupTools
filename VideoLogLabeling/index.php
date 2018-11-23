@@ -20,6 +20,7 @@ $name = isset($_GET["name"]) ? $_GET["name"] : null;
 
 $errors = [];
 $events = readLogs(Config::paths(), $errors); // read log directories
+/* @var Game $game */
 $game = isset($_GET["game"]) ? getGame($events, $_GET["game"]) : NULL; // search for a requested game
 
 usort($events, function ($a, $b) { return $a->getDate() < $b->getDate(); });
@@ -59,6 +60,8 @@ if (isset($_GET["download"])) {
         } else {
             echo 'ERROR: missing tag or label data!';
         }
+    } elseif ($request === 'GET' && isset($_GET['logs'])) {
+        sendAsJson(null, $game->getLabelsAsJson($_GET['logs']));
     } else {
         include 'php/template_labeling.php';
     }

@@ -36,7 +36,9 @@ function getGame($events, $id) {
 function sendAsJson($fileName, $content) {
     // send data as downloadable json file
     header('Content-Type: application/json');
-    header('Content-Disposition: attachment; filename="'.$fileName.'"');
+    if($fileName !== null) {
+        header('Content-Disposition: attachment; filename="'.$fileName.'"');
+    }
     echo $content;
 }
 

@@ -279,11 +279,11 @@ class Game
      * Returns the label/event data as JSON string.
      * @return string
      */
-    public function getLabelsAsJson() {
+    public function getLabelsAsJson($label = null) {
         $json = '{';
         $keys = array_keys($this->logs);
         for ($i=0; $i < count($keys); $i++) { 
-            $json .= '"' . $this->logs[$keys[$i]]->getPlayer() . '": ' . $this->logs[$keys[$i]]->getLabelsAsJson() . ($i === count($keys)-1 ? "\n" : ", \n");
+            $json .= '"' . $keys[$i] . '": ' . $this->logs[$keys[$i]]->getLabelsAsJson($label) . ($i === count($keys)-1 ? "\n" : ", \n");
         }
         $json .= '}';
         return $json;

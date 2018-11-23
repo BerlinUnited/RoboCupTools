@@ -3,15 +3,16 @@
 /* @var string $name */
 /* @var string $basepath */
 
-
 // TODO: add ability to select different videos (if available)
 $video_sources = null;
+$video_syncpoint = 0.0;
 if($game->hasVideos()) {
     // retrieve the source video file type, which should be used first
     $default = !empty(Config::getInstance()->getGame()['video_default']) ? Config::getInstance()->getGame()['video_default'] : '';
     // use the first video to display
     $game_videos = $game->getVideos();
     $video = reset($game_videos);
+    $video_syncpoint = $video->getSyncPoint();
     // sort the sources by the preferred order
     $video_sources = $video->getSources();
     usort($video_sources, function($a, $b) use ($default){
@@ -77,7 +78,7 @@ if($game->hasVideos()) {
     
     <div class="col-sm-7">
       <div ng-controller="PlayerController" id="video-player-wrapper">
-        <video class="video-player" id="player" preload="metadata">
+        <video class="video-player" id="player" preload="metadata" data-offset="<?=$video_syncpoint?>">
         <?php
         if ($video_sources !== null) {
             // write out the sources
@@ -96,26 +97,8 @@ if($game->hasVideos()) {
       </div>
     </div>
 
-
     <div class="col-sm-10 pull-right">
-      <?php
-      //<div data-timeline data-file="log/labels.json"></div>
-      foreach ($game->getLogs() as $log) {
-          /* @var NaoLog $log */
-          // TODO: security risk - any file could be loaded?!
-          $log_url = str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getInfoFile());
-          $sync_video = $game->hasVideos() ? key($game->getVideos()) : '';
-          $sync_info = $log->getSyncInfo($sync_video);
-          echo '<div id="'.$log->getId().'"'
-                  .' class="timeline"'
-                  .' data-file="'.$log_url.'"'
-                  .' data-logoffset="'.$sync_info['log'].'"'
-                  .' data-videooffset="'.$sync_info['video'].'"'
-                  .' data-playernumber="'.$log->getPlayer().'"'
-                  .(($name !== null && $log->getLabel($name) !== null)?' data-labels="'.str_replace($basepath . DIRECTORY_SEPARATOR, '', $log->getLabel($name)).'"':'')
-                  .' data-timeline ></div>';
-      }
-      ?>
+      <div id="timelines"></div>
       <div id="configuration" class="panel-group" role="tablist" aria-multiselectable="true">
         <div class="panel panel-default">
           <div id="event_configuration" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
@@ -125,10 +108,7 @@ if($game->hasVideos()) {
         <div class="panel panel-default">
           <div id="video_configuration" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
             <div class="panel-body">
-                <?php
-                if($game->hasVideos()) {
-
-                ?>
+<?php if($game->hasVideos()) { ?>
                 <div class="row">
                     <div class="col-xs-6">
                         <div class="form-group">
@@ -144,7 +124,7 @@ if($game->hasVideos()) {
                         </div>
                     </div>
                 </div><!--.row-->
-                <?php } ?>
+<?php } ?>
                 <div class="row">
                   <div class="col-xs-6">
                     <div class="form-group">

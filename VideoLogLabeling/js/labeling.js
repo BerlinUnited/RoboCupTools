@@ -44,43 +44,73 @@ $( document ).ready(function() {
 
 var app = angular.module('test', ['schemaForm']);
 
-app.controller('MainController', function($rootScope, $scope, $compile) {
-  $scope.logs = {};
+app.controller('MainController', ['$rootScope','$scope','$http', function($rootScope, $scope, $http) {
+    //
+    var url = new URL(window.location.href);
+    $scope.widget = { title: url.searchParams.get("name") !== null ? url.searchParams.get("name") : 'New' };
+    // init log model
+    $scope.logs = {};
+    $scope.logs_max_duration = 0;
+    // retrieve logs
+    $http.get(url.pathname + url.search + '&logs='+$scope.widget.title).then(function(response) {
+        if (angular.isObject(response.data)) {
+            $scope.logs = response.data;
+        }
+        // find the maximum log duration - needed to align all events in the timeline!
+        for(var log in $scope.logs) {
+            $scope.logs_max_duration = Math.max($scope.logs_max_duration, $scope.logs[log].end - $scope.logs[log].start);
+        }
+        // add timelines of logs
+        for(var log in $scope.logs) {
+            $scope.addTimeline(log);
+        }
+    });
 
-  $scope.selected = null;
+    $scope.addTimeline = function(id) {
+        var data = $scope.logs[id];
+        // if not already available, add the label container
+        if(typeof data.labels === 'undefined') { data.labels = {}; }
+        if(typeof data.sync === 'undefined') { data.sync = 0.0; }
+        // show the timeline and player number
+        var timeline = $('<div id="'+id+'" class="timeline"><div class="info">#'+data.number+'</div></div>');
 
-  var url = new URL(window.location.href);
-  $scope.widget = { title: url.searchParams.get("name") !== null ? url.searchParams.get("name") : 'New' };
-
-  
-  $scope.addLogfileToModel = function(id, data) {
-    $scope.logs[id] = data; //push({"id":id, "data":data});
-  };
-  
-  $scope.addPeriod = function(timeline, interval_id, log_offset, video_offset) {
-    var model = $scope.logs[timeline.attr('id')];
-    var interval = model.intervals[interval_id];
-    var offset = video_offset - log_offset;
-    var width = (interval.end - interval.begin) / (model.end - log_offset) * 100;
-    var starting_at = (interval.begin - log_offset) / (model.end - log_offset) * 100;
-
-    var str = '<a href="#" id="'+interval_id+'" class="button '+interval.type+'" data-toggle="tooltip" title="'+interval.type+'"></a>';
-    var o = $compile(str)($scope);
-    $(o).css( "width", width + "%");
-    $(o).css( "left", starting_at + "%");
-
-    o[0].onclick = function(i,e) {
-      $rootScope.$broadcast('setPeriod', $(this).parent().attr('id'), interval_id, offset);
-      o.addClass("selected");
-      
-      if($scope.selected != null) {
-        $scope.selected.removeClass("selected");
-      }
-      $scope.selected = o;
+        console.log(data);
+        // iterate through the actions and add the interval to the timeline
+        for(var interval_id in data.intervals) {
+            var v = data.intervals[interval_id];
+            // collect all found actions in the log file and add a control to the UI
+            if($('#event_configuration input[name="'+v.type+'"]').length === 0) {
+                var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');
+                event_checkbox.change(function(e) { hide_event(e.target.name) });
+                $('#event_configuration .row').append(event_checkbox);
+            }
+            $scope.addPeriod(timeline, interval_id);
+        }
+        $('#timelines').append(timeline);
     };
-    
-    timeline.append(o);
-  };
+
+    $scope.addPeriod = function (timeline, interval_id) {
+        var zoom = 100;
+        var model = $scope.logs[timeline.attr('id')];
+        var interval = model.intervals[interval_id];
+        var width = (interval.end - interval.begin) / $scope.logs_max_duration * 100; //*zoom
+        var starting_at = (interval.begin - model.sync) / $scope.logs_max_duration * 100; //*zoom
+
+        var o = $('<a href="#" id="' + interval_id + '" class="button ' + interval.type + '" data-toggle="tooltip" title="' + interval.type + '"></a>')
+                .css("width", width + "%")
+                .css("left", starting_at + "%");
+
+        o[0].onclick = function (i, e) {
+            $rootScope.$broadcast('setPeriod', $(this).parent().attr('id'), interval_id);
+            o.addClass("selected");
+
+            if ($scope.selected != null) {
+                $scope.selected.removeClass("selected");
+            }
+            $scope.selected = o;
+        };
+        timeline.append(o);
+    };
   
   $scope.save = function(event) {
       var name = $scope.widget.title.trim();
@@ -124,8 +154,7 @@ app.controller('MainController', function($rootScope, $scope, $compile) {
           showSavingAlert('<b>Nothing to save!</b>', 'alert alert-warning', 600, true);
         }
   };
-});
-
+}]);
 
 app.controller('FormController', function($scope) {
   labels = typeof ANNOTATION_LABELS === 'undefined' ? {} : ANNOTATION_LABELS;
@@ -163,13 +192,12 @@ app.controller('FormController', function($scope) {
 
   $scope.model = {};
 
-  $scope.$on('setPeriod', function(event, log_id, interval_id, offset) {
+  $scope.$on('setPeriod', function(event, log_id, interval_id) {
       if(typeof $scope.logs[log_id].labels[interval_id] === 'undefined') { $scope.logs[log_id].labels[interval_id] = {}; }
       $scope.model = $scope.logs[log_id].labels[interval_id];
       $scope.$apply();
   });
 });
-
 
 app.controller('PlayerController', function($scope) {
     // add video sources to source selector
@@ -183,8 +211,11 @@ app.controller('PlayerController', function($scope) {
         playerGlobal.player.setPoster('');
         playerGlobal.player.load();
     });
+    // retrieve the video's offset
+    $scope.video_offset = $('#player').data('offset');
 
-    $scope.$on('setPeriod', function(event, log_id, interval_id, offset) {
+    $scope.$on('setPeriod', function(event, log_id, interval_id) {
+        offset = $scope.video_offset - $scope.logs[log_id].sync;
         var t_begin = $scope.logs[log_id].intervals[interval_id].begin + offset - parseFloat($('#video_configuration_before').val());
         var t_end = $scope.logs[log_id].intervals[interval_id].end + offset + parseFloat($('#video_configuration_after').val());
         playerGlobal.setPeriod(t_begin, t_end);
@@ -192,7 +223,7 @@ app.controller('PlayerController', function($scope) {
 });
 
 app.controller('DrawingController', function($scope) {
-    $scope.$on('setPeriod', function(event, log_id, interval_id, offset) {
+    $scope.$on('setPeriod', function(event, log_id, interval_id) {
         //draw the robot position
         draw(
             $scope.logs[log_id].intervals[interval_id].pose.x/10.0,
@@ -202,41 +233,6 @@ app.controller('DrawingController', function($scope) {
             $scope.logs[log_id].intervals[interval_id].ball.y/10.0
         );
     });
-});
-
-app.directive('timeline', function($compile) {
-    return {
-        //restrict: 'AE',
-        //replace: true,
-        //template: '<div class="timeline"></div>',
-        link: function(scope, element, attrs) {
-            $.getJSON( attrs.file, function( data ) {
-                // if not already available, add the label container
-                if(typeof data.labels === 'undefined') { data.labels = {}; }
-                if(typeof data.sync === 'undefined') { data.sync = {}; }
-                // load labels
-                if(typeof attrs.labels !== 'undefined') {
-                    $.getJSON( attrs.labels, function( labels ) {
-                        $.extend(data.labels, labels);
-                    });
-                }
-                scope.addLogfileToModel(attrs.id, data);
-                // show the player number in the timeline
-                element.append('<div class="info">#'+attrs.playernumber+'</div>');
-                // iterate through the actions and add the interval to the timeline
-                for(var interval_id in data.intervals) {
-                    var v = data.intervals[interval_id];
-                    // collect all found actions in the log file and add a control to the UI
-                    if($('#event_configuration input[name="'+v.type+'"]').length === 0) {
-                        var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');
-                        event_checkbox.change(function(e) { hide_event(e.target.name) });
-                        $('#event_configuration .row').append(event_checkbox);
-                    }
-                    scope.addPeriod(element, interval_id, attrs.logoffset, attrs.videooffset);
-                }
-            });
-        }
-    };
 });
 
 function hide_event(e) {
