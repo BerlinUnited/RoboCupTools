@@ -193,6 +193,7 @@ def do_log(log:Log, dry=False, apply=None, reparse:bool=False):
     :return:    None
     """
     try:
+        logging.debug('%s / %s / %s - processing log ...', str(log.game.event), str(log.game), str(log))
         # check if the default label file exits
         if not log.has_info_file():
             logging.info('%s / %s / %s - missing info file! creating default ...', str(log.game.event), str(log.game), str(log))
@@ -270,6 +271,7 @@ if __name__ == "__main__":
             pp.apply_async(do_game_video, (g, args.video_file))
             pp.apply_async(do_game_gc, (g, args.reparse, actions_gc, args.gc))
             # do work of logs
+
             for l in g.logs.values():
                 pp.apply_async(do_log, (l, args.dry_run, actions_applying, args.reparse))
         # wait for workers to finish
@@ -277,8 +279,9 @@ if __name__ == "__main__":
         pp.join()
 
         # TODO: do the syncing!
-        for g in games:
-            g.sync()
+        # TODO: changes of other processes aren't synchonized!
+        #for g in games:
+        #    g.sync()
 
 
         '''

@@ -222,6 +222,9 @@ class Game:
         # initializes log readers for each log file
         players = {}
         for l in self.logs:
+            # TODO: HACK! reloads data from file (should already be read by another process)!
+            self.logs[l].scan_data()
+
             players[int(self.logs[l].player_number)] = {
                 'key': l,
                 'reader': LogReaderV2.LogReader(self.logs[l].file),

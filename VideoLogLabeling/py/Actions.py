@@ -40,3 +40,9 @@ def forwardkick_right(symbols, option):
 
 def fallen(symbols, option):
     return 'fall_down_and_stand_up' in option and option['fall_down_and_stand_up']['state'].name != 'idle'
+
+def path_decide_role_striker(symbols, option):
+    return 'path_decide_role' in option and option['path_decide_role']['state'].name == 'striker'
+
+def path_decide_role_secondstriker(symbols, option):
+    return 'path_decide_role' in option and option['path_decide_role']['state'].name == 'secondstriker'
