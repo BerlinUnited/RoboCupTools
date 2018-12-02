@@ -36,6 +36,9 @@ class Log:
         self.info_data = None
         self.scan_data()
 
+    def __log(self):
+        return logging.getLogger(__class__.__name__)
+
     def __get_file(self, key):
         """
         Convenience method,returns a path specified in the config and identified by :key:.
@@ -65,7 +68,7 @@ class Log:
         if os.path.isfile(log_file):
             self.file = log_file
         else:
-            logging.getLogger('Log').debug("Missing log file (%s)!", log_file)
+            self.__log().debug("Missing log file (%s)!", log_file)
 
         m = re.match(config['log']['regex'], os.path.basename(self.directory))
         if m:
@@ -73,7 +76,7 @@ class Log:
             self.nao = m.group(2)
             self.robot = m.group(3)
         else:
-            logging.getLogger('Log').debug("Log directory doesn't match regex (%s)!", self.directory)
+            self.__log().debug("Log directory doesn't match regex (%s)!", self.directory)
 
     def scan_data(self):
         """Reads the info file of this log and retrieves all label files of this log."""
@@ -89,17 +92,17 @@ class Log:
             # retrieve all label files
             self.labels = glob.glob(self.data_directory+'/'+config['log']['labels'][0]+'*'+config['log']['labels'][1])
         else:
-            logging.getLogger('Log').debug("Data directory doesn't exist (%s)!", self.data_directory)
+            self.__log().debug("Data directory doesn't exist (%s)!", self.data_directory)
             self.__set_default_info_data()
 
     def __read_info_file(self):
         """Reads the content of the info file or creates the default dict, if the info file doesn't exists."""
         if self.info_data is None:
             if self.info_file is not None and os.path.isfile(self.info_file):
-                logging.getLogger('Log').debug("Read log's info file (%s).", self.info_file)
+                self.__log().debug("Read log's info file (%s).", self.info_file)
                 self.info_data = json.load(io.open(self.info_file, 'r', encoding='utf-8'))
             else:
-                logging.getLogger('Log').debug("No log info file available (%s)!", self.info_file)
+                self.__log().debug("No log info file available (%s)!", self.info_file)
                 self.__set_default_info_data()
 
     def parsed_actions(self):
@@ -141,7 +144,7 @@ class Log:
                         'video-file='+v['sources'][0]+'\n'
                     ])
             else:
-                logging.getLogger('Log').warning("Couldn't create old syncing file - no syncing info available.")
+                self.__log().warning("Couldn't create old syncing file - no syncing info available.")
 
     def find_first_ready_state(self):
         """
@@ -154,7 +157,7 @@ class Log:
         # are the ready states?
         if ready:
             # return the first ready state of this log file
-            logging.getLogger('Log').debug("Use already parsed ready state for retrieving first one.")
+            self.__log().debug("Use already parsed ready state for retrieving first one.")
             ready.sort(key=lambda i: i['frame'])
             return (ready[0]['frame'], ready[0]['begin']*1000.0)
 
@@ -249,14 +252,14 @@ class Log:
     def __save_info_data(self):
         """Saves the info data to the info file and creates the parent directory if necessary."""
         self.__create_data_directory()
-        logging.getLogger('Log').debug("Save log info file (%s)!", self.data_directory)
+        self.__log().debug("Save log info file (%s)!", self.data_directory)
         info_file = self.__get_data_file('info')
         json.dump(self.info_data, open(info_file, 'w'), indent=4, separators=(',', ': '))
 
     def __create_data_directory(self):
         """Creates the data directory if necessary."""
         if not os.path.isdir(self.data_directory):
-            logging.getLogger('Log').debug("Create data directory for log (%s)!", self.data_directory)
+            self.__log().debug("Create data directory for log (%s)!", self.data_directory)
             os.makedirs(self.data_directory)
 
     def get_action(self, key:str):

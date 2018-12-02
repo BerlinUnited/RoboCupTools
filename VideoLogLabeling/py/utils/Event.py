@@ -22,6 +22,9 @@ class Event:
         self.parse_info()
         self.scan_games()
 
+    def __log(self):
+        return logging.getLogger(__class__.__name__)
+
     def parse_info(self):
         """Extracts date and name of this game, based on the configuration regular expression."""
         m = re.match(config['event']['regex'], os.path.basename(self.directory))
@@ -29,7 +32,7 @@ class Event:
             self.date = datetime.datetime.strptime(m.group(1), '%Y-%m-%d')
             self.name = m.group(2)
         else:
-            logging.getLogger('Event').debug("Couldn't parse event info from %s", os.path.basename(self.directory))
+            self.__log().debug("Couldn't parse event info from %s", os.path.basename(self.directory))
 
     def scan_games(self):
         """Scans the directory for matching games and add them to the game list."""
@@ -41,7 +44,7 @@ class Event:
                 g = Game(self, game_dir)
                 self.games.append(g)
             else:
-                logging.getLogger('Event').debug("Ignoring invalid game directory: %s", game)
+                self.__log().debug("Ignoring invalid game directory: %s", game)
 
     def __repr__(self):
         """Returns the string representation of this event."""

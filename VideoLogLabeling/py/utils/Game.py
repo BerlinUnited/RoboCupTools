@@ -34,12 +34,14 @@ class Game:
 
         self.__dirty_v = False
         self.__url_schemes = ['http', 'https']
-        self.__logger = logging.getLogger(__class__.__name__)
 
         self.parse_info()
         self.scan_logs()
         self.scan_videos()
         self.scan_gc_logs()
+
+    def __log(self):
+        return logging.getLogger(__class__.__name__)
 
     def parse_info(self):
         """Extracts date, playing teams and halftime based on the configuration regular expression."""
@@ -50,7 +52,7 @@ class Game:
             self.team_2 = m.group(3)
             self.half = m.group(4)
         else:
-            self.__logger.debug("Game directory doesn't match regex: %s", self.directory)
+            self.__log().debug("Game directory doesn't match regex: %s", self.directory)
 
     def scan_logs(self):
         """Scans the log directory for matching logs and adds them to the log list."""
@@ -65,9 +67,9 @@ class Game:
                     log_data_dir = os.path.join(self.directory, config['game']['dirs']['data'], log)
                     self.logs[log] = Log(self, log_dir, log_data_dir)
                 else:
-                    self.__logger.warning("Invalid log directory: %s", log_dir)
+                    self.__log().warning("Invalid log directory: %s", log_dir)
         else:
-            self.__logger.debug("Game has no log directories!")
+            self.__log().debug("Game has no log directories!")
 
     def scan_videos(self):
         """First it reads the content of the video info file and then scans the video directory for video files. Only
@@ -76,11 +78,11 @@ class Game:
         # read the video info file
         videos_file = self.__get_video_file()
         if os.path.isfile(videos_file):
-            self.__logger.debug("Read game's video info file: %s", videos_file)
+            self.__log().debug("Read game's video info file: %s", videos_file)
             self.videos_file = videos_file
             self.videos = json.load(open(videos_file,'r'))
         else:
-            self.__logger.debug("Game has no video info file: %s", videos_file)
+            self.__log().debug("Game has no video info file: %s", videos_file)
 
         # scan for the "real" video files
         videos = os.path.join(self.directory, config['game']['dirs']['video'])
@@ -94,7 +96,7 @@ class Game:
                         # read content of '.url' files
                         # NOTE: could be more general for 'text' files
                         if ext == 'url':
-                            self.__logger.debug("Read url video file: %s", video)
+                            self.__log().debug("Read url video file: %s", video)
                             with open(os.path.join(videos, video), 'r') as url_file:
                                 video = list(filter(None, [ (l.strip() if urlparse(l.strip()).scheme in self.__url_schemes else None) for l in url_file.readlines() ]))
                         else:
@@ -107,7 +109,7 @@ class Game:
                         if video:
                             # add new video;
                             if name not in self.videos:
-                                self.__logger.debug("Adding video to game: %s", name)
+                                self.__log().debug("Adding video to game: %s", name)
                                 self.videos[name] = {
                                     'sources': [],
                                     'events': {
@@ -118,7 +120,7 @@ class Game:
                                 }
                             # add all missing video to sources
                             for v in video:
-                                self.__logger.debug("Adding source to video: %s -> %s", name, v)
+                                self.__log().debug("Adding source to video: %s -> %s", name, v)
                                 self.videos[name]['sources'].append(v)
                             # mark as changed
                             self.__dirty_v = True
@@ -126,7 +128,7 @@ class Game:
                         # skip the remaining extensions
                         break
         else:
-            self.__logger.debug("Game has video directory: %s", str(self))
+            self.__log().debug("Game has video directory: %s", str(self))
 
     def scan_gc_logs(self):
         """Scans the log directory for matching gamecontroller logs."""
@@ -142,12 +144,12 @@ class Game:
                         log_data_dir = os.path.join(self.directory, config['game']['dirs']['data'])
                         self.gc = GcLog(gc_log_file, log_data_dir)
                     else:
-                        self.__logger.warning("Found multiple gamecontroller log files, the should only be one! (ignoring the others)")
+                        self.__log().warning("Found multiple gamecontroller log files, the should only be one! (ignoring the others)")
             # some debug output
             if not self.gc:
-                self.__logger.debug("No gamecontroller log file found.")
+                self.__log().debug("No gamecontroller log file found.")
         else:
-            self.__logger.debug("Game has no gamecontroller log directory!")
+            self.__log().debug("Game has no gamecontroller log directory!")
 
     def __get_video_file(self):
         """
@@ -200,13 +202,13 @@ class Game:
         """Creates the data directory if necessary."""
         directory = os.path.join(self.directory, config['game']['dirs']['data'])
         if not os.path.isdir(directory):
-            self.__logger.debug("Create data directory: %s", directory)
+            self.__log().debug("Create data directory: %s", directory)
             os.mkdir(directory)
 
     def create_video_file(self):
         """Creates/Writes the video info file."""
         self.__create_data_directory()
-        self.__logger.debug("Create video info file: %s", self.__get_video_file())
+        self.__log().debug("Create video info file: %s", self.__get_video_file())
         json.dump(self.videos, open(self.__get_video_file(), 'w'), indent=4, separators=(',', ': '))
 
     def has_gc_file(self):
@@ -218,7 +220,7 @@ class Game:
         return self.gc is not None
 
     def sync(self):
-        self.__logger.info("Read log files of %s", str(self))
+        self.__log().info("Read log files of %s", str(self))
         # initializes log readers for each log file
         players = {}
         for l in self.logs:
@@ -242,10 +244,10 @@ class Game:
             p['reader'].close()
             # report non-synced logs
             if not p['synced']:
-                self.__logger.warning("Couldn't find syncing point for %s", self.logs[p['key']])
+                self.__log().warning("Couldn't find syncing point for %s", self.logs[p['key']])
 
     def __sync_with_gamecontroller(self, players):
-        self.__logger.info("syncing data with gamecontroller log file: %s", str(self))
+        self.__log().info("syncing data with gamecontroller log file: %s", str(self))
 
         # the gamecontrollers first ready state is used as synchronization point
         point = -1
@@ -272,7 +274,7 @@ class Game:
                 offset = players[msg['playerNum']]['reader'].mm.find(msg_data[12:], 0)
                 # found the message in the log?
                 if offset != -1:
-                    self.__logger.debug("found message of %d in gamecontroller log, determine containing frame ...", msg['playerNum'])
+                    self.__log().debug("found message of %d in gamecontroller log, determine containing frame ...", msg['playerNum'])
                     # find the frame containing the offset
                     for f in players[msg['playerNum']]['reader'].frames:
                         if f.offset['start'] <= offset and offset <= f.offset['end']:
@@ -283,11 +285,11 @@ class Game:
             if all(map(lambda p: p['synced'], players.values())): break
 
     def __sync_with_teamcomm(self, players):
-        self.__logger.info("syncing data with teamcomm: %s", str(self))
+        self.__log().info("syncing data with teamcomm: %s", str(self))
 
         # skip games with only one (or less) log files
         if len(players) <= 1:
-            self.__logger.info("Only one log file available, can't sync!")
+            self.__log().info("Only one log file available, can't sync!")
             return
 
         # select an already synced player or arbitrarily select the first of the players dict
