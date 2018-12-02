@@ -32,6 +32,10 @@ class Log:
         self.parse_info()
         self.scan_data()
 
+    def reload(self):
+        self.info_data = None
+        self.scan_data()
+
     def __get_file(self, key):
         """
         Convenience method,returns a path specified in the config and identified by :key:.
@@ -52,7 +56,7 @@ class Log:
 
     def __set_default_info_data(self):
         """Sets the default data for the info variable."""
-        self.info_data = {'parsed_actions': [], 'intervals': {}, 'start': 0, 'end': 0, 'sync': 0.0}
+        self.info_data = {'parsed_actions': [], 'intervals': {}, 'start': 0, 'end': 0}  #, 'sync': 0.0
 
     def parse_info(self):
         """Sets the log file path and extracts player number, robot number and an robot id from the log path based on the
@@ -90,12 +94,13 @@ class Log:
 
     def __read_info_file(self):
         """Reads the content of the info file or creates the default dict, if the info file doesn't exists."""
-        if self.info_data is None and self.info_file is not None and os.path.isfile(self.info_file):
-            logging.getLogger('Log').debug("Read log's info file (%s).", self.info_file)
-            self.info_data = json.load(io.open(self.info_file, 'r', encoding='utf-8'))
-        else:
-            logging.getLogger('Log').debug("No log info file available (%s)!", self.info_file)
-            self.__set_default_info_data()
+        if self.info_data is None:
+            if self.info_file is not None and os.path.isfile(self.info_file):
+                logging.getLogger('Log').debug("Read log's info file (%s).", self.info_file)
+                self.info_data = json.load(io.open(self.info_file, 'r', encoding='utf-8'))
+            else:
+                logging.getLogger('Log').debug("No log info file available (%s)!", self.info_file)
+                self.__set_default_info_data()
 
     def parsed_actions(self):
         """Returns the parsed actions of this log."""
@@ -252,7 +257,7 @@ class Log:
         """Creates the data directory if necessary."""
         if not os.path.isdir(self.data_directory):
             logging.getLogger('Log').debug("Create data directory for log (%s)!", self.data_directory)
-            os.mkdir(self.data_directory)
+            os.makedirs(self.data_directory)
 
     def get_action(self, key:str):
         """

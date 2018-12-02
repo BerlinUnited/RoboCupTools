@@ -222,9 +222,6 @@ class Game:
         # initializes log readers for each log file
         players = {}
         for l in self.logs:
-            # TODO: HACK! reloads data from file (should already be read by another process)!
-            self.logs[l].scan_data()
-
             players[int(self.logs[l].player_number)] = {
                 'key': l,
                 'reader': LogReaderV2.LogReader(self.logs[l].file),
@@ -275,7 +272,7 @@ class Game:
                 offset = players[msg['playerNum']]['reader'].mm.find(msg_data[12:], 0)
                 # found the message in the log?
                 if offset != -1:
-                    self.__logger.debug("found message of %d in gamecontroller log", msg['playerNum'])
+                    self.__logger.debug("found message of %d in gamecontroller log, determine containing frame ...", msg['playerNum'])
                     # find the frame containing the offset
                     for f in players[msg['playerNum']]['reader'].frames:
                         if f.offset['start'] <= offset and offset <= f.offset['end']:
@@ -287,6 +284,12 @@ class Game:
 
     def __sync_with_teamcomm(self, players):
         self.__logger.info("syncing data with teamcomm: %s", str(self))
+
+        # skip games with only one (or less) log files
+        if len(players) <= 1:
+            self.__logger.info("Only one log file available, can't sync!")
+            return
+
         # select an already synced player or arbitrarily select the first of the players dict
         try:
             player_number, player = next(filter(lambda i, p: p['synced'], players.items()))
@@ -310,7 +313,7 @@ class Game:
                 # iterate through frame messages
                 for d in frame['TeamMessage'].data:
                     # ... and find the message of an un-synchronized player
-                    if d.playerNum != player_number and not players[d.playerNum]['synced']:
+                    if d.playerNum != player_number and d.playerNum in players and not players[d.playerNum]['synced']:
                         # a player is skipped, if the syncing message was found or if we're sure, that it can not be found any more
                         skip_player = False
                         # ... iterate over those players frames and try to find the send message (received by the synchronizing player)

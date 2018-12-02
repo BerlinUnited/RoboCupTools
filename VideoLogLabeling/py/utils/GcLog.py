@@ -15,15 +15,21 @@ class GcLog:
         """Constructor, Searches for converted log files."""
         self.file = file
         self.data_directory = data_dir
+
+        self.reload()
+
+
+    def reload(self):
+        # reset class variables
         self.info_file = None
         self.info_data = None
         self.__data = None
         self.converted = {}
 
         # search for converted gamecontroller log files
-        for c in glob.glob(file + '*' + config['gc']['conv_ext']):
+        for c in glob.glob(self.file + '*' + config['gc']['conv_ext']):
             # use the part between the log file name and the converted extension as identifier for the converted file
-            _ = c[len(file):-len(config['gc']['conv_ext'])].strip('.')
+            _ = c[len(self.file):-len(config['gc']['conv_ext'])].strip('.')
             self.converted[_] = c
         if not self.converted:
             logging.getLogger(__class__.__name__).debug("There are unconverted gamecontroller log files.")
@@ -31,7 +37,7 @@ class GcLog:
             logging.getLogger(__class__.__name__).debug("The 'gtc' converted gamecontroller log file is required.")
 
         # check gamecontroller info file
-        info_file = os.path.join(data_dir, config['gc']['file'])
+        info_file = os.path.join(self.data_directory, config['gc']['file'])
         if os.path.isfile(info_file):
             self.info_file = info_file
         #
@@ -43,7 +49,7 @@ class GcLog:
             logging.getLogger(__class__.__name__).debug("Read gamecontroller info file (%s).", self.info_file)
             self.info_data = json.load(io.open(self.info_file, 'r', encoding='utf-8'))
         else:
-            logging.getLogger(__class__.__name__).debug("No gamecontroller info file available (%s)!", self.info_file)
+            logging.getLogger(__class__.__name__).debug("No gamecontroller info file available (%s)!", self.file)
             self.info_data = { 'parsed_actions': [], 'intervals': {}, 'sync': 0.0 }
 
     def has_converted(self):
@@ -132,6 +138,3 @@ class GcLog:
     def parsed_actions(self):
         """Returns the parsed actions of this log."""
         return self.info_data['parsed_actions']
-
-
-
