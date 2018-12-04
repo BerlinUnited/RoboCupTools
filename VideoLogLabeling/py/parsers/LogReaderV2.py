@@ -51,6 +51,7 @@ class LogReader:
 
         self.parser = parser
         self.filter = filter
+        self.__corrupted = False
 
         self.frames = []
         while self.mm.tell() < self.mm.size():
@@ -60,6 +61,12 @@ class LogReader:
             str_size = end_pos - self.mm.tell()
             # extract frameNumber, name and data size; ignore NULL-byte (\0)
             fn, name, size = struct.unpack('=l'+str(str_size-4)+'sxl', self.mm.read(str_size+5))
+            # simple plauibility check
+            if self.frames and (fn < self.frames[-1].number or fn < 0):
+                # something is wrong! log file corrupted?
+                self.__corrupted = True
+                del self.frames[-1]
+                break
             # create new frame, if the frameNumber doesn't exists
             if not self.frames or self.frames[-1].number != fn:
                 # get the starting log offset for the new frame
@@ -85,6 +92,10 @@ class LogReader:
         """Closes the log file and releases all file descriptors."""
         self.mm.close()
         self.file.close()
+
+    def is_corrupted(self):
+        """Returns true, if the file seems to be corrupted, otherwise false."""
+        return self.__corrupted
 
 class Frame:
     """A Frame represents a container of data (messages) at a certain time frame in a log file."""

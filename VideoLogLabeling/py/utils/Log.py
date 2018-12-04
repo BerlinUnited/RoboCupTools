@@ -202,6 +202,10 @@ class Log:
         frame. After parsing the resulting info  are saved to the info file."""
         parser = BehaviorParser.BehaviorParser()
         log = BehaviorParser.LogReader(self.file, parser)
+
+        if log.is_corrupted():
+            self.__log().warning("Log file is corrupted (%s)!", self.file)
+
         # update parsed actions
         self.info_data['parsed_actions'] = list(set(self.info_data['parsed_actions']) | set(actions.keys()))
         tmp = {}

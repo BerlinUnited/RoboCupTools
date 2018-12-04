@@ -160,6 +160,7 @@ def do_game_video(game:Game):
         # ignore canceled jobs
         pass
     except Exception:
+        logging.error("An error occurred updating video file of %s", game)
         traceback.print_exc()
     return game
 
@@ -178,6 +179,7 @@ def do_game_gc(game:Game, reparse:bool, actions_gc:dict, converter:str=None):
         # ignore canceled jobs
         pass
     except Exception:
+        logging.error("An error occurred during conversion of gamecontroller of %s", game)
         traceback.print_exc()
     return game
 
@@ -212,6 +214,7 @@ def do_log(log:Log, dry=False, apply=None, reparse:bool=False):
         # ignore canceled jobs
         pass
     except Exception:
+        logging.error("An error occurred during processing log %s", log)
         traceback.print_exc()
 
 def do_sync(game:Game):
@@ -221,8 +224,15 @@ def do_sync(game:Game):
     :param game:
     :return: return a synchronized game
     """
-    if not all([ l.has_syncing_info() for l in game.logs.values() ]):
-        if not args.dry_run: game.sync()
+    try:
+        if not all([ l.has_syncing_info() for l in game.logs.values() ]):
+            if not args.dry_run: game.sync()
+    except KeyboardInterrupt:
+        # ignore canceled jobs
+        pass
+    except Exception:
+        logging.error("An error occurred during synchronization of %s", game)
+        traceback.print_exc()
 
     return game
 
