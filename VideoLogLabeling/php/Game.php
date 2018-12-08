@@ -87,11 +87,6 @@ class Game
             }
         }
 
-        // add error message if no videos are available
-        if(empty($this->videos)){
-            $this->warnings[] = 'No video files!';
-        }
-
         $gc_file = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['data'] . DIRECTORY_SEPARATOR . Config::gc('file');
         if (is_file($gc_file)) {
             $this->gamecontroller_file = $gc_file;
