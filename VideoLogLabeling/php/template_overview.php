@@ -30,7 +30,7 @@
                 <thead>
                     <tr>
                         <th></th>
-                        <th>Competition</th>
+                        <th></th>
                         <th>Date, Time - Opponents - #halftime (Robots)</th>
                         <th>Label set</th>
                         <th></th>
@@ -58,13 +58,16 @@ foreach ($events as $event) {
             } else {
                 echo '<tr>'
                         .'<td><input type="checkbox" name="games[]" value="'.$game->getId().'" /></td>'
-                        .'<td>'.'</td>'
+                        .'<td>'
+                    . ($game->hasWarnings() ? ' <span class="glyphicon glyphicon-alert text-danger" title="'.implode("; ", $game->getWarnings()).'"></span>' : '')
+                    . ($game->hasGamecontroller() ? ' <span class="glyphicon glyphicon-cog" title="GameController available"></span>' : '')
+                    . ($game->hasVideos() ? ' <span class="glyphicon glyphicon-film" title="Video available"></span>' : '')
+                    .'</td>'
                         .'<td>'
                             . $game->getDateString()
                             . ' - ' . $game->getTeam1() . ' vs. ' . $game->getTeam2()
                             . ' #' . $game->getHalf()
                             . ' (' . $game->getSize() . ')'
-                            . ($game->hasVideos() ? '' : ' <span class="glyphicon glyphicon-alert" title="Missing video"></span>')
                         .'</td>'
                         .'<td>'
                     //.'<a href="./index.php?game='.$game->getId().'&name=New">[New]</a>'
@@ -107,6 +110,7 @@ foreach ($events as $event) {
 </div>
 
 <div class="errors <?=$errors?'':'hide'?>">
+    <span class="close" title="Hide errors" onclick="(function(){$('.errors').fadeOut();})();">×</span>
     <pre><?php
   foreach ($errors as $game) {
       if($game instanceof Game) {

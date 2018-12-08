@@ -34,6 +34,10 @@ class Config
         "labels" => ["labels", ".json"]
     ];
 
+    private $gc = [
+        "file" => "gc.json",
+    ];
+
     /**
      * Private constructor for the singleton pattern.
      * Reads the config file and initializes the config variables.
@@ -124,6 +128,23 @@ class Config
      */
     public function getLog() {
         return $this->log;
+    }
+
+    /**
+     * Returns the gamecontroller configuration
+     * @return array
+     */
+    public function getGameController() {
+        return $this->gc;
+    }
+
+    /**
+     * Shorthand function for accessing the gamecontroller configuration
+     * @param $key
+     * @return mixed
+     */
+    public static function gc($key) {
+        return self::getInstance()->gc[$key];
     }
 
     /**

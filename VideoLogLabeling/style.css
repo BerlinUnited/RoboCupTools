@@ -175,14 +175,29 @@ body {
     margin: 5px;
 }
 
+.row:last-of-type {
+    margin-bottom: 2em;
+}
+
 .errors {
-  position: fixed;
-  bottom: 2em;
-  left: 2em;
+    position: fixed;
+    bottom: 2em;
+    left: 2em;
+    min-height: 100px;
+    height: 20%;
+}
+
+.errors .close {
+    position: absolute;
+    top: -1em;
+    left: 4px;
+    font-size: 2em;
 }
 
 .errors pre {
+    height: 100%;
     margin: 0;
+    overflow: auto;
 }
 
 #event_configuration_ctrl {

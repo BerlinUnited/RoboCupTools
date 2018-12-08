@@ -16,6 +16,7 @@ class Game
 
     private $logs = [];
     private $videos = [];
+    private $gamecontroller_file;
 
     private $errors = [];
     private $warnings = [];
@@ -73,11 +74,16 @@ class Game
         // read video infos from video json file
         $path = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['data'] . DIRECTORY_SEPARATOR . Config::g('video_file');
         if(is_file($path)) {
-            $video_data = json_decode(file_get_contents($path), true);
-            if(!empty($video_data)) {
-                foreach ($video_data as $name => $value) {
-                    $this->videos[$name] = new Video($this, $value);
+            $content = @file_get_contents($path);
+            if($content !== false) {
+                $video_data = json_decode($content, true);
+                if(!empty($video_data)) {
+                    foreach ($video_data as $name => $value) {
+                        $this->videos[$name] = new Video($this, $value);
+                    }
                 }
+            } else {
+                $this->warnings[] = 'Could not read video info file - no permission!';
             }
         }
 
@@ -86,10 +92,9 @@ class Game
             $this->warnings[] = 'No video files!';
         }
 
-        if (is_dir($this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['gc'])) {
-            // TODO: read gamecontroller files
-        } else {
-            $this->warnings[] = 'No gamecontroller files!';
+        $gc_file = $this->path . DIRECTORY_SEPARATOR . Config::g('dirs')['data'] . DIRECTORY_SEPARATOR . Config::gc('file');
+        if (is_file($gc_file)) {
+            $this->gamecontroller_file = $gc_file;
         }
     }
 
@@ -148,12 +153,29 @@ class Game
     {
         return count($this->errors) > 0;
     }
+
+    /**
+     * @return bool
+     */
+    public function hasWarnings()
+    {
+        return count($this->warnings) > 0;
+    }
+
     /**
      * @return array
      */
     public function getErrors()
     {
         return $this->errors;
+    }
+
+    /**
+     * @return array
+     */
+    public function getWarnings()
+    {
+        return $this->warnings;
     }
 
     /**
@@ -331,5 +353,9 @@ class Game
         }
 
         return true;
+    }
+
+    public function hasGamecontroller() {
+        return $this->gamecontroller_file !== NULL;
     }
 }
