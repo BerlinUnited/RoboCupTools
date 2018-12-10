@@ -32,11 +32,16 @@ $( document ).ready(function() {
     stretching: 'responsive',
     success: function(media, node, player) {
       $('#' + node.id + '-mode').html('mode: ' + player.pluginType);
-      player.setSrc($('#video_configuration_source').val());
+      if($('#video_configuration_source').val()) {
+          player.setSrc($('#video_configuration_source').val());
+      } else if($(media).children("video")[0].childElementCount <= 0) {
+          player.media.createErrorMessage();
+      }
       media.addEventListener('loadedmetadata', function() {
         playerGlobal = new PeriodicPlayer(player);
       });
-    }
+    },
+      customError: '<span class="alert alert-danger"><b>ERROR</b>: Video is not available!</span>',
     //, youtube:{ nocookie: true }
   });
 });
