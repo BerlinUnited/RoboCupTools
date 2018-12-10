@@ -32,7 +32,7 @@ $( document ).ready(function() {
     stretching: 'responsive',
     success: function(media, node, player) {
       $('#' + node.id + '-mode').html('mode: ' + player.pluginType);
-      
+      player.setSrc($('#video_configuration_source').val());
       media.addEventListener('loadedmetadata', function() {
         playerGlobal = new PeriodicPlayer(player);
       });
@@ -218,11 +218,18 @@ app.controller('PlayerController', function($scope) {
     // switch source listener
     sourceSelect.change(function (e) {
         if(playerGlobal !== null) {
+            window.location.hash="source="+this.options.selectedIndex;
             playerGlobal.player.setSrc(this.value);
             playerGlobal.player.setPoster('');
             playerGlobal.player.load();
         }
     });
+    // set the source if available
+    let location_hash = window.location.hash.substr(1).split('=');
+    if(location_hash.indexOf('source') !== -1) {
+        sourceSelect.val(sourceSelect.children()[location_hash[location_hash.indexOf('source') + 1]].value);
+        sourceSelect.trigger( "change" );
+    }
     // retrieve the video's offset
     $scope.video_offset = $('#player').data('offset');
 

@@ -110,7 +110,7 @@ foreach ($events as $event) {
 </div>
 
 <div class="errors <?=$errors?'':'hide'?>">
-    <span class="close" title="Hide errors" onclick="(function(){$('.errors').fadeOut();})();">×</span>
+    <span class="close" title="Hide errors">×</span>
     <pre><?php
   foreach ($errors as $game) {
       if($game instanceof Game) {
@@ -126,6 +126,6 @@ foreach ($events as $event) {
 </div>
 
 <div id="watermark"></div>
-
+<script type="text/javascript">$(".errors .close").click(function(){$('.errors').fadeOut();});</script>
 </body>
 </html>

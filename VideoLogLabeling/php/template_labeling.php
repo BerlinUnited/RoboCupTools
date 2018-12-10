@@ -66,7 +66,7 @@ if($game->hasVideos()) {
             <h3><a href="./index.php"><< BACK</a></h3>
         </div>
         <div class="col-sm-10">
-            <a href="#" id="configuration_opener" class="pull-right" title="Show configuration"><span class="glyphicon glyphicon-cog"></span></a>
+            <a id="configuration_opener" class="pull-right" title="Show configuration"><span class="glyphicon glyphicon-cog"></span></a>
             <h3><?= $game->getEvent()->getName() ?> | <?= $game->getDateString() ?> - <?= $game->getTeam1() ?> vs. <?= $game->getTeam2() ?> #<?= $game->getHalf() ?></h3>
         </div>
     </div>
