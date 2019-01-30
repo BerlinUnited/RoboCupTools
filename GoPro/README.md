@@ -205,3 +205,7 @@ And some handles from the GoPro bluetooth:
 
 #### Video Tutorial
 A Video explaining the setup and handling of the GoPro - Pi Setup can be found at https://www2.informatik.hu-berlin.de/~naoth/ressources/howto-robocup-gopro-small.mp4
+
+#### Notes:
+ - The GoPro App did not work in Iran (as of 2018)  
+ - Not every USB Port of Pi gives enough power to load the GoPro
