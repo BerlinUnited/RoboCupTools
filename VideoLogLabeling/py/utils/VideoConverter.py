@@ -376,7 +376,7 @@ class FFMpeg:
             # set muted, if the file doesn't contain an audio stream
             if 'muted' not in info:
                 info['muted'] = True
-        except Exception, e:
+        except Exception as e:
             getLogger().error('An error occurred parsing file info (%s): %s', file, e)
         return info
     
@@ -472,7 +472,7 @@ class FFMpeg:
                 # only interested in the progress
                 if 'frame' == line[0:5]:
                     # show progress ...
-                    print "\r%s" % line,
+                    print("\r{}".format(line))
                     # the 'flush' is needed, otherwise the output buffer would be never or randomly flushed
                     # 'cause the previous data is always deleted '\r'!
                     sys.stdout.flush()
@@ -490,8 +490,8 @@ class FFMpeg:
         # check return code
         if p.returncode != 0:
             # TODO: use logger or throw exception?!
-            print 'Exited with code %d' % p.returncode
-            print buffer
+            print('Exited with code {}'.format(p.returncode))
+            print(buffer)
 
 
 # TODO: add "pre-configuration" flag -> don't ask any questions!
@@ -532,10 +532,10 @@ def getLogger(suffix=None):
 
 def question(string, short, options):
     """User interaction function for asking questions with a defined set of answers."""
-    choice = raw_input(string)
+    choice = input(string)
     # ask again, if answer was 'incorrect'
     while choice.lower() not in options:
-        choice = raw_input(short)
+        choice = input(short)
     # return answer
     return choice
 
@@ -571,7 +571,7 @@ def createTodoList(path, formats, prefix=None):
     files = searchVideoFiles(path)
     # filter VideoFiles not matching given prefix
     if prefix is not None:
-        files = {k: v for k, v in files.iteritems() if k==prefix}
+        files = {k: v for k, v in files.items() if k==prefix}
     # iterate over VideoFiles and collect converting todos
     for f in files:
         # analyze video files
@@ -631,12 +631,12 @@ if __name__ == "__main__":
         exit(0)
 
     if not todo_list:
-        print 'Nothing to do!'
+        print('Nothing to do!')
         exit(0)
     
-    print 'The following would be converted:'
+    print('The following would be converted:')
     for i in todo_list:
-        print '  - ', i
+        print('  - {}'.format(i))
     
     choice = question("\nHow to continue? (cancel [C], convert all [A], ask every file [F], ask every format configuration [M]\n-> ", "[C,A,F,M]-> ", ['c','a','f','m'])
     
@@ -645,7 +645,7 @@ if __name__ == "__main__":
     else:
         # TODO: catch exceptions!
         for video in todo_list:
-            print '\n', video.video.source
+            print('\n{}'.format(video.video.source))
             if choice.lower() == 'f':
                 file_choice = question("\nProceed converting? [Y]es, [S]kip, [C]ancel -> ", "[Y,S,C]-> ", ['c','s','y'])
                 if file_choice.lower() == 's':
@@ -661,5 +661,5 @@ if __name__ == "__main__":
                         break
                     elif config_choice.lower() == 'c':
                         exit(0)
-                print '\nprocess config ', todo
+                print('\nprocess config {}'.format(str(todo)))
                 video.convert(todo)

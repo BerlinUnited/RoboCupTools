@@ -11,10 +11,14 @@ function PeriodicPlayer(player)
     }
     
     this.currentStopListener = function(event) {
-     if (player.node.currentTime > end) {
-          player.setCurrentTime(start);
-          player.pause();
-      }
+        // if the user sets the current time (eg. via slider), we don't want to reset it
+        // assuming that the user sets the time "obviously" different than the current interval
+        if (player.node.currentTime < (start - 4.0) || player.node.currentTime > (end + 4.0)) {
+            player.media.removeEventListener("timeupdate", playerGlobal.currentStopListener, false);
+        } else if (player.node.currentTime > end) {
+            player.setCurrentTime(start);
+            player.pause();
+        }
     };
     
     player.media.addEventListener("timeupdate", this.currentStopListener, false);
@@ -22,149 +26,153 @@ function PeriodicPlayer(player)
   }
 }
 
-var playerGlobal;
+var playerGlobal = null;
 $( document ).ready(function() {
   $('#player').mediaelementplayer({
     stretching: 'responsive',
     success: function(media, node, player) {
       $('#' + node.id + '-mode').html('mode: ' + player.pluginType);
-      
+      if($('#video_configuration_source').val()) {
+          player.setSrc($('#video_configuration_source').val());
+      } else if($(media).children("video")[0].childElementCount <= 0) {
+          player.media.createErrorMessage();
+      }
       media.addEventListener('loadedmetadata', function() {
         playerGlobal = new PeriodicPlayer(player);
       });
-    }
+    },
+      customError: '<span class="alert alert-danger"><b>ERROR</b>: Video is not available!</span>',
+    //, youtube:{ nocookie: true }
   });
 });
 
 
 var app = angular.module('test', ['schemaForm']);
 
-app.controller('MainController', function($rootScope, $scope, $compile) {
+app.controller('MainController', ['$rootScope','$scope','$http', function($rootScope, $scope, $http) {
+    //
+    var url = new URL(window.location.href);
+    $scope.widget = { title: url.searchParams.get("name") !== null ? url.searchParams.get("name") : 'New' };
+    // init log model
+    $scope.logs = {};
+    $scope.logs_max_duration = 0;
+    $scope.zoom = "%";
 
-  $scope.model = [];
-  $scope.selected = null;
-
-  $scope.widget = {title: label_name};
-
-  /*
-  $scope.openFile = function(input) {
-  
-    var reader = new FileReader();
-    
-    reader.onload = function(){
-      jsonData = JSON.parse(reader.result);
-      $scope.model = jsonData;
-      
-      for (var i = 0; i < jsonData.intervals.length; i++) 
-      {
-        var v = jsonData.intervals[i];
-        if (typeof v.labels === 'undefined') {
-          v.labels = {};
+    // retrieve logs
+    $http.get(url.pathname + url.search + '&logs='+$scope.widget.title).then(function(response) {
+        if (angular.isObject(response.data)) {
+            $scope.logs = response.data;
         }
-        $scope.addPeriod(v);
-      }
-      
-      $('[data-toggle="tooltip"]').tooltip();
-    };
-    reader.readAsText(input.files[0]);
-  };
-  */
-  
-  $scope.addLogfileToModel = function(file, data) 
-  {
-    $scope.model.push({"file":file, "data":data});
-  }
-  
-  $scope.addPeriod = function(timeline, data, duration, log_offset, video_offset, duration_none, num_event) 
-  {
-    var offset = video_offset - log_offset;
-    
-    //var duration = playerGlobal.player.media.duration;
-    var width = 0;
-    
-    var non_supression = 0.2;
-    var event_duration_add = duration_none * non_supression / num_event;
-    
-    if(data.type == 'none') {
-      width = (data.end-data.begin)/duration*(1.0 - non_supression);
-    } else {
-      width = (data.end-data.begin + event_duration_add)/duration;
-    }
-    width = Math.min(width*100, 100);
-    
-    var c = data.type == 'none'?'blank':'button';
-    
-    var str = '<a href="#" class="'+c+' '+data.type+'" data-toggle="tooltip" title="'+data.type+'"></a>';
-    var o = $compile(str)($scope);
-    $(o).css( "width", "" + width + "%");
+        // find the maximum log duration - needed to align all events in the timeline!
+        for(var log in $scope.logs) {
+            $scope.logs_max_duration = Math.max($scope.logs_max_duration, $scope.logs[log].end - $scope.logs[log].start);
+        }
+        // add timelines of logs
+        for(var log in $scope.logs) {
+            $scope.addTimeline(log);
+        }
+    });
 
-    
-    
-    o[0].onclick = function() {
-      $rootScope.$broadcast('setPeriod', data, offset);
-      o.addClass("selected");
-      
-      if($scope.selected != null) {
-        $scope.selected.removeClass("selected");
-      }
-      $scope.selected = o;
-    };
-    
-    timeline.append(o);
-  };
-  
-  $scope.save = function(event) 
-  {
-    if($scope.widget.title == '') {
-      alert("ERROR: you need to set a tag.");
-    }
-    
-    //console.log($scope.widget.title);
-    for(var i = 0; i < $scope.model.length; ++i) {
-      var log = $scope.model[i];
-      var str = JSON.stringify(log.data, null, '  ');
-      //console.log(log.file);
-      //console.log(str);
-      //event.target.href = 'data:text/json;charset=utf8,' + encodeURIComponent(str);
-      
-      $.post( "php/admin/save.php", {"tag" : $scope.widget.title, "file": log.file, "data" : str})
-       .done(function( result ) {
-          console.log(result);
-        });
-    }
-    //var str = JSON.stringify($scope.model, null, '  ');
-  }
-});
+    $scope.addTimeline = function(id) {
+        var data = $scope.logs[id];
+        // if not already available, add the label container
+        if(typeof data.labels === 'undefined') { data.labels = {}; }
+        if(typeof data.sync === 'undefined') { data.sync = 0.0; }
+        // show the timeline and player number
+        var timeline = $('<div id="'+id+'" class="timeline"><div class="info">#'+data.number+'</div></div>').css('width', $scope.zoom === '%' ? '100%' : ($scope.logs_max_duration*$scope.zoom)+'px');
 
+        // iterate through the actions and add the interval to the timeline
+        for(var interval_id in data.intervals) {
+            var v = data.intervals[interval_id];
+            // collect all found actions in the log file and add a control to the UI
+            if($('#event_configuration input[name="'+v.type+'"]').length === 0) {
+                var event_checkbox = $('<div class="col-xs-3"><div class="checkbox"><label><input type="checkbox" name="'+v.type+'" checked> '+v.type+'</label></div></div>');
+                event_checkbox.change(function(e) { hide_event(e.target.name) });
+                $('#event_configuration .row').append(event_checkbox);
+            }
+            $scope.addPeriod(timeline, interval_id);
+        }
+        $('#timelines').append(timeline);
+    };
+
+    $scope.addPeriod = function (timeline, interval_id) {
+        var isRelative = $scope.zoom === '%';
+        var model = $scope.logs[timeline.attr('id')];
+        var interval = model.intervals[interval_id];
+        var width = (interval.end - interval.begin)*(isRelative?(1/$scope.logs_max_duration*100):$scope.zoom);
+        var starting_at = (interval.begin - model.sync)*(isRelative?(1/$scope.logs_max_duration*100):$scope.zoom);
+
+        var o = $('<a href="#" id="' + interval_id + '" class="button ' + interval.type + '" data-toggle="tooltip" title="' + interval.type + '"></a>')
+                .css("width", width + (isRelative?"%":"px"))
+                .css("left", starting_at + (isRelative?"%":"px"));
+
+        o[0].onclick = function (i, e) {
+            $rootScope.$broadcast('setPeriod', $(this).parent().attr('id'), interval_id);
+            o.addClass("selected");
+
+            if ($scope.selected != null) {
+                $scope.selected.removeClass("selected");
+            }
+            $scope.selected = o;
+        };
+        timeline.append(o);
+    };
+  
+    $scope.save = function(event) {
+      var name = $scope.widget.title.trim();
+        if(name.length === 0 || name.toLowerCase() === 'new') {
+            showSavingAlert('<b>WARNING: you need to set a tag!</b>', 'alert alert-warning', 1000, true);
+            return;
+        }
+
+        var url = new URL(window.location.href);
+        var game = url.searchParams.get("game");
+        if (game === null) {
+            showSavingAlert('<b>ERROR: invalid game id!</b>', 'alert alert-danger', 0, false);
+            return;
+        }
+
+        data = [];
+        for(var i in $scope.logs) {
+            // check & remove empty objects/arrays
+            var lbl = $scope.logs[i].labels;
+            for(var l in lbl) {
+                for(var a in lbl[l]) {
+                    if ($.isEmptyObject(lbl[l][a])) { delete lbl[l][a]; }
+                }
+                if ($.isEmptyObject(lbl[l])) { delete lbl[l]; }
+            }
+            if ($.isEmptyObject(lbl)) { continue; }
+            // add to the sending array
+            data.push({'id': i, 'labels': JSON.stringify($scope.logs[i].labels, null, '  ')});
+        }
+
+        if(data.length > 0) {
+          $.post(null, {"tag" : $scope.widget.title, "data" : data})
+            .done(function( result ) {
+              if (result === 'SUCCESS') {
+                showSavingAlert('<b>Saved!</b>', 'alert alert-success', 800, true);
+              } else {
+                showSavingAlert('<b>'+result+'</b>', 'alert alert-danger', 0, false);
+              }
+            });
+        } else {
+          showSavingAlert('<b>Nothing to save!</b>', 'alert alert-warning', 600, true);
+        }
+  };
+
+    $scope.$watch('zoom', function(newValue, oldValue) {
+        // remove old timelines before adding new ones
+        $("#timelines").children().remove();
+        // add timelines of logs
+        for(var log in $scope.logs) {
+            $scope.addTimeline(log);
+        }
+    });
+}]);
 
 app.controller('FormController', function($scope) {
-  
-  // TODO: load those from file
-
-  var labels = {
-    "basisLabels" : {"title": "Basis", "labels": [
-      {"value":"badView",       "name": "<b>view</b> obstructed"},
-      {"value":"nokick",        "name": "<b>no kick motion</b> performed"},
-      {"value":"delocalized",   "name": "robot <b>delocalized</b>"},
-      {"value":"noBall",        "name": "<b>no ball</b> in front of robot"}
-    ]},
-    "situationLabels" : {"title": "Situation", "labels": [
-      {"value":"moved",         "name": "ball <b>moved</b> by the kick"},
-      {"value":"touch",         "name": "<b>touch</b> the ball <b>before</b> kick"},
-      {"value":"pushed",        "name": "<b>pushed</b> by opponent while kicking"},
-      {"value":"fall",          "name": "<b>fall</b> after kick"},
-      {"value":"balldirection", "name": "ball moved in the <b>desired direction</b>"}
-    ]},
-    "resultLabels" : {"title": "Result", "labels": [
-      {"value":"oppgoal",       "name": "<b>goal</b> scored"},
-      {"value":"sideOut",       "name": "ball out on a <b>side line</b>"},
-      {"value":"ownOut",        "name": "ball out on the <b>own groundline</b>"},
-      {"value":"oppOut",        "name": "ball out on the <b>opponent groundline</b>"},
-      {"value":"ballToOwnGoal", "name": "ball moved <b>closer to own</b> goal"},
-      {"value":"ballToOppGoal", "name": "ball moved <b>closer to opponent</b> goal"}
-    ]}
-  };
-  
+  labels = typeof ANNOTATION_LABELS === 'undefined' ? {} : ANNOTATION_LABELS;
   var properties = {};
   var form = [];
   
@@ -198,84 +206,85 @@ app.controller('FormController', function($scope) {
   $scope.form = form;
 
   $scope.model = {};
-  
-  /*
-  $scope.onSubmit = function(form) {
-  
-    $scope.$broadcast('schemaFormValidate');
-    
-    if (form.$valid) {
-      x = JSON.stringify($scope.model);
-      v = 3;
-      
-      tmp = '{"labels":["fall after kick","touch the ball before kick","kick successful"],"comment":"ewfwefw"}';
-    }
-  }*/
 
-  $scope.$on('setPeriod', function(event, data) {
-      $scope.model = data.labels;
+  $scope.$on('setPeriod', function(event, log_id, interval_id) {
+      if(typeof $scope.logs[log_id].labels[interval_id] === 'undefined') { $scope.logs[log_id].labels[interval_id] = {}; }
+      $scope.model = $scope.logs[log_id].labels[interval_id];
       $scope.$apply();
   });
 });
 
-
 app.controller('PlayerController', function($scope) {
-  $scope.$on('setPeriod', function(event, data, offset) {
-    var t_begin = data.begin + offset;
-    var t_end = data.end + offset + (data.type == 'none'?0.0:3.0);
-    playerGlobal.setPeriod(t_begin, t_end);
-  });
+    // add video sources to source selector
+    var sourceSelect = $('#video_configuration_source');
+    $('#player').children().each(function (i,s) {
+        sourceSelect.append('<option value="'+this.src+'">'+(this.type?this.type:mejs.Utils.getTypeFromFile(this.src))+'</option>');
+    });
+    // switch source listener
+    sourceSelect.change(function (e) {
+        if(playerGlobal !== null) {
+            window.location.hash="source="+this.options.selectedIndex;
+            playerGlobal.player.setSrc(this.value);
+            playerGlobal.player.setPoster('');
+            playerGlobal.player.load();
+        }
+    });
+    // set the source if available
+    let location_hash = window.location.hash.substr(1).split('=');
+    if(location_hash.indexOf('source') !== -1) {
+        sourceSelect.val(sourceSelect.children()[location_hash[location_hash.indexOf('source') + 1]].value);
+        sourceSelect.trigger( "change" );
+    }
+    // retrieve the video's offset
+    $scope.video_offset = $('#player').data('offset');
+
+    $scope.$on('setPeriod', function(event, log_id, interval_id) {
+        if(playerGlobal !== null) {
+            offset = $scope.video_offset - $scope.logs[log_id].sync;
+            var t_begin = $scope.logs[log_id].intervals[interval_id].begin + offset - parseFloat($('#video_configuration_before').val());
+            var t_end = $scope.logs[log_id].intervals[interval_id].end + offset + parseFloat($('#video_configuration_after').val());
+            playerGlobal.setPeriod(t_begin, t_end);
+        }
+    });
 });
 
 app.controller('DrawingController', function($scope) {
-  $scope.$on('setPeriod', function(event, data) {
-    //draw the robot position
-    //console.log(data.pose.x, data.pose.y, data.pose.r);
-    draw(data.pose.x/10.0, data.pose.y/10.0, data.pose.r, data.ball.x/10.0, data.ball.y/10.0);
-  });
+    $scope.$on('setPeriod', function(event, log_id, interval_id) {
+        //draw the robot position
+        draw(
+            $scope.logs[log_id].intervals[interval_id].pose.x/10.0,
+            $scope.logs[log_id].intervals[interval_id].pose.y/10.0,
+            $scope.logs[log_id].intervals[interval_id].pose.r,
+            $scope.logs[log_id].intervals[interval_id].ball.x/10.0,
+            $scope.logs[log_id].intervals[interval_id].ball.y/10.0
+        );
+    });
 });
 
+function hide_event(e) {
+  $("."+e).toggleClass('visibility_hidden');
+}
 
+function showSavingAlert(content, clz, delay, fadeout) {
+  var alert = $("#label_title_form .alert");
+  alert.html(content).attr('class', clz).fadeIn();
+  if (fadeout) {
+    alert.delay(delay).fadeOut();
+  }
+}
 
-app.directive('timeline', function($compile) {
-  return {
-    //restrict: 'AE',
-    //replace: true,
-    //template: '<div class="timeline"></div>',
-    link: function(scope, element, attrs) {
+// initialize the alert
+$("#label_title_form .alert").hide();
+$("#label_title_form .alert").removeClass('hidden');
 
-      $.getJSON( attrs.file, function( data ) {
-        
-        // HACK: estimate the duration of the logfile
-        var duration = 0;
-        var num_none = 0;
-        var num_event = 0;
-        var duration_none = 0;
-        for (var i = 0; i < data.intervals.length; i++) 
-        {
-          var v = data.intervals[i];
-          duration = duration + (v.end-v.begin);
-          
-          if(v.type == 'none') {
-            num_none = num_none + 1;
-            duration_none = duration_none + (v.end-v.begin);
-          } else {
-            num_event = num_event + 1;
-          }
-        }
-        
-        for (var i = 0; i < data.intervals.length; i++) 
-        {
-          var v = data.intervals[i];
-          if (typeof v.labels === 'undefined') {
-            v.labels = {};
-          }
-          
-          scope.addPeriod(element, v, duration, attrs.logoffset, attrs.videooffset, duration_none, num_event);
-        }
-        
-        scope.addLogfileToModel(attrs.file, data);
-      });
-    }
-  };
+// update/show the current open state of the configuration panel
+$('#configuration .panel-collapse').on('show.bs.collapse', function () {
+  $('#event_configuration_ctrl a[href="#'+this.id+'"] .glyphicon').toggleClass('glyphicon-plus glyphicon-minus');
+}).on('hide.bs.collapse', function () {
+  $('#event_configuration_ctrl a[href="#'+this.id+'"] .glyphicon').toggleClass('glyphicon-plus glyphicon-minus');
 });
+
+// show/hide configuration
+$("#configuration_opener").click(function () { $("#configuration_control").fadeIn(); });
+$("#configuration_closer").click(function () { $("#configuration_control").fadeOut(); });
+document.addEventListener('keyup', (e) => { if(e.key === "Escape" && $("#configuration_control").is(":visible")) { $("#configuration_control").fadeOut(); }});

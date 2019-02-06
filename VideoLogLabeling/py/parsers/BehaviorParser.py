@@ -2,8 +2,8 @@
 
 import os, sys, getopt
 
-from LogReader import LogReader
-from LogReader import Parser
+from .LogReaderV2 import LogReader
+from .LogReaderV2 import Parser
 
 from matplotlib import pyplot
 import numpy
@@ -113,7 +113,7 @@ if __name__ == "__main__":
   upright = filter(lambda m: m[2] == 1, b)
   fall = filter(lambda m: m[2] != 1, b)
   
-  print "step 2"
+  print("step 2")
   du = zip(*upright)
   df = zip(*fall)
   
