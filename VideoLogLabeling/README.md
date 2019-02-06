@@ -10,4 +10,4 @@ This creates a configuration file with the default values and you adjust them fo
 
 
 Example of usage to label kick events in RoboCup games:
-https://www2.informatik.hu-berlin.de/~naoth/videolabeling/index.php
+https://www2.informatik.hu-berlin.de/~naoth/videolabeling/
