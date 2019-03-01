@@ -10,13 +10,14 @@ class GameControlData(Struct):
     """Representation of the SPL message format."""
 
     GAMECONTROLLER_STRUCT_HEADER = b'RGme'
-    GAMECONTROLLER_STRUCT_VERSION = 12
+    GAMECONTROLLER_STRUCT_VERSION = 11
 
     COMPETITION_PHASE_ROUNDROBIN  = 0
     COMPETITION_PHASE_PLAYOFF     = 1
     
-    COMPETITION_TYPE_NORMAL             = 0
-    COMPETITION_TYPE_MIXEDTEAM          = 1
+    COMPETITION_TYPE_NORMAL               = 0
+    COMPETITION_TYPE_MIXEDTEAM            = 1
+    COMPETITION_TYPE_GENERAL_PENALTY_KICK = 2
     
     GAME_PHASE_NORMAL                   = 0
     GAME_PHASE_PENALTYSHOOT             = 1
@@ -32,27 +33,13 @@ class GameControlData(Struct):
     SET_PLAY_NONE                       = 0
     SET_PLAY_GOAL_FREE_KICK             = 1
     SET_PLAY_PUSHING_FREE_KICK          = 2
-    SET_PLAY_CORNER_KICK                = 3
-    SET_PLAY_KICK_IN                    = 4
+
     
     def __init__(self, data=None):
         """Constructor."""
         # initialize with the struct format characters as described here
         # https://docs.python.org/2/library/struct.html
-        super(GameControlData, self).__init__('4s'  # header
-                                               'B'  # version
-                                               'B'  # packet number
-                                               'B'  # numPlayers
-                                               'B'  # competitionPhase
-                                               'B'  # competitionType
-                                               'B'  # gamePhase
-                                               'B'  # gameState
-                                               'B'  # setPlay
-                                               'B'  # firstHalf
-                                               'B'  # kickingTeam
-                                               'h'  # secsRemaining
-                                               'h'  # secondaryTime
-                                              )
+        super(GameControlData, self).__init__('4sH10B3h')
         self.logger = logging.getLogger("GameControlData")
 
         self.setDefaults()
@@ -72,7 +59,9 @@ class GameControlData(Struct):
         
         self.firstHalf = 1
         self.kickingTeam = 0
-
+        
+        self.dropInTeam = 0
+        self.dropInTime = -1
         self.secsRemaining = 600
         self.secondaryTime = 0
 
@@ -106,6 +95,8 @@ class GameControlData(Struct):
         
         self.firstHalf = next(it)
         self.kickingTeam = next(it)
+        self.dropInTeam = next(it)
+        self.dropInTime = next(it)
         self.secsRemaining = next(it)
         self.secondaryTime = next(it)
 
@@ -127,6 +118,8 @@ class GameControlData(Struct):
                            self.setPlay,
                            self.firstHalf,
                            self.kickingTeam,
+                           self.dropInTeam,
+                           self.dropInTime,
                            self.secsRemaining,
                            self.secondaryTime
                            )
@@ -149,10 +142,12 @@ class GameControlData(Struct):
         elif self.firstHalf == 0:
             out += "false"
         else:
-            out += "undefined(" + str(self.firstHalf) + ")"
+            out += "undefinied(" + str(self.firstHalf) + ")"
             
         out += "\n"
         out += "        kickingTeam: " + str(self.kickingTeam) + "\n"
+        out += "         dropInTeam: " + str(self.dropInTeam) + "\n"
+        out += "         dropInTime: " + str(self.dropInTime) + "\n"
         out += "      secsRemaining: " + str(self.secsRemaining) + "\n"
         out += "      secondaryTime: " + str(self.secondaryTime) + "\n"
 
@@ -162,8 +157,9 @@ class GameControlData(Struct):
       if value in names:
         return names[value]
       else:
-        return "undefined({})".format(value)
-
+        return "undefinied({})".format(value)
+        
+        
     def getCompetitionPhase(self):
       return self.getName({
         self.COMPETITION_PHASE_ROUNDROBIN: "round robin",
@@ -173,7 +169,8 @@ class GameControlData(Struct):
     def getCompetitionType(self):
       return self.getName({
         self.COMPETITION_TYPE_NORMAL: "normal",
-        self.COMPETITION_TYPE_MIXEDTEAM: "mixed team"
+        self.COMPETITION_TYPE_MIXEDTEAM: "mixed team",
+        self.COMPETITION_TYPE_GENERAL_PENALTY_KICK: "penalty kick"
       }, self.competitionType)
             
     def getGamePhase(self):
@@ -197,9 +194,7 @@ class GameControlData(Struct):
       return self.getName({
         self.SET_PLAY_NONE: "none",
         self.SET_PLAY_GOAL_FREE_KICK: "goal free kick",
-        self.SET_PLAY_PUSHING_FREE_KICK: "pushing free kick",
-        self.SET_PLAY_CORNER_KICK: "corner kick",
-        self.SET_PLAY_KICK_IN: "kick in"
+        self.SET_PLAY_PUSHING_FREE_KICK: "pushing free kick"
       }, self.setPlay)
 
 
@@ -208,24 +203,8 @@ class TeamInfo(Struct):
 
     MAX_NUM_PLAYERS = 6
 
-    TEAM_BLUE                           = 0  # blue, cyan
-    TEAM_RED                            = 1  # red, magenta, pink
-    TEAM_YELLOW                         = 2  # yellow
-    TEAM_BLACK                          = 3  # black, dark gray
-    TEAM_WHITE                          = 4  # white
-    TEAM_GREEN                          = 5  # green
-    TEAM_ORANGE                         = 6  # orange
-    TEAM_PURPLE                         = 7  # purple, violet
-    TEAM_BROWN                          = 8  # brown
-    TEAM_GRAY                           = 9  # lighter grey
-
     def __init__(self, data=None):
-        super().__init__('B'  # teamNumber
-                         'B'  # teamColor
-                         'B'  # score
-                         'B'  # penaltyShot
-                         'H'  # singleShots
-                         )
+        super().__init__('4BH')
 
         self.setDefaults()
 
@@ -265,26 +244,6 @@ class TeamInfo(Struct):
 
         return (True, None)
 
-    def getName(self, names, value):
-      if value in names:
-        return names[value]
-      else:
-        return "undefined({})".format(value)
-
-    def getColor(self):
-      return self.getName({
-          self.TEAM_BLUE:   "blue",
-          self.TEAM_RED:    "red",
-          self.TEAM_YELLOW: "yellow",
-          self.TEAM_BLACK:  "black",
-          self.TEAM_WHITE:  "white",
-          self.TEAM_GREEN:  "green",
-          self.TEAM_ORANGE: "orange",
-          self.TEAM_PURPLE: "purple",
-          self.TEAM_BROWN:  "brown",
-          self.TEAM_GRAY:   "grey",
-      }, self.teamColor)
-
     def __str__(self):
         out = "--------------------------------------\n"
 
@@ -300,26 +259,10 @@ class TeamInfo(Struct):
 
 
 class PlayerInfo(Struct):
-    PENALTY_NONE                        = 0
-    PENALTY_SPL_ILLEGAL_BALL_CONTACT    = 1
-    PENALTY_SPL_PLAYER_PUSHING          = 2
-    PENALTY_SPL_ILLEGAL_MOTION_IN_SET   = 3
-    PENALTY_SPL_INACTIVE_PLAYER         = 4
-    PENALTY_SPL_ILLEGAL_DEFENDER        = 5
-    PENALTY_SPL_LEAVING_THE_FIELD       = 6
-    PENALTY_SPL_KICK_OFF_GOAL           = 7
-    PENALTY_SPL_REQUEST_FOR_PICKUP      = 8
-    PENALTY_SPL_LOCAL_GAME_STUCK        = 9
-    PENALTY_SPL_ILLEGAL_POSITIONING     = 10
-    PENALTY_SUBSTITUTE                  = 14
-    PENALTY_MANUAL                      = 15
-
     """ Representation of the PlayerInfo. """
 
     def __init__(self, data=None):
-        super().__init__('B'  # penalty
-                         'B'  # secsTillUnpenalised
-                         )
+        super().__init__('2B')
 
         self.setDefaults()
 
@@ -343,29 +286,6 @@ class PlayerInfo(Struct):
         self.secsTillUnpenalised = next(it)
 
         return (True, None)
-
-    def getName(self, names, value):
-      if value in names:
-        return names[value]
-      else:
-        return "undefined({})".format(value)
-
-    def getPenalty(self):
-      return self.getName({
-          self.PENALTY_NONE:                      "none",
-          self.PENALTY_SPL_ILLEGAL_BALL_CONTACT:  "playing with hands",
-          self.PENALTY_SPL_PLAYER_PUSHING:        "pushing",
-          self.PENALTY_SPL_ILLEGAL_MOTION_IN_SET: "motion in set",
-          self.PENALTY_SPL_INACTIVE_PLAYER:       "inactive",
-          self.PENALTY_SPL_ILLEGAL_DEFENDER:      "illegal defender",
-          self.PENALTY_SPL_LEAVING_THE_FIELD:     "leaving the field",
-          self.PENALTY_SPL_KICK_OFF_GOAL:         "kick off goal",
-          self.PENALTY_SPL_REQUEST_FOR_PICKUP:    "pickup",
-          self.PENALTY_SPL_LOCAL_GAME_STUCK:      "local game stuck",
-          self.PENALTY_SPL_ILLEGAL_POSITIONING:   "illegal positioning",
-          self.PENALTY_SUBSTITUTE:                "substitute",
-          self.PENALTY_MANUAL:                    "manual",
-      }, self.penalty)
 
     def __str__(self):
         out = "penalty: " + str(self.penalty)
