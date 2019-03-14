@@ -56,7 +56,9 @@ class GameLoggerLog(threading.Thread):
                 self.last_file.flush()
                 self.state['v'] = gopro['lastVideo']
             else:
-                logger.error("Got a video file, but without an running game!")
+                logger.error("Got a video file, but without an running game (%s)!", gopro['lastVideo'])
+                # prevent printing error message multiple times
+                self.state['v'] = gopro['lastVideo']
 
     def __handle_gamecontroller(self):
         gc_data = blackboard['gamecontroller']
