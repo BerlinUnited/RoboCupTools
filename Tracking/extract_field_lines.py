@@ -27,6 +27,8 @@ def field_mask(img):
   # bring field to original size
   mask_field = cv2.dilate(mask_field, None, iterations=20)
 
+  mask_field = cv2.erode(mask_field, None, iterations=2)
+  
   # white mask
   lower_white = np.array([0  ,0 ,160])
   upper_white = np.array([360,100,255])
