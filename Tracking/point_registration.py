@@ -140,7 +140,7 @@ def finde_transformation(points, t0, registration_function=registration_fast, mo
 
 
 # ein zweistufiges verfahren 
-def finde_transformation_zwei_stufen(points, registration_function=registration_fast, modelfkt=tools.make_field_points, t0):
+def finde_transformation_zwei_stufen(points, t0, registration_function=registration_fast, modelfkt=tools.make_field_points):
     ###############################
     # STUFE 1
 

@@ -26,7 +26,8 @@ def field_mask(img):
     # bring field to original size
     mask_field = cv2.dilate(mask_field, None, iterations=20)
 
-    mask_field = cv2.erode(mask_field, None, iterations=2)
+    # remove some noise at the edges
+    mask_field = cv2.erode(mask_field, None, iterations=3)
 
     # white mask
     lower_white = np.array([0, 0, 160])
@@ -145,10 +146,10 @@ if __name__ == "__main__":
     dir = os.path.dirname(file)
     target_file = os.path.join(dir, name + '.txt')
 
-    # img = readImage(file)
-    # img = readVideoFrame(file, 800)
-    img = readVideoBackground(file)
-
+    img = readImage(file)
+    #img = readVideoBackground(file)
+    #cv2.imwrite('background.jpg',cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    
     print("detect field and lines:")
     mask_field, mask_line, skel, points = detect_lines(img)
 
