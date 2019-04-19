@@ -140,13 +140,7 @@ def finde_transformation(points, t0, registration_function=registration_fast, mo
 
 
 # ein zweistufiges verfahren 
-def finde_transformation_zwei_stufen(points, registration_function=registration_fast, modelfkt=tools.make_field_points,
-                                     t0=None):
-    # startwert
-    # ~ t0, _, _ = finde_initiale_transformation(points)
-    if t0 is None:
-        t0 = finde_initiale_transformation(points)
-
+def finde_transformation_zwei_stufen(points, registration_function=registration_fast, modelfkt=tools.make_field_points, t0):
     ###############################
     # STUFE 1
 
@@ -225,12 +219,10 @@ if __name__ == "__main__":
 
     # teste das zweistufige verfahren
     # ------------------------------
-    # t, err, points, model = finde_transformation_zwei_stufen(points, registration_fast)
-    t, err, points, model = finde_transformation_zwei_stufen(points, registration_simple)
+    # t, err, points, model = finde_transformation_zwei_stufen(points, registration_fast, t)
+    t, err, points, model = finde_transformation_zwei_stufen(points, registration_simple, t)
 
     print("Final Error: {0}mm".format(err))
-    print(
-        "ax: {0:.2f}, ay: {1:.2f}, az: {2:.2f} x: {3:.0f}, y: {4:.0f}, z: {5:.0f}".format(t[0], t[1], t[2], t[3], t[4],
-                                                                                          t[5]))
+    print("ax: {0:.2f}, ay: {1:.2f}, az: {2:.2f} x: {3:.0f}, y: {4:.0f}, z: {5:.0f}".format(t[0], t[1], t[2], t[3], t[4], t[5]))
 
     show_data(model, points, t, err)
