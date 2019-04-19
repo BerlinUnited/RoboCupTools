@@ -57,7 +57,7 @@ def align_camera(points):
 
     # get the model for the RC19 field lines
     model_points = tools.make_field_points(50.0)
-    ax2.plot(model_points[:, 1], model_points[:, 0], '.')
+    ax2.plot(model_points[:, 1], model_points[:, 0], '.', label='model points')
 
     # initial guess for the position of the camera at the RC19
     t0 = np.array([0, -35, 0, -3500, 0, 1800])
@@ -68,23 +68,23 @@ def align_camera(points):
     points[:, 0] -= cx
     points[:, 1] -= cy
 
-    # project the points with the initial tranform t0
+    # project the points with the initial transform t0
     tpoints = tools.projectPoints(points, t0)
-    ax2.plot(tpoints[:, 1], tpoints[:, 0], '.')
+    ax2.plot(tpoints[:, 1], tpoints[:, 0], '.', label='after initial transformation')
 
     # ignore the 'worst outliers', i.e., more than 3m away
     inlier_idx, outlier_idx = tools.calculateOutliers(model_points, tpoints, 3000)
     points = points[inlier_idx, :]
 
-    # optimize the lignement
+    # optimize the alignment
     t, err, points, model_points = point_registration.finde_transformation(points, t0,
                                                                            point_registration.registration_fast,
                                                                            tools.make_field_points)
 
     # project the points with the final transformation
     tpoints = tools.projectPoints(points, t)
-    ax2.plot(tpoints[:, 1], tpoints[:, 0], '.')
-
+    ax2.plot(tpoints[:, 1], tpoints[:, 0], '.', label='final projection')
+    ax2.legend(loc='lower center', bbox_to_anchor=(0.5, 1.05), fancybox=True, shadow=True)
     plt.show()
 
 
