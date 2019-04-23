@@ -9,8 +9,10 @@ def field_mask(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # green mask
+    #lower_green = np.array([50, 40, 60])
     lower_green = np.array([30, 30, 60])
     # upper_green = np.array([80  ,255,255]) # 3x4 image
+    #upper_green = np.array([90, 255, 255])  #
     upper_green = np.array([100, 255, 255])  #
     mask_field = cv2.inRange(hsv, lower_green, upper_green)
 
@@ -145,10 +147,12 @@ if __name__ == "__main__":
     name = os.path.splitext(os.path.basename(file))[0]
     dir = os.path.dirname(file)
     target_file = os.path.join(dir, name + '.txt')
-
-    img = readImage(file)
-    #img = readVideoBackground(file)
-    #cv2.imwrite('background.jpg',cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    
+    # use this to extract a background from a video if necessary
+    img = readVideoBackground(file, skipFrames=100, historyLength=30)
+    cv2.imwrite('background.jpg',cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+    
+    #img = readImage(file)
     
     print("detect field and lines:")
     mask_field, mask_line, skel, points = detect_lines(img)
