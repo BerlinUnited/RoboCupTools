@@ -95,10 +95,11 @@ def align_camera(points):
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
-        print("ERROR: need a path to a video file")
-        quit()
+        file = './data/rc18-htwk-naoth-h1-background.txt'
+    else:
+      file = sys.argv[1]
 
-    file = sys.argv[1]
+    print("reading: {}".format(file))
 
     # construct the path for the target file to save the points to
     name = os.path.splitext(os.path.basename(file))[0]
