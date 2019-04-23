@@ -55,14 +55,18 @@ def align_camera(points):
     points = correct_distortion(points, cx, cy, k1, k2, k3, f)
     ax1.plot(points[:, 1], -points[:, 0], '.')
 
-    # get the model for the RC19 field lines
-    model_points = tools.make_field_points(50.0)
-    ax2.plot(model_points[:, 1], model_points[:, 0], '.', label='model points')
+    # the model for the RC19 field lines
+    field_model_fkt = tools.make_field_points_rc
+    # the model for the NaoTH lab
+    #field_model_fkt = tools.make_field_points_bu
+
+    model_points = field_model_fkt(50.0)
+    ax2.plot(model_points[:, 1], model_points[:, 0], '.', label='field lines')
 
     # initial guess for the position of the camera at the RC19
     t0 = np.array([0, -35, 0, -3500, 0, 1800])
-    # initial guess for the position of the camera in the lab
-    # t0 = np.array([0,-90, 0, -400, 0, 2400])
+    # initial guess for the position of the camera in the lab NaoCam 2
+    #t0 = np.array([0,-90, 6, -400, -300, 2400])
 
     # all coordinates relative to the center for convenience in the projection
     points[:, 0] -= cx
@@ -79,8 +83,8 @@ def align_camera(points):
     # optimize the alignment
     t, err, points, model_points = point_registration.finde_transformation(points, t0,
                                                                            point_registration.registration_fast,
-                                                                           tools.make_field_points)
-
+                                                                           field_model_fkt)
+    
     # project the points with the final transformation
     tpoints = tools.projectPoints(points, t)
     ax2.plot(tpoints[:, 1], tpoints[:, 0], '.', label='final projection')
