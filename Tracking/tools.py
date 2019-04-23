@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
-import numpy as np
-# from PIL import Image
-
 import math
+
+import numpy as np
 from scipy.spatial import cKDTree as KDTree
 
 '''
+from PIL import Image
+
 def loadImage(path):
   img = Image.open(path)
   ycbcr = img.convert('YCbCr')
@@ -30,60 +31,74 @@ def loadImage(path):
   return (img, img_y, img_u, img_v)
 '''
 
+class FieldRC:
+  width = 6000.0
+  length = 9000.0
+  circle_radius = 750.0
+  penalty_area_width = 600.0
+  penalty_area_length = 2200.0
+  penalty_mark_distance = 1300.0
 
-def make_field_points(step=200.0):
-    width = 6000.0
-    length = 9000.0
-    circle_radius = 750.0
-    penalty_area_width = 600.0
-    penalty_area_length = 2200.0
-    penalty_mark_distance = 1300.0
-    feld = []
+# field parameters for the Berlin United lab field
+class FieldBU:
+  width = 3600.0
+  length = 6000.0
+  circle_radius = 725.0
+  penalty_area_width = 550.0
+  penalty_area_length = 2100.0
+  penalty_mark_distance = 1250.0
 
+  
+def make_field_points(step=200.0, f = FieldRC):
+    
+    points = []
+
+    length_half = f.length / 2.0
+    width_half = f.width / 2.0
+    penalty_area_length_half = f.penalty_area_length / 2.0
+    
     # side lines
-    for x in np.arange(-length / 2.0, length / 2.0 + step, step):
-        feld += [[x, -width / 2.0]]
-        feld += [[x, width / 2.0]]
+    for x in np.arange(-length_half, length_half + step, step):
+        points += [[x, -width_half]]
+        points += [[x,  width_half]]
 
     # goal lines and the center line
-    for y in np.arange(-width / 2.0, width / 2.0 + step, step):
-        feld += [[-length / 2.0, y]]
-        feld += [[length / 2.0, y]]
-        feld += [[0.0, y]]
+    for y in np.arange(-width_half, width_half + step, step):
+        points += [[-length_half, y]]
+        points += [[ length_half, y]]
+        points += [[0.0, y]]
 
     # penalty area long lines
-    for y in np.arange(-penalty_area_length / 2.0, penalty_area_length / 2.0 + step, step):
-        feld += [[-length / 2.0 + penalty_area_width, y]]
-        feld += [[length / 2.0 - penalty_area_width, y]]
+    for y in np.arange(-penalty_area_length_half, penalty_area_length_half + step, step):
+        points += [[-length_half + f.penalty_area_width, y]]
+        points += [[ length_half - f.penalty_area_width, y]]
 
     # penalty area short lines
-    for x in np.arange(0.0, penalty_area_width, step):
-        feld += [[-length / 2.0 + x, -penalty_area_length / 2.0]]
-        feld += [[-length / 2.0 + x, penalty_area_length / 2.0]]
-        feld += [[length / 2.0 - x, -penalty_area_length / 2.0]]
-        feld += [[length / 2.0 - x, penalty_area_length / 2.0]]
+    for x in np.arange(0.0, f.penalty_area_width, step):
+        points += [[-length_half + x, -penalty_area_length_half]]
+        points += [[-length_half + x,  penalty_area_length_half]]
+        points += [[ length_half - x, -penalty_area_length_half]]
+        points += [[ length_half - x,  penalty_area_length_half]]
 
     # penalty mark
-    # feld += [[length/2.0-penalty_mark_distance, 0.0]]
-    # feld += [[-length/2.0+penalty_mark_distance, 0.0]]
+    # points += [[length/2.0-f.penalty_mark_distance, 0.0]]
+    # points += [[-length/2.0+f.penalty_mark_distance, 0.0]]
 
     # middle circle
-    number_of_steps = (2.0 * np.pi * circle_radius) / step
+    number_of_steps = (2.0 * np.pi * f.circle_radius) / step
     for a in np.arange(-np.pi, np.pi, 2.0 * np.pi / number_of_steps):
-        feld += [[circle_radius * np.sin(a), circle_radius * np.cos(a)]]
+        points += [[f.circle_radius * np.sin(a), f.circle_radius * np.cos(a)]]
 
-    feld = np.array(feld).astype(float)
-    feld = feld[:, [1, 0]]  # vertausche x und y
-    return feld
+    points = np.array(points).astype(float)
+    points = points[:, [1, 0]]  # switch x and y #TODO. why?!
+    return points
 
-
-def make_field_points_HU(step=200.0):
-    feld = np.load("HU_Modell.npy")
-    feld = feld[:, [1, 0]]  # vertausche x und y
-    return feld[::int(step / 10)] * 1000.0
+#define some convenien functions
+make_field_points_rc = lambda step: make_field_points(step, FieldRC)
+make_field_points_bu = lambda step: make_field_points(step, FieldBU)
 
 
-def projectPoints(points, pose):
+def projectPoints(points, pose, objectHeight = 0):
     # stelle sicher, dass die Punkte im richtigen Format sind
     assert (points.shape[1] == 2)
 
@@ -102,11 +117,6 @@ def projectPoints(points, pose):
     # NOTE: calculated for GoPro Session with Matlab
     f = 820.0
 
-    # NOTIZ:
-    # skallierungsfaktor fuer die Pixel: Pixel scheinen nicht quadratisch zu sein
-    # Das kann daran liegen, dass die Aufloesung 1920 x 1080 nicht der nativen Aufloesung des Chips der Kamera entspricht.
-    # ACHTUNG: aktueller Faktor ist manuell ermittelt (!)
-
     projected_points = np.zeros((points.shape[0], 3))
 
     # verschiebe alle Punkte
@@ -120,9 +130,8 @@ def projectPoints(points, pose):
 
     # projiziere ale Punkte: vgl. project()
     # v[0:2]*(t[2]/(-v[2])) + t[0:2]
-    result = np.multiply(v[:, 0:2], np.tile(np.divide(-t[2], v[:, 2]), (2, 1)).transpose()) + np.tile(t[0:2],
+    result = np.multiply(v[:, 0:2], np.tile(np.divide(objectHeight-t[2], v[:, 2]), (2, 1)).transpose()) + np.tile(t[0:2],
                                                                                                       (v.shape[0], 1))
-
     return result
 
 
