@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,12 +56,14 @@ public class GcTeamcommConverter
         // vars set by the given arguments
         ArrayList<String> args_files = new ArrayList<>();
         boolean convertAll = false;
+        Set<Integer> args_teams = new HashSet<>();
         // init converter & file container
         ArrayList<Class<? extends FileConverter>> converter = new ArrayList<>();
         ArrayList<File> files = new ArrayList<>();
         
         // parse arguments
-        for (String arg : args) {
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
             // parse application options
             if(arg.equals("--raw")) {
                 converter.add(FileConverterRaw.class);
@@ -91,11 +94,22 @@ public class GcTeamcommConverter
                     });
                 }
                 return;
+            } else if(arg.equals("--teams")) {
+                args_teams = Arrays.asList(args[++i].split(",|\\s")).stream().map((t) -> {
+                    try {
+                        return Integer.parseInt(t);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid team number '" + t + "', ignoring!");
+                    }
+                    return -1;
+                }).filter((n) -> {
+                    return n >= 0;
+                }).collect(Collectors.toSet());
             } else {
                 // treat argument as file/directory
                 args_files.add(arg);
             }
-        }
+        } // END for(args)
         
         final boolean convertAllTmp = convertAll;
         // retrieve 'correct' files from the arguments files/directories
@@ -139,7 +153,7 @@ public class GcTeamcommConverter
             }).collect(Collectors.toList());
             
             // iterate through files and apply converters
-            files.forEach((file) -> {
+            for (File file : files) {
                 GcLogFile lf = new GcLogFile(file, gc);
                 
                 if(!lf.canReadFile()) {
@@ -151,12 +165,14 @@ public class GcTeamcommConverter
                 } else if(lf.getData() == null) {
                     System.err.println("No data available!");
                 } else {
-                    converterObj.forEach((conv) -> {
+                    for (FileConverter conv : converterObj) {
                         System.out.println("convert '" + file.getAbsolutePath() + "' to '" + file.getAbsoluteFile() + conv.getExtension() + "'");
                         
                         // select teams, except for raw converteer
                         if(conv instanceof FileConverterRaw) {
                             conv.setTeams(lf.getTeams());
+                        } else if(!args_teams.isEmpty()) {
+                            conv.setTeams(args_teams);
                         } else {
                             conv.setTeams(selectTeams(lf.getTeams()));
                         }
@@ -170,9 +186,9 @@ public class GcTeamcommConverter
                                 + "\tfilter/convert, ok =  " + counter_conv + "\n"
                                 + "\tfilter/convert, error =  " + (lf.counter_ok - counter_conv) + "\n"
                         );
-                    });
+                    } // END for(converter)
                 }
-            });
+            } // END for(files)
         }
     } // END main()
     
@@ -180,6 +196,7 @@ public class GcTeamcommConverter
         System.out.println("Converts TeamCommunication log files of the GameController to JSON file(s).\n"
                 + "Usage: java -jar GcTeamcommConverter.jar [--raw] [--tc] [--gtc] <File|Directory>\n"
                 + "\t-h|--help\tshows this help message\n"
+                + "\t--teams\tset the team numbers, which messages should be parsed (eg. \"4,0\")\n"
                 + "\t--raw\tconverts log file 'as-is' to json with extension '.raw.json'\n"
                 + "\t--tc\tconverts log file team communication to json (specific data only) with extension '.tc.json'\n"
                 + "\t--gtc\tconverts log file gamecontroller and team communication to json (specific data only) with extension '.gtc.json'\n"
