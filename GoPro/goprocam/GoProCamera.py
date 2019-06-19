@@ -178,7 +178,7 @@ class GoPro:
             self.power_on(self._mac_address)
             time.sleep(5)
         except timeout:
-          self.power_on(self.mac_address)
+          self.power_on(self._mac_address)
           time.sleep(5)
           response = urllib.request.urlopen('http://' + self.ip_addr + '/camera/cv', timeout=5).read()
           if b"Hero3" in response:
@@ -709,7 +709,7 @@ class GoPro:
         try:
           urllib.request.urlretrieve("http://" + self.ip_addr + ":8080/videos/DCIM/" + folder + "/" + file, filename)
         except (HTTPError, URLError) as error:
-          print("ERROR: " + str(error))
+          print("ERROR: " + "downloadMedia(): " + str(error))
       else:
         print("Not supported while recording or processing media.")
 
@@ -786,12 +786,12 @@ class GoPro:
             try:
               urllib.request.urlretrieve(lowres_url, lowres_filename)
             except (HTTPError, URLError) as error:
-              print("ERROR: " + str(error))
+              print("ERROR: " + "downloadLowRes(): " + str(error))
           else:
             try:
               urllib.request.urlretrieve(lowres_url, custom_filename)
             except (HTTPError, URLError) as error:
-              print("ERROR: " + str(error))
+              print("ERROR: " + "downloadLowRes(custom_filename): " + str(error))
         else:
           lowres_url = ""
           lowres_filename = ""
@@ -807,12 +807,12 @@ class GoPro:
             try:
               urllib.request.urlretrieve(lowres_url, lowres_filename)
             except (HTTPError, URLError) as error:
-              print("ERROR: " + str(error))
+              print("ERROR: " + "downloadLowRes(path): " + str(error))
           else:
             try:
               urllib.request.urlretrieve(lowres_url, custom_filename)
             except (HTTPError, URLError) as error:
-              print("ERROR: " + str(error))
+              print("ERROR: " + "downloadLowRes(path, custom_filename): " + str(error))
       else:
         print("Not supported while recording or processing media.")
 

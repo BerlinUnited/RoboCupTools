@@ -23,7 +23,7 @@ def setupLogger(quiet:bool = False, verbose:bool = False, syslog:bool = False, d
 
     if syslog:
         sh = logging.handlers.SysLogHandler(address='/dev/log')
-        sh.setFormatter(logging.Formatter('GoPro:'+LOGGER_FMT))
+        sh.setFormatter(logging.Formatter('GoPro:'+LOGGER_FMT_CHILD))
         logger.addHandler(sh)
 
     if directory and os.path.isdir(directory):

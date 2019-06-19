@@ -24,6 +24,7 @@ class Bluetooth(threading.Thread):
             outs, errs = self.process.communicate()
             # log outputs
             if errs:
+                logger.warning(' '.join(self.process.args))
                 logger.warning(errs.decode('utf-8').strip())
             if outs:
                 logger.debug(outs.decode('utf-8').strip())

@@ -1,4 +1,4 @@
-import threading, time, json, inspect
+import threading, time, json, inspect, traceback
 
 from goprocam import GoProCamera, constants
 from .GameControlData import GameControlData
@@ -72,7 +72,7 @@ class GoPro(threading.Thread):
                     self.disconnect()
             except Exception as ex:
                 # something unexpected happen!?
-                Logger.error(str(ex))
+                Logger.error("{}\n{}".format(str(ex), traceback.format_exc()))
         # if canceled, at least fire the disconnect event
         self.disconnect()
         logger.debug("GoPro thread finished.")
@@ -114,17 +114,20 @@ class GoPro(threading.Thread):
             raw = self.cam.getStatusRaw()
             if raw and self.cam:
                 js = json.loads(raw)
-                self.cam_status['mode'] = self.cam.parse_value("mode", js[constants.Status.Status][constants.Status.STATUS.Mode])
-                self.cam_status['recording'] = (js[constants.Status.Status][constants.Status.STATUS.IsRecording] == 1)
-                self.cam_status['sd_card'] = (js[constants.Status.Status][constants.Status.STATUS.SdCardInserted] == 0)
-                self.cam_status['lastVideo'] = self.cam.getMedia()
-                # parse and format datetime data
-                self.cam_status['datetime'] =  "{2:02.0f}.{1:02.0f}.{0}, {3:02.0f}:{4:02.0f}:{5:02.0f}".format(*map(lambda h: int(h,16),filter(None, js[constants.Status.Status]['40'].split('%'))))
-                # update video settings
-                for var, val in vars(constants.Video).items():
-                    if not var.startswith("_") and not inspect.isclass(val) and val in js[constants.Status.Settings]:
-                        self.cam_settings[var] = (val, js[constants.Status.Settings][val])
-                return True
+                if constants.Status.Status in js:
+                    self.cam_status['mode'] = self.cam.parse_value("mode", js[constants.Status.Status][constants.Status.STATUS.Mode])
+                    self.cam_status['recording'] = (js[constants.Status.Status][constants.Status.STATUS.IsRecording] == 1)
+                    self.cam_status['sd_card'] = (js[constants.Status.Status][constants.Status.STATUS.SdCardInserted] == 0)
+                    self.cam_status['lastVideo'] = self.cam.getMedia()
+                    # parse and format datetime data
+                    self.cam_status['datetime'] =  "{2:02.0f}.{1:02.0f}.{0}, {3:02.0f}:{4:02.0f}:{5:02.0f}".format(*map(lambda h: int(h,16),filter(None, js[constants.Status.Status]['40'].split('%'))))
+                    # update video settings
+                    for var, val in vars(constants.Video).items():
+                        if not var.startswith("_") and not inspect.isclass(val) and val in js[constants.Status.Settings]:
+                            self.cam_settings[var] = (val, js[constants.Status.Settings][val])
+                    return True
+                else:
+                    logger.warning("Failed to get status of the gopro: %s", raw)
         return False
 
     def takePhoto(self):

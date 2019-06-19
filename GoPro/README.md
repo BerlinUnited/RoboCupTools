@@ -116,6 +116,7 @@ https://github.com/KonradIT/goprowifihack/blob/master/Bluetooth/Platforms/Raspbe
 The following are some examples, how to communicate with the GoPro via Bluetooth:
 ```
 sudo gatttool -t random -b F8:D2:E9:F0:AC:0B -I
+connect
 # beep on/off
 char-write-req 2f 03160101
 char-write-req 2f 03160100

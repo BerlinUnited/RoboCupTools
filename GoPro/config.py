@@ -8,7 +8,7 @@ from goprocam.constants import *
 
 ssid = 'GP26329941'
 passwd = 'family3887'
-mac = 'D6:B9:D4:D7:B7:40'
+mac = None
 
 retries = -1
 

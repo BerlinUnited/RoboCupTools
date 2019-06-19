@@ -100,6 +100,8 @@ class Network(threading.Thread):
         while not self.__cancel.is_set():
             if self.isConnected():
                 self.__timer.wait(10)
+                # keep the wifi of the gopro enabled (>= Hero 5)
+                self.wakeGoProWLAN()
             else:
                 blackboard['network'] = 1 # NetworkDisconnected
                 self.wakeGoProWLAN()
