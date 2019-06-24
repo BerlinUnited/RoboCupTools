@@ -14,6 +14,7 @@ import threading
 import time
 import importlib
 import importlib.util
+import ipaddress
 
 from utils import Logger, Daemonize, Network, GoPro, GameController, GameLoggerSql, GameLoggerLog, LedStatusMonitor, \
     CheckGameController, rename, CheckBluetooth, blackboard
@@ -42,7 +43,8 @@ def parseArguments():
     parser.add_argument('-r', '--retries', action='store', type=int, default=-1, help='How many retries should be attempted to connect to wifi before giving up.')
     parser.add_argument('-m', '--max-time', action='store', type=int, default=600, help='How many seconds should be continued to record, after playing time expired and "finished" state wasn\'t set. (precaution to prevent endless recording!; default: 600s)')
     parser.add_argument('-i', '--ignore', action='store_true', help='Ignores the "max time" option - possible infinity recording, if "finished" state isn\'t set.')
-    parser.add_argument('-gc', '--check-gc', action='store_true', help='Tries to listen to GameController and print its state (for debugging).')
+    parser.add_argument('-gc', '--gc-check', action='store_true', help='Tries to listen to GameController and print its state (for debugging).')
+    parser.add_argument('-gs', '--gc-source', action='store', type=ipaddress.ip_address, help='Sets the IP address of the GameController, other IPs are ignored! NOTE: the GameController doesn\'t use the loopback device, if it is not explicitly specified')
     parser.add_argument('-li', '--log-invisible', action='store_true', help='Whether the games with invisibles should be logged.')
     parser.add_argument('-bt', '--check-bt', action='store', nargs='?', type=check_mac_address, default=False, metavar='mac address', help='Tests the bluetooth functionality. If the mac address is not set, a default one is used.')
     use_rename = any([ o in sys.argv for o in ['-n', '--rename'] ])
@@ -85,7 +87,7 @@ def main():
     gameLogger = GameLoggerLog(os.path.join(os.path.dirname(__file__), 'logs/'), teams, args.log_invisible)
     gameLogger.start()
 
-    gameController = GameController()
+    gameController = GameController(args.gc_source)
     gameController.start()
 
     network = Network(args.device, args.ssid, args.passwd, args.retries, args.mac)
@@ -104,6 +106,7 @@ def main():
                     importlib.reload(config)
                     Logger.info("Reloaded modified config")
                     network.setConfig(None, config.ssid, config.passwd, config.retries, config.mac)
+                    gameController.setSource(config.gc_source)
                     gopro.setUserSettings({
                         'FRAME_RATE': config.fps if 'fps' in vars(config) else None,
                         'FOV': config.fov if 'fov' in vars(config) else None,
@@ -149,8 +152,8 @@ if __name__ == '__main__':
     Logger.setupLogger(args.quiet, args.verbose, args.syslog, log_directory)
 
     # call different functions based on the arguments
-    if args.check_gc:
-        CheckGameController()
+    if args.gc_check:
+        CheckGameController(args.gc_source)
     elif args.check_bt != False:
         CheckBluetooth(args.check_bt if args.check_bt else 'D6:B9:D4:D7:B7:40')
     elif args.rename:
@@ -164,6 +167,7 @@ if __name__ == '__main__':
                 args.passwd = config.passwd
                 args.retries = config.retries
                 args.mac = config.mac
+                args.gc_source = config.gc_source
             except:
                 # no config available!
                 Logger.error("No config available OR invalid config!")

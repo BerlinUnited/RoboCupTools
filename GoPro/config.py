@@ -11,6 +11,7 @@ passwd = 'family3887'
 mac = None
 
 retries = -1
+gc_source = None
 
 # if the following configs are set, the cam tries to set them before starting recording
 # if you want to configure these setting manually, comment them out

@@ -4,8 +4,8 @@ from utils import GameController, blackboard
 
 
 class CheckGameController:
-    def __init__(self):
-        gameController = GameController()
+    def __init__(self, source=None):
+        gameController = GameController(source)
         gameController.start()
 
         packet = -1

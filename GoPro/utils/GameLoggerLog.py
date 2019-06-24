@@ -103,10 +103,7 @@ class GameLoggerLog(threading.Thread):
 
     def __closeLog(self):
         if self.last_file is not None:
-            self.last_file.write('], "info": '
-                                 + json.dumps(blackboard['gopro']['info'])
-                                 + ', "gopro_time": "' + blackboard['gopro']['datetime'] + '"'
-                                 + ' }\n')
+            self.last_file.write('], "info": {}, "gopro_time": "{}" }}\n'.format(json.dumps(blackboard['gopro']['info']), blackboard['gopro']['datetime']))
             self.last_file.close()
             logger.debug("closed log file: " + self.last_file.name)
             self.last_file = None
