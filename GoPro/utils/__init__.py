@@ -15,7 +15,7 @@ from .Bluetooth import Bluetooth
 from .CheckBluetooth import CheckBluetooth
 
 
-def rename(videos_dir, logs_dir):
+def rename(videos_dir, logs_dir, dry:bool=False):
     """ Renames all files from the 'videos_dir' based on the log entry in the 'logs_dir'. """
     import os, re
 
@@ -53,14 +53,41 @@ def rename(videos_dir, logs_dir):
                     print('ERROR[',filename, '] Invalid JSON, skipping file;', e)
 
         cnt = 0
+
+        def do_renaming(v, o):
+            c = 0
+            for f in vids[o]:
+                if os.path.isfile(f):
+                    n = re.sub('(.+/)(.+)(\..{3})', '\g<1>'+v+'_'+o+'\g<3>', f)
+                    Logger.debug("Renaming '{}' to '{}'".format(o,n))
+                    if not dry:
+                        os.replace(f, n)
+                        #shutil.move(o, n)
+                    c += 1
+            return c
+
         # rename video file based on the log entry
         for l in logs:
             if len(logs[l]) == 1 and l in vids:
-                for v in vids[l]:
-                    n = re.sub('(.+/)(.+)(\..{3})', '\g<1>'+logs[l][0]+'_'+l+'\g<3>', v)
-                    Logger.debug("Renaming '{}' to '{}'".format(v,n))
-                    os.replace(v, n)
-                    cnt+=1
+                # rename the registered file
+                cnt += do_renaming(logs[l][0], l)
+
+                # check if other files of the same video exists
+                if l.startswith('GOPR'):
+                    j = 1
+                    while 'GP{:02d}{}'.format(j, l[4:]) in vids:
+                        cnt += do_renaming(logs[l][0], 'GP{:02d}{}'.format(j, l[4:]))
+                        j += 1
+
+                # check if other files of the same video exists
+                if l.startswith('GP'):
+                    if 'GOPR{}'.format(l[4:]) in vids:
+                        cnt += do_renaming(logs[l][0], 'GOPR{}'.format(l[4:]))
+                    j = 1
+                    while 'GP{:02d}{}'.format(j, l[4:]) in vids:
+                        cnt += do_renaming(logs[l][0], 'GP{:02d}{}'.format(j, l[4:]))
+                        j+=1
+
             elif len(logs[l]) > 1:
                 print("ERROR: multiple games for the same video file!?")
         Logger.info("Renamed {} files".format(cnt))

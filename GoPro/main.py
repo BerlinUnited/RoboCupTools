@@ -50,6 +50,7 @@ def parseArguments():
     use_rename = any([ o in sys.argv for o in ['-n', '--rename'] ])
     rename = parser.add_argument_group()
     rename.add_argument('-n', '--rename', action='store_true', help='Renames the video files based on the given entries in the log files.')
+    rename.add_argument('--dry', action='store_true', help="Doesn't actually rename, just prints the old and new name.")
     rename.add_argument('videos', nargs=1 if use_rename else '?', help='Path to the video files, which should be renamed.')
     rename.add_argument('logs', nargs=1 if use_rename else '?', help='Path to the log files, on which the video files should be renamed too.')
 
@@ -157,7 +158,7 @@ if __name__ == '__main__':
     elif args.check_bt != False:
         CheckBluetooth(args.check_bt if args.check_bt else 'D6:B9:D4:D7:B7:40')
     elif args.rename:
-        rename(args.videos[0], args.logs[0])
+        rename(args.videos[0], args.logs[0], args.dry)
     else:
         if args.config:
             # use config for network setup
