@@ -68,11 +68,11 @@ teams = {
     45: "Naova ETS",
     46: "Recife Soccer",
     47: "Rinobot",
-    90: "DoBerMan",
-    91: "B-HULKs",
-    92: "Swift-Ark",
-    93: "Team USA",
-    94: "B-Swift",
-    95: "AstroNAOtas",
+    48: "Starkit",
+    49: "SABANA Herons",
+    90: "Devil SMASH",
+    91: "B&B",
+    92: "SwiftArk",
+    93: "SPQR-Starkit",
     96: "Team-Team"
 }
