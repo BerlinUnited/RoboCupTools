@@ -1,5 +1,5 @@
-import os, sys
-import cv2
+import os
+import sys
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ def correct_distortion(points, cx, cy, k1, k2, k3, f):
     r2 = r2 * (1.0 / (f * f))
     r4 = np.multiply(r2, r2)
     cr = 1 + k1 * r2 + k2 * r4 + k3 * r2 * r4
-    pr = np.array([cx + np.multiply(points[:, 0] - cx, cr), cy + np.multiply(points[:, 1] - cy, cr)]);
+    pr = np.array([cx + np.multiply(points[:, 0] - cx, cr), cy + np.multiply(points[:, 1] - cy, cr)])
     return pr.transpose()
 
 
@@ -41,10 +41,13 @@ def align_camera(points):
     cx = 1080 / 2
     cy = 1920 / 2
 
-    f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    f, (ax1, ax2) = plt.subplots(2, 1)
+    ax1.set_aspect('equal')
+    ax2.set_aspect('equal')
     ax1.plot(points[:, 1], -points[:, 0], '.')
 
     points = correct_superview(points, cx, cy)
+
     ax1.plot(points[:, 1], -points[:, 0], '.')
 
     # this was determined manually
