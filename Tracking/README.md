@@ -1,4 +1,4 @@
-## Locate the Camera relativ to the field midpoint
+## Locate the Camera relative to the field midpoint
 
 **Step 1: detect the field lines in the image**  
     run `python extract_field_lines.py <path to video file>`
