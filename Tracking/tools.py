@@ -27,58 +27,59 @@ def loadImage(path):
   img_y = np.reshape(img_y, size)
   img_u = np.reshape(img_u, size)
   img_v = np.reshape(img_v, size)
-		
+
   return (img, img_y, img_u, img_v)
 '''
 
+
 class FieldRC:
-  width = 6000.0
-  length = 9000.0
-  circle_radius = 750.0
-  penalty_area_width = 600.0
-  penalty_area_length = 2200.0
-  penalty_mark_distance = 1300.0
+    width = 6000.0
+    length = 9000.0
+    circle_radius = 750.0
+    penalty_area_width = 600.0
+    penalty_area_length = 2200.0
+    penalty_mark_distance = 1300.0
+
 
 # field parameters for the Berlin United lab field
 class FieldBU:
-  width = 3600.0
-  length = 6000.0
-  circle_radius = 725.0
-  penalty_area_width = 550.0
-  penalty_area_length = 2100.0
-  penalty_mark_distance = 1250.0
+    width = 3600.0
+    length = 6000.0
+    circle_radius = 725.0
+    penalty_area_width = 550.0
+    penalty_area_length = 2100.0
+    penalty_mark_distance = 1250.0
 
-  
-def make_field_points(step=200.0, f = FieldRC):
-    
+
+def make_field_points(step=200.0, f=FieldRC):
     points = []
 
     length_half = f.length / 2.0
     width_half = f.width / 2.0
     penalty_area_length_half = f.penalty_area_length / 2.0
-    
+
     # side lines
     for x in np.arange(-length_half, length_half + step, step):
         points += [[x, -width_half]]
-        points += [[x,  width_half]]
+        points += [[x, width_half]]
 
     # goal lines and the center line
     for y in np.arange(-width_half, width_half + step, step):
         points += [[-length_half, y]]
-        points += [[ length_half, y]]
+        points += [[length_half, y]]
         points += [[0.0, y]]
 
     # penalty area long lines
     for y in np.arange(-penalty_area_length_half, penalty_area_length_half + step, step):
         points += [[-length_half + f.penalty_area_width, y]]
-        points += [[ length_half - f.penalty_area_width, y]]
+        points += [[length_half - f.penalty_area_width, y]]
 
     # penalty area short lines
     for x in np.arange(0.0, f.penalty_area_width, step):
         points += [[-length_half + x, -penalty_area_length_half]]
-        points += [[-length_half + x,  penalty_area_length_half]]
-        points += [[ length_half - x, -penalty_area_length_half]]
-        points += [[ length_half - x,  penalty_area_length_half]]
+        points += [[-length_half + x, penalty_area_length_half]]
+        points += [[length_half - x, -penalty_area_length_half]]
+        points += [[length_half - x, penalty_area_length_half]]
 
     # penalty mark
     # points += [[length/2.0-f.penalty_mark_distance, 0.0]]
@@ -93,12 +94,13 @@ def make_field_points(step=200.0, f = FieldRC):
     points = points[:, [1, 0]]  # switch x and y #TODO. why?!
     return points
 
-#define some convenien functions
+
+# define some convenience functions
 make_field_points_rc = lambda step: make_field_points(step, FieldRC)
 make_field_points_bu = lambda step: make_field_points(step, FieldBU)
 
 
-def projectPoints(points, pose, objectHeight = 0):
+def projectPoints(points, pose, objectHeight=0):
     # stelle sicher, dass die Punkte im richtigen Format sind
     assert (points.shape[1] == 2)
 
