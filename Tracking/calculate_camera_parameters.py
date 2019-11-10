@@ -1,11 +1,11 @@
 import os
 import sys
-import numpy as np
 
 import matplotlib.pyplot as plt
+import numpy as np
 
-import tools
 import point_registration
+import tools
 
 
 def correct_superview(points, cx, cy):
@@ -98,7 +98,7 @@ def align_camera(points):
 if __name__ == "__main__":
 
     if len(sys.argv) == 1:
-        file = './data/rc18-htwk-naoth-h1-background.txt'
+        file = './data/rc18-htwk-naoth-h1-combined.txt'
     else:
       file = sys.argv[1]
 
