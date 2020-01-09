@@ -1,0 +1,75 @@
+# Setting Cron
+sudo hostnamectl set-hostname livestream-nano-3
+
+sudo service nv-l4t-usb-device-mode stop
+sudo systemctl disable nv-l4t-usb-device-mode.service
+
+# crontab -l ; 
+(echo "@reboot /usr/bin/screen -dmS test -L bash -c '/home/arne/Livestream/livestream.sh'") | crontab -
+crontab -l
+
+# Setting Network
+sudo bash -c 'cat > /etc/network/interfaces << "EOF"
+# interfaces(5) file used by ifup(8) and ifdown(8)
+# Include files from /etc/network/interfaces.d:
+source-directory /etc/network/interfaces.d 
+
+auto wlan0 
+allow-hotplug wlan0 
+iface wlan0 inet static 
+address 10.0.12.234 
+netmask 255.255.255.0
+#wpa-essid SPL_FIELD_2ghz_A
+#wpa-essid SPL_FIELD_2ghz_B
+wpa-essid SPL_FIELD_2ghz_C
+#wpa-essid SPL_FIELD_2ghz_D
+#wpa-essid SPL_FIELD_2ghz_E
+
+
+wpa-psk Nao?!Nao?!
+#wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+auto eth0 
+iface eth0 inet dhcp
+
+auto eth1
+iface eth1 inet static
+address 192.168.31.3
+netmask 255.255.255.0
+
+iface default inet dhcp
+EOF'
+sudo nano /etc/network/interfaces
+
+cat /etc/resolv.conf
+route -n | grep "^0.0.0.0" | tr -s " " | cut -f2 -d" "
+
+sudo bash -c 'cat > /etc/network/interfaces << "EOF"
+# interfaces(5) file used by ifup(8) and ifdown(8)
+# Include files from /etc/network/interfaces.d:
+source-directory /etc/network/interfaces.d 
+
+auto wlan0 
+allow-hotplug wlan0 
+iface wlan0 inet static 
+address 10.0.12.234 
+netmask 255.255.0.0
+#wpa-essid SPL_FIELD_2ghz_A
+#wpa-essid SPL_FIELD_2ghz_B
+#wpa-essid SPL_FIELD_2ghz_C
+wpa-essid SPL_FIELD_2ghz_D
+#wpa-essid SPL_FIELD_2ghz_E
+
+wpa-psk Nao?!Nao?!
+#wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+auto eth0 
+iface eth0 inet dhcp
+
+auto eth1
+iface eth1 inet static
+address 10.0.12.235 
+netmask 255.255.0.0
+
+iface default inet dhcp
+EOF'
