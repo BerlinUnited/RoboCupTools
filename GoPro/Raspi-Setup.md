@@ -36,3 +36,7 @@ Setup a static IP using this [guide](https://www.modmypi.com/blog/how-to-give-yo
 ### Misc
 Changing the keyboard layout on the raspberry:
 https://raspberrypi.stackexchange.com/questions/24161/change-keyboard-layout-in-console
+
+---
+This image shows where the colored wires have to go on the GPIO  pins:  
+![GPIO Color Codes](https://github.com/BerlinUnited/RoboCupTools/blob/master/GoPro/gpio_color_codes.png)
