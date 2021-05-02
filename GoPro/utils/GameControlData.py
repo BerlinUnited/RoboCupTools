@@ -363,7 +363,7 @@ class PlayerInfo(Struct):
           self.PENALTY_SPL_LEAVING_THE_FIELD:     "leaving the field",
           self.PENALTY_SPL_REQUEST_FOR_PICKUP:    "pickup",
           self.PENALTY_SPL_LOCAL_GAME_STUCK:      "local game stuck",
-          PENALTY_SPL_ILLEGAL_POSITION_IN_SET:    "illegal position in SET"
+          PENALTY_SPL_ILLEGAL_POSITION_IN_SET:    "illegal position in SET",
           
           self.PENALTY_SUBSTITUTE:                "substitute",
           self.PENALTY_MANUAL:                    "manual",
