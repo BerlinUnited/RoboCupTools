@@ -1,6 +1,5 @@
 '''
     Copied structure from the GameController "data.GameControlData.java" file.
-    https://github.com/RoboCup-SPL/GameController/blob/master/include/RoboCupGameControlData.h
 '''
 
 import logging
@@ -10,32 +9,31 @@ from struct import Struct
 class GameControlData(Struct):
     """Representation of the SPL message format."""
 
-    GAMECONTROLLER_STRUCT_HEADER          = b'RGme'
-    GAMECONTROLLER_STRUCT_VERSION         = 13
+    GAMECONTROLLER_STRUCT_HEADER = b'RGme'
+    GAMECONTROLLER_STRUCT_VERSION = 12
 
-    COMPETITION_PHASE_ROUNDROBIN          = 0
-    COMPETITION_PHASE_PLAYOFF             = 1
+    COMPETITION_PHASE_ROUNDROBIN  = 0
+    COMPETITION_PHASE_PLAYOFF     = 1
     
-    COMPETITION_TYPE_NORMAL               = 0
-    COMPETITION_TYPE_GENERAL_PENALTY_KICK = 1
+    COMPETITION_TYPE_NORMAL             = 0
+    COMPETITION_TYPE_MIXEDTEAM          = 1
     
-    GAME_PHASE_NORMAL                     = 0
-    GAME_PHASE_PENALTYSHOOT               = 1
-    GAME_PHASE_OVERTIME                   = 2
-    GAME_PHASE_TIMEOUT                    = 3
+    GAME_PHASE_NORMAL                   = 0
+    GAME_PHASE_PENALTYSHOOT             = 1
+    GAME_PHASE_OVERTIME                 = 2
+    GAME_PHASE_TIMEOUT                  = 3
     
-    STATE_INITIAL                         = 0
-    STATE_READY                           = 1
-    STATE_SET                             = 2
-    STATE_PLAYING                         = 3
-    STATE_FINISHED                        = 4
+    STATE_INITIAL                       = 0
+    STATE_READY                         = 1
+    STATE_SET                           = 2
+    STATE_PLAYING                       = 3
+    STATE_FINISHED                      = 4
 
-    SET_PLAY_NONE                         = 0
-    SET_PLAY_GOAL_FREE_KICK               = 1
-    SET_PLAY_PUSHING_FREE_KICK            = 2
-    SET_PLAY_CORNER_KICK                  = 3
-    SET_PLAY_KICK_IN                      = 4
-    SET_PLAY_PENALTY_KICK                 = 5
+    SET_PLAY_NONE                       = 0
+    SET_PLAY_GOAL_FREE_KICK             = 1
+    SET_PLAY_PUSHING_FREE_KICK          = 2
+    SET_PLAY_CORNER_KICK                = 3
+    SET_PLAY_KICK_IN                    = 4
     
     def __init__(self, data=None):
         """Constructor."""
@@ -43,12 +41,12 @@ class GameControlData(Struct):
         # https://docs.python.org/2/library/struct.html
         super(GameControlData, self).__init__('4s'  # header
                                                'B'  # version
-                                               'B'  # packetNumber
-                                               'B'  # playersPerTeam
+                                               'B'  # packet number
+                                               'B'  # numPlayers
                                                'B'  # competitionPhase
                                                'B'  # competitionType
                                                'B'  # gamePhase
-                                               'B'  # gameState #state
+                                               'B'  # gameState
                                                'B'  # setPlay
                                                'B'  # firstHalf
                                                'B'  # kickingTeam
@@ -307,12 +305,12 @@ class PlayerInfo(Struct):
     PENALTY_SPL_PLAYER_PUSHING          = 2
     PENALTY_SPL_ILLEGAL_MOTION_IN_SET   = 3
     PENALTY_SPL_INACTIVE_PLAYER         = 4
-    PENALTY_SPL_ILLEGAL_POSITION        = 5
+    PENALTY_SPL_ILLEGAL_DEFENDER        = 5
     PENALTY_SPL_LEAVING_THE_FIELD       = 6
-    PENALTY_SPL_REQUEST_FOR_PICKUP      = 7
-    PENALTY_SPL_LOCAL_GAME_STUCK        = 8
-    PENALTY_SPL_ILLEGAL_POSITION_IN_SET = 9
-    
+    PENALTY_SPL_KICK_OFF_GOAL           = 7
+    PENALTY_SPL_REQUEST_FOR_PICKUP      = 8
+    PENALTY_SPL_LOCAL_GAME_STUCK        = 9
+    PENALTY_SPL_ILLEGAL_POSITIONING     = 10
     PENALTY_SUBSTITUTE                  = 14
     PENALTY_MANUAL                      = 15
 
@@ -359,12 +357,12 @@ class PlayerInfo(Struct):
           self.PENALTY_SPL_PLAYER_PUSHING:        "pushing",
           self.PENALTY_SPL_ILLEGAL_MOTION_IN_SET: "motion in set",
           self.PENALTY_SPL_INACTIVE_PLAYER:       "inactive",
-          self.PENALTY_SPL_ILLEGAL_POSITION:      "illegal position",
+          self.PENALTY_SPL_ILLEGAL_DEFENDER:      "illegal defender",
           self.PENALTY_SPL_LEAVING_THE_FIELD:     "leaving the field",
+          self.PENALTY_SPL_KICK_OFF_GOAL:         "kick off goal",
           self.PENALTY_SPL_REQUEST_FOR_PICKUP:    "pickup",
           self.PENALTY_SPL_LOCAL_GAME_STUCK:      "local game stuck",
-          PENALTY_SPL_ILLEGAL_POSITION_IN_SET:    "illegal position in SET",
-          
+          self.PENALTY_SPL_ILLEGAL_POSITIONING:   "illegal positioning",
           self.PENALTY_SUBSTITUTE:                "substitute",
           self.PENALTY_MANUAL:                    "manual",
       }, self.penalty)
