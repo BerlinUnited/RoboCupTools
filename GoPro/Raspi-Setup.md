@@ -28,7 +28,7 @@ More information about the Pi network configuration can be found in the
 [official docs](https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md).
 
 ### (3) Setup Ethernet Network
-The Raspberry Pi should be connected to the router via ethernet.In order to get the GameController data, the
+The Raspberry Pi should be connected to the router via ethernet. In order to get the GameController data, the
 Raspberry Pi has to be in the "10.0.x.x/16" subnet. Also make sure, there's no other device with the same IP!  
 
 Setup a static IP using this [guide](https://www.modmypi.com/blog/how-to-give-your-raspberry-pi-a-static-ip-address-update)
