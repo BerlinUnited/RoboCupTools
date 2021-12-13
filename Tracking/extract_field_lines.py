@@ -1,8 +1,8 @@
 import os
 import sys
+
 import cv2
 import numpy as np
-from pywget import wget
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -130,6 +130,8 @@ def detect_lines(img):
 
 
 def get_demo_logfiles():
+    from pywget import wget
+    
     base_url = "https://www2.informatik.hu-berlin.de/~naoth/ressources/log/demo_rc20_project/"
     demo_logfile = "rc18-htwk-naoth-h1-combined.mp4"
 
