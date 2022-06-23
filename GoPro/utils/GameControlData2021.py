@@ -10,34 +10,32 @@ from struct import Struct
 class GameControlData(Struct):
     """Representation of the SPL message format."""
 
-    GAMECONTROLLER_STRUCT_HEADER = b'RGme'
-    GAMECONTROLLER_STRUCT_VERSION = 14
+    GAMECONTROLLER_STRUCT_HEADER          = b'RGme'
+    GAMECONTROLLER_STRUCT_VERSION         = 13
 
-    COMPETITION_PHASE_ROUNDROBIN  = 0
-    COMPETITION_PHASE_PLAYOFF     = 1
+    COMPETITION_PHASE_ROUNDROBIN          = 0
+    COMPETITION_PHASE_PLAYOFF             = 1
     
-    COMPETITION_TYPE_NORMAL             = 0
-    COMPETITION_TYPE_CHALLENGE_SHIELD   = 1
-    COMPETITION_TYPE_7V7   = 2
-    COMPETITION_TYPE_DYNAMIC_BALL_HANDLING   = 3
+    COMPETITION_TYPE_NORMAL               = 0
+    COMPETITION_TYPE_GENERAL_PENALTY_KICK = 1
     
-    GAME_PHASE_NORMAL                   = 0
-    GAME_PHASE_PENALTYSHOOT             = 1
-    GAME_PHASE_OVERTIME                 = 2
-    GAME_PHASE_TIMEOUT                  = 3
+    GAME_PHASE_NORMAL                     = 0
+    GAME_PHASE_PENALTYSHOOT               = 1
+    GAME_PHASE_OVERTIME                   = 2
+    GAME_PHASE_TIMEOUT                    = 3
     
-    STATE_INITIAL                       = 0
-    STATE_READY                         = 1
-    STATE_SET                           = 2
-    STATE_PLAYING                       = 3
-    STATE_FINISHED                      = 4
+    STATE_INITIAL                         = 0
+    STATE_READY                           = 1
+    STATE_SET                             = 2
+    STATE_PLAYING                         = 3
+    STATE_FINISHED                        = 4
 
-    SET_PLAY_NONE                       = 0
-    SET_PLAY_GOAL_FREE_KICK             = 1
-    SET_PLAY_PUSHING_FREE_KICK          = 2
-    SET_PLAY_CORNER_KICK                = 3
-    SET_PLAY_KICK_IN                    = 4
-    SET_PLAY_PENALTY_KICK               = 5
+    SET_PLAY_NONE                         = 0
+    SET_PLAY_GOAL_FREE_KICK               = 1
+    SET_PLAY_PUSHING_FREE_KICK            = 2
+    SET_PLAY_CORNER_KICK                  = 3
+    SET_PLAY_KICK_IN                      = 4
+    SET_PLAY_PENALTY_KICK                 = 5
     
     def __init__(self, data=None):
         """Constructor."""
@@ -171,15 +169,13 @@ class GameControlData(Struct):
     def getCompetitionPhase(self):
       return self.getName({
         self.COMPETITION_PHASE_ROUNDROBIN: "round robin",
-        self.COMPETITION_PHASE_PLAYOFF   : "playoff",
+        self.COMPETITION_PHASE_PLAYOFF   : "playoff"
       }, self.competitionPhase)
     
     def getCompetitionType(self):
       return self.getName({
         self.COMPETITION_TYPE_NORMAL: "normal",
-        self.COMPETITION_TYPE_CHALLENGE_SHIELD: "COMPETITION_TYPE_CHALLENGE_SHIELD",
-        self.COMPETITION_TYPE_7V7: "COMPETITION_TYPE_7V7",
-        self.COMPETITION_TYPE_DYNAMIC_BALL_HANDLING: "COMPETITION_TYPE_DYNAMIC_BALL_HANDLING"
+        self.COMPETITION_TYPE_MIXEDTEAM: "mixed team"
       }, self.competitionType)
             
     def getGamePhase(self):
