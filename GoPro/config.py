@@ -74,5 +74,6 @@ teams = {
     91: "B&B",
     92: "SwiftArk",
     93: "SPQR-Starkit",
-    96: "Team-Team"
+    96: "Team-Team",
+    99: "Defenders" # Dynamic Ball Handling in 2022
 }
