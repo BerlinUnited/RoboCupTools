@@ -11,13 +11,15 @@ class GameControlData(Struct):
     """Representation of the SPL message format."""
 
     GAMECONTROLLER_STRUCT_HEADER = b'RGme'
-    GAMECONTROLLER_STRUCT_VERSION = 15
+    GAMECONTROLLER_STRUCT_VERSION = 14
 
     COMPETITION_PHASE_ROUNDROBIN  = 0
     COMPETITION_PHASE_PLAYOFF     = 1
     
-    COMPETITION_TYPE_NORMAL                = 0
-    COMPETITION_TYPE_DYNAMIC_BALL_HANDLING = 1
+    COMPETITION_TYPE_NORMAL             = 0
+    COMPETITION_TYPE_CHALLENGE_SHIELD   = 1
+    COMPETITION_TYPE_7V7   = 2
+    COMPETITION_TYPE_DYNAMIC_BALL_HANDLING   = 3
     
     GAME_PHASE_NORMAL                   = 0
     GAME_PHASE_PENALTYSHOOT             = 1
@@ -31,7 +33,7 @@ class GameControlData(Struct):
     STATE_FINISHED                      = 4
 
     SET_PLAY_NONE                       = 0
-    SET_PLAY_GOAL_KICK                  = 1
+    SET_PLAY_GOAL_FREE_KICK             = 1
     SET_PLAY_PUSHING_FREE_KICK          = 2
     SET_PLAY_CORNER_KICK                = 3
     SET_PLAY_KICK_IN                    = 4
@@ -64,7 +66,7 @@ class GameControlData(Struct):
 
     def setDefaults(self):
         self.packetNumber = 0
-        self.playersPerTeam = 7
+        self.playersPerTeam = 6
         
         self.competitionPhase = self.COMPETITION_PHASE_ROUNDROBIN
         self.competitionType  = self.COMPETITION_TYPE_NORMAL
@@ -175,6 +177,8 @@ class GameControlData(Struct):
     def getCompetitionType(self):
       return self.getName({
         self.COMPETITION_TYPE_NORMAL: "normal",
+        self.COMPETITION_TYPE_CHALLENGE_SHIELD: "COMPETITION_TYPE_CHALLENGE_SHIELD",
+        self.COMPETITION_TYPE_7V7: "COMPETITION_TYPE_7V7",
         self.COMPETITION_TYPE_DYNAMIC_BALL_HANDLING: "COMPETITION_TYPE_DYNAMIC_BALL_HANDLING"
       }, self.competitionType)
             
@@ -198,18 +202,17 @@ class GameControlData(Struct):
     def getSetPlay(self):
       return self.getName({
         self.SET_PLAY_NONE: "none",
-        self.SET_PLAY_GOAL_KICK: "goal kick",
+        self.SET_PLAY_GOAL_FREE_KICK: "goal free kick",
         self.SET_PLAY_PUSHING_FREE_KICK: "pushing free kick",
         self.SET_PLAY_CORNER_KICK: "corner kick",
-        self.SET_PLAY_KICK_IN: "kick in",
-        self.SET_PLAY_PENALTY_KICK: "penalty kick"
+        self.SET_PLAY_KICK_IN: "kick in"
       }, self.setPlay)
 
 
 class TeamInfo(Struct):
     """ Representation of the TeamInfo. """
 
-    MAX_NUM_PLAYERS = 20
+    MAX_NUM_PLAYERS = 6
 
     TEAM_BLUE                           = 0  # blue, cyan
     TEAM_RED                            = 1  # red, magenta, pink
@@ -224,13 +227,10 @@ class TeamInfo(Struct):
 
     def __init__(self, data=None):
         super().__init__('B'  # teamNumber
-                         'B'  # fieldPlayerColor
-                         'B'  # goalkeeperColor
-                         'B'  # goalkeeper
+                         'B'  # teamColor
                          'B'  # score
                          'B'  # penaltyShot
                          'H'  # singleShots
-                         'H'  # messageBudget
                          )
 
         self.setDefaults()
@@ -240,13 +240,10 @@ class TeamInfo(Struct):
 
     def setDefaults(self):
         self.teamNumber = 0
-        self.fieldPlayerColor = 0
-        self.goalkeeperColor = 0
-        self.goalkeeper = 0
+        self.teamColor = 0
         self.score = 0
         self.penaltyShot = 0
         self.singleShots = 0
-        self.messageBudget = 0
 
         self.player = [ PlayerInfo() for _ in range(self.MAX_NUM_PLAYERS) ]
 
@@ -264,13 +261,10 @@ class TeamInfo(Struct):
         # assign data
         it = iter(msg)
         self.teamNumber = next(it)
-        self.fieldPlayerColor = next(it)
-        self.goalkeeperColor = next(it)
-        self.goalkeeper = next(it)
+        self.teamColor = next(it)
         self.score = next(it)
         self.penaltyShot = next(it)
         self.singleShots = next(it)
-        self.messageBudget = next(it)
 
         for i,p in enumerate(self.player):
             p.unpack(data[super().size+i*p.size:super().size+i*p.size + p.size])
@@ -301,13 +295,10 @@ class TeamInfo(Struct):
         out = "--------------------------------------\n"
 
         out += "         teamNumber: " + str(self.teamNumber) + "\n"
-        out += "   fieldPlayerColor: " + str(self.fieldPlayerColor) + "\n"
-        out += "    goalkeeperColor: " + str(self.goalkeeperColor) + "\n"
-        out += "         goalkeeper: " + str(self.goalkeeper) + "\n"
+        out += "          teamColor: " + str(self.teamColor) + "\n"
         out += "              score: " + str(self.score) + "\n"
         out += "        penaltyShot: " + str(self.penaltyShot) + "\n"
         out += "        singleShots: " + str(self.singleShots) + "\n"
-        out += "      messageBudget: " + str(self.messageBudget) + "\n"
         for i, p in enumerate(self.player):
             out += "          Player #" + str(i + 1) + ": " + str(p) + "\n"
 
@@ -325,7 +316,6 @@ class PlayerInfo(Struct):
     PENALTY_SPL_REQUEST_FOR_PICKUP      = 7
     PENALTY_SPL_LOCAL_GAME_STUCK        = 8
     PENALTY_SPL_ILLEGAL_POSITION_IN_SET = 9
-    PENALTY_SPL_PLAYER_STANCE           = 10
     
     PENALTY_SUBSTITUTE                  = 14
     PENALTY_MANUAL                      = 15
@@ -368,20 +358,19 @@ class PlayerInfo(Struct):
 
     def getPenalty(self):
       return self.getName({
-          self.PENALTY_NONE:                        "none",
-          self.PENALTY_SPL_ILLEGAL_BALL_CONTACT:    "playing with hands",
-          self.PENALTY_SPL_PLAYER_PUSHING:          "pushing",
-          self.PENALTY_SPL_ILLEGAL_MOTION_IN_SET:   "motion in set",
-          self.PENALTY_SPL_INACTIVE_PLAYER:         "inactive",
-          self.PENALTY_SPL_ILLEGAL_POSITION:        "illegal position",
-          self.PENALTY_SPL_LEAVING_THE_FIELD:       "leaving the field",
-          self.PENALTY_SPL_REQUEST_FOR_PICKUP:      "pickup",
-          self.PENALTY_SPL_LOCAL_GAME_STUCK:        "local game stuck",
-          self.PENALTY_SPL_ILLEGAL_POSITION_IN_SET: "illegal position in SET",
-          self.PENALTY_SPL_PLAYER_STANCE:           "player stance",
+          self.PENALTY_NONE:                      "none",
+          self.PENALTY_SPL_ILLEGAL_BALL_CONTACT:  "playing with hands",
+          self.PENALTY_SPL_PLAYER_PUSHING:        "pushing",
+          self.PENALTY_SPL_ILLEGAL_MOTION_IN_SET: "motion in set",
+          self.PENALTY_SPL_INACTIVE_PLAYER:       "inactive",
+          self.PENALTY_SPL_ILLEGAL_POSITION:      "illegal position",
+          self.PENALTY_SPL_LEAVING_THE_FIELD:     "leaving the field",
+          self.PENALTY_SPL_REQUEST_FOR_PICKUP:    "pickup",
+          self.PENALTY_SPL_LOCAL_GAME_STUCK:      "local game stuck",
+          PENALTY_SPL_ILLEGAL_POSITION_IN_SET:    "illegal position in SET",
           
-          self.PENALTY_SUBSTITUTE:                  "substitute",
-          self.PENALTY_MANUAL:                      "manual",
+          self.PENALTY_SUBSTITUTE:                "substitute",
+          self.PENALTY_MANUAL:                    "manual",
       }, self.penalty)
 
     def __str__(self):
