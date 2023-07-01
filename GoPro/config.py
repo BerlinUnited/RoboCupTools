@@ -1,4 +1,4 @@
-from goprocam.constants import *
+from utils import GoPro
 
 # NaoCam / a1b0a1b0a1
 # NAOCAM_2 / a1b0a1b0a1
@@ -15,9 +15,9 @@ gc_source = None
 
 # if the following configs are set, the cam tries to set them before starting recording
 # if you want to configure these setting manually, comment them out
-fps = Video.FrameRate.FR30
-fov = Video.Fov.SuperView
-resolution = Video.Resolution.R1080pSV
+fps = GoPro.Settings.FrameRate.FR_30
+fov = GoPro.Settings.Fov.SV
+resolution = GoPro.Settings.Resolution.R_1080P
 
 # all available teams
 teams = {

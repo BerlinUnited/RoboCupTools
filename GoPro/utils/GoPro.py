@@ -14,8 +14,6 @@ logger = Logger.getLogger("GoPro")
 class GoPro(threading.Thread, metaclass=ABCMeta):
 
     class Settings:
-        FRAME_RATE = 'FRAME_RATE'
-
         class FrameRate:
             FR_24 = 24
             FR_25 = 25
@@ -27,16 +25,12 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
             FR_120 = 120
             FR_240 = 240
 
-        FOV = 'FOV'
-
         class Fov:
             LINEAR = 'linear'
             NARROW = 'narrow'
             MEDIUM = 'medium'
             WIDE = 'wide'
             SV = 'sv'
-
-        RESOLUTION = 'RESOLUTION'
 
         class Resolution:
             R_4K = '4K'
@@ -65,9 +59,9 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
         self.__cam_status = {'recording': False, 'mode': None, 'lastVideo': None, 'sd_card': False, 'info': {}, 'datetime': None}
         self.cam_settings = {}
         self.__user_settings = {
-            GoPro.Settings.FRAME_RATE: GoPro.Settings.FrameRate.FR_30,
-            GoPro.Settings.FOV: GoPro.Settings.Fov.SV,
-            GoPro.Settings.RESOLUTION: GoPro.Settings.Resolution.R_1080P
+            GoPro.Settings.FrameRate: GoPro.Settings.FrameRate.FR_30,
+            GoPro.Settings.Fov: GoPro.Settings.Fov.SV,
+            GoPro.Settings.Resolution: GoPro.Settings.Resolution.R_1080P
         }
         self.gc_data = GameControlData()
 
@@ -75,38 +69,6 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
 
         self.__is_connected = False
         self.__cancel = threading.Event()
-
-    @staticmethod
-    def settings():
-        return {
-            GoPro.Settings.FRAME_RATE: [
-                GoPro.Settings.FrameRate.FR_24,
-                GoPro.Settings.FrameRate.FR_25,
-                GoPro.Settings.FrameRate.FR_30,
-                GoPro.Settings.FrameRate.FR_48,
-                GoPro.Settings.FrameRate.FR_50,
-                GoPro.Settings.FrameRate.FR_60,
-                GoPro.Settings.FrameRate.FR_100,
-                GoPro.Settings.FrameRate.FR_120,
-                GoPro.Settings.FrameRate.FR_240,
-            ],
-            GoPro.Settings.FOV: [
-                GoPro.Settings.Fov.LINEAR,
-                GoPro.Settings.Fov.NARROW,
-                GoPro.Settings.Fov.MEDIUM,
-                GoPro.Settings.Fov.WIDE,
-                GoPro.Settings.Fov.SV,
-            ],
-            GoPro.Settings.RESOLUTION: [
-                GoPro.Settings.Resolution.R_4K,
-                GoPro.Settings.Resolution.R_2K,
-                GoPro.Settings.Resolution.R_1440P,
-                GoPro.Settings.Resolution.R_1080P,
-                GoPro.Settings.Resolution.R_960P,
-                GoPro.Settings.Resolution.R_720P,
-                GoPro.Settings.Resolution.R_480P
-            ]
-        }
 
     @property
     def is_connected(self):
@@ -335,34 +297,36 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
 
     def setUserSettings(self, settings: dict):
         # check the settings first
-        gopro_settings = self.settings()
         for s, v in settings.items():
-            if s not in gopro_settings.keys():
+            if s not in self.__settings(GoPro.Settings):
                 raise Exception('Unknown GoPro setting: ' + s)
-            if v not in gopro_settings[s]:
+            if v not in self.__settings(s):
                 raise Exception('Invalid GoPro setting: ' + s + ' = ' + v)
             self.__user_settings[s] = v
         # apply settings, if connected
         if self.is_connected:
             self.__update_user_settings()
 
+    def __settings(self, setting_type):
+        return [val for var, val in vars(setting_type).items() if not var.startswith("_")]
+
     def __update_user_settings(self):
         logger.debug("Set user video settings")
 
-        if self.__user_settings[GoPro.Settings.FRAME_RATE] != self.fps:
-            if not self._set_fps(self.__user_settings[GoPro.Settings.FRAME_RATE]):
-                logger.warning("The following setting can not be set for this cam: '" + GoPro.Settings.FRAME_RATE + "'")
-                self.__user_settings[GoPro.Settings.FRAME_RATE] = None
+        if self.__user_settings[GoPro.Settings.FrameRate] != self.fps:
+            if not self._set_fps(self.__user_settings[GoPro.Settings.FrameRate]):
+                logger.warning("The following setting can not be set for this cam: '" + GoPro.Settings.FrameRate.__name__ + "'")
+                self.__user_settings[GoPro.Settings.FrameRate] = GoPro.Settings.FrameRate.FR_30
 
-        if self.__user_settings[GoPro.Settings.FOV] != self.fov:
-            if not self._set_fov(self.__user_settings[GoPro.Settings.FOV]):
-                logger.warning("The following setting can not be set for this cam: '" + GoPro.Settings.FOV + "'")
-                self.__user_settings[GoPro.Settings.FOV] = None
+        if self.__user_settings[GoPro.Settings.Fov] != self.fov:
+            if not self._set_fov(self.__user_settings[GoPro.Settings.Fov]):
+                logger.warning("The following setting can not be set for this cam: '" + GoPro.Settings.Fov.__name__ + "'")
+                self.__user_settings[GoPro.Settings.Fov] = GoPro.Settings.Fov.SV
 
-        if self.__user_settings[GoPro.Settings.RESOLUTION] != self.res:
-            if not self._set_res(self.__user_settings[GoPro.Settings.RESOLUTION]):
-                logger.warning("The following setting can not be set for this cam: '" + GoPro.Settings.RESOLUTION + "'")
-                self.__user_settings[GoPro.Settings.RESOLUTION] = None
+        if self.__user_settings[GoPro.Settings.Resolution] != self.res:
+            if not self._set_res(self.__user_settings[GoPro.Settings.Resolution]):
+                logger.warning("The following setting can not be set for this cam: '" + GoPro.Settings.Resolution.__name__ + "'")
+                self.__user_settings[GoPro.Settings.Resolution] = GoPro.Settings.Resolution.R_1080P
 
     @abstractmethod
     def _init(self):
@@ -460,7 +424,7 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
     @abstractmethod
     def _last_video(self) -> str|None:
         """
-        Returns the last recorded video or None, if there're no recordings.
+        Returns the last recorded video or None, if there are no recordings.
         :return:
         """
         return None
