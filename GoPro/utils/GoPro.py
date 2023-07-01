@@ -48,25 +48,24 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
     def __init__(self, quiet: bool, ignore: bool, max_time: int, rec_invisible: bool = False):
         super().__init__()
 
-        self.quiet = quiet
-        self.ignore = ignore
-        self.max_time = max_time
-        self.rec_invisible = rec_invisible
-        self.take_photo_when_idle = 0 # in seconds
+        self.__quiet = quiet
+        self.__ignore = ignore
+        self.__max_time = max_time
+        self.__rec_invisible = rec_invisible
+        self.__take_photo_when_idle = 0  # in seconds
         self.__photo_timestamp = 0
 
-        self.cam = None
-        self.__cam_status = {'recording': False, 'mode': None, 'lastVideo': None, 'sd_card': False, 'info': {}, 'datetime': None}
-        self.cam_settings = {}
+        # the default GoPro settings
         self.__user_settings = {
             GoPro.Settings.FrameRate: GoPro.Settings.FrameRate.FR_30,
             GoPro.Settings.Fov: GoPro.Settings.Fov.SV,
             GoPro.Settings.Resolution: GoPro.Settings.Resolution.R_1080P
         }
-        self.gc_data = GameControlData()
 
+        # init GoPro blackboard infos
         blackboard['gopro'] = {'state': 0, 'info': None, 'lastVideo': None, 'datetime': None}
 
+        # vars handling execution
         self.__is_connected = False
         self.__cancel = threading.Event()
 
@@ -244,7 +243,7 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
         self.__set_bb('lastVideo', video)
 
     def __keep_alive_photo(self) -> bool:
-        return self.take_photo_when_idle > 0 and self.__photo_timestamp + self.take_photo_when_idle < time.time()
+        return self.__take_photo_when_idle > 0 and self.__photo_timestamp + self.__take_photo_when_idle < time.time()
 
     def __handle_sdcard(self, state):
         # update sd-card status on the blackboard
@@ -258,20 +257,20 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
         gc_data = self.__get_bb_gc()
         if gc_data is not None:
             # check if one team is 'invisible'
-            both_teams_valid = all([t.teamNumber > 0 for t in gc_data.team]) or self.rec_invisible
+            both_teams_valid = all([t.teamNumber > 0 for t in gc_data.team]) or self.__rec_invisible
 
             # handle output
-            if not self.quiet:
+            if not self.__quiet:
                 output = "%s | %s | game state: %s | %s" % (
                     self.mode, "RECORDING!" if self.is_recording else "Not recording", gc_data.getGameState(), gc_data.secsRemaining)
                 print(output, flush=True)
 
             # handle game state changes
-            if not self.ignore and gc_data.secsRemaining < -self.max_time:
+            if not self.__ignore and gc_data.secsRemaining < -self.__max_time:
                 # only stop, if we're still recording
                 if self.is_recording:
                     self.stopRecording()
-            elif gc_data.gameState == GameControlData.STATE_SET and previous_state['time'] + self.max_time < time.monotonic():
+            elif gc_data.gameState == GameControlData.STATE_SET and previous_state['time'] + self.__max_time < time.monotonic():
                 # too long in the set state, stop recording!
                 if self.is_recording:
                     logger.debug("Stopped recording because we were too long in set")
