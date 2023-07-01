@@ -45,7 +45,11 @@ class OpenGoPro(GoPro):
             # get GoPro presets
             response = self.__cam.http_command.get_preset_status()
             if response.is_ok:
-                self.__cam_presets = response.data
+                # parse and re-order presets
+                for g in response.data['presetGroupArray']:
+                    for p in g['presetArray']:
+                        self.__cam_presets[p['id']] = p
+                        self.__cam_presets[p['id']]['group'] = g['id']
             else:
                 logger.warning(f'Unable to get camera presets ({response.status})')
 
@@ -56,13 +60,6 @@ class OpenGoPro(GoPro):
             else:
                 logger.warning(f'Unable to get camera datetime ({response.status})')
 
-            # TODO: get status
-            # - mode
-            # - recording state
-            # - sdcard
-            # - lastvideo
-            # - datetime
-            # - camerasettings
             return True
         return False
 
@@ -79,21 +76,26 @@ class OpenGoPro(GoPro):
 
     def _mode(self):
         if self.__cam_state:
-            if self.__cam_state[constants.StatusId.ACTIVE_PRESET] == '65536':
-                return GoPro.Modes.PHOTO
-            elif self.__cam_state[constants.StatusId.ACTIVE_PRESET] == '65536':
-                return GoPro.Modes.VIDEO
-        return 'unknown'  # TODO
+            if self.__cam_state[constants.StatusId.ACTIVE_PRESET] in self.__cam_presets:
+                mode = self.__cam_presets[self.__cam_state[constants.StatusId.ACTIVE_PRESET]]
+                # TODO: should we be more specific which mode is currently set?
+                if mode['group'] == 'PRESET_GROUP_ID_PHOTO':
+                    return GoPro.Modes.PHOTO
+                elif mode['group'] == 'PRESET_GROUP_ID_VIDEO':
+                    return GoPro.Modes.VIDEO
+        return 'unknown'
 
     def _set_video_mode(self):
-        self.__cam.http_setting.video_performance_mode.set(Params.PerformanceMode.STATIONARY)
+        # NOTE: STATIONARY mode has limited setting options!
+        self.__cam.http_setting.video_performance_mode.set(Params.PerformanceMode.EXTENDED_BATTERY)
         self.__cam.http_setting.max_lens_mode.set(Params.MaxLensMode.DEFAULT)
         self.__cam.http_setting.camera_ux_mode.set(Params.CameraUxMode.PRO)
         self.__cam.http_command.set_turbo_mode(mode=Params.Toggle.DISABLE)
         self.__cam.http_command.load_preset_group(group=Params.PresetGroup.VIDEO)
 
     def _take_photo(self):
-        self.__cam.http_setting.video_performance_mode.set(Params.PerformanceMode.STATIONARY)
+        # NOTE: STATIONARY mode has limited setting options!
+        self.__cam.http_setting.video_performance_mode.set(Params.PerformanceMode.EXTENDED_BATTERY)
         self.__cam.http_setting.max_lens_mode.set(Params.MaxLensMode.DEFAULT)
         self.__cam.http_setting.camera_ux_mode.set(Params.CameraUxMode.PRO)
         self.__cam.http_command.set_turbo_mode(mode=Params.Toggle.DISABLE)
@@ -120,32 +122,127 @@ class OpenGoPro(GoPro):
     def _last_video(self) -> str:
         return ''  # TODO
 
-    def __set(self, setting, value):
-        return False  # TODO
-
     def _fps(self) -> str:
-        return '30'  # TODO
+        fps = self.__cam_state[constants.SettingId.FPS]
+        if fps == Params.FPS.FPS_24:
+            return GoPro.Settings.FrameRate.FR_24
+        elif fps == Params.FPS.FPS_25:
+            return GoPro.Settings.FrameRate.FR_25
+        elif fps == Params.FPS.FPS_30:
+            return GoPro.Settings.FrameRate.FR_30
+        elif fps == Params.FPS.FPS_50:
+            return GoPro.Settings.FrameRate.FR_50
+        elif fps == Params.FPS.FPS_60:
+            return GoPro.Settings.FrameRate.FR_60
+        elif fps == Params.FPS.FPS_100:
+            return GoPro.Settings.FrameRate.FR_100
+        elif fps == Params.FPS.FPS_120:
+            return GoPro.Settings.FrameRate.FR_120
+        elif fps == Params.FPS.FPS_240:
+            return GoPro.Settings.FrameRate.FR_240
+
+        return 'unknown'
 
     def _set_fps(self, value) -> bool:
-        return False  # TODO
+        def set(v):
+            try:
+                self.__cam.http_setting.fps.set(v)
+                return True
+            except:
+                pass  # TODO: handle exceptions?!
+            return False
+
+        if value == GoPro.Settings.FrameRate.FR_24:
+            return set(Params.FPS.FPS_24)
+        elif value == GoPro.Settings.FrameRate.FR_25:
+            return set(Params.FPS.FPS_25)
+        elif value == GoPro.Settings.FrameRate.FR_30:
+            return set(Params.FPS.FPS_30)
+        elif value == GoPro.Settings.FrameRate.FR_50:
+            return set(Params.FPS.FPS_50)
+        elif value == GoPro.Settings.FrameRate.FR_60:
+            return set(Params.FPS.FPS_60)
+        elif value == GoPro.Settings.FrameRate.FR_100:
+            return set(Params.FPS.FPS_100)
+        elif value == GoPro.Settings.FrameRate.FR_120:
+            return set(Params.FPS.FPS_120)
+        elif value == GoPro.Settings.FrameRate.FR_240:
+            return set(Params.FPS.FPS_240)
+
+        return False
 
     def _fov(self) -> str:
-        return 'medium'  # TODO
+        fov = self.__cam_state[constants.SettingId.VIDEO_FOV]
+        if fov == Params.VideoFOV.NARROW:
+            return GoPro.Settings.Fov.NARROW
+        elif fov == Params.VideoFOV.LINEAR_HORIZON_LEVELING:
+            return GoPro.Settings.Fov.MEDIUM
+        elif fov == Params.VideoFOV.WIDE:
+            return GoPro.Settings.Fov.WIDE
+        elif fov == Params.VideoFOV.SUPERVIEW:
+            return GoPro.Settings.Fov.SV
+        elif fov == Params.VideoFOV.LINEAR:
+            return GoPro.Settings.Fov.LINEAR
+
+        return 'unknown'
 
     def _set_fov(self, value) -> bool:
-        return False  # TODO
+        def set(v):
+            try:
+                self.__cam.http_setting.video_field_of_view.set(v)
+                return True
+            except:
+                pass  # TODO: handle exceptions?!
+            return False
+
+        if value == GoPro.Settings.Fov.NARROW:
+            return set(Params.VideoFOV.NARROW)
+        elif value == GoPro.Settings.Fov.MEDIUM:
+            return set(Params.VideoFOV.LINEAR_HORIZON_LEVELING)
+        elif value == GoPro.Settings.Fov.WIDE:
+            return set(Params.VideoFOV.WIDE)
+        elif value == GoPro.Settings.Fov.SV:
+            return set(Params.VideoFOV.SUPERVIEW)
+        elif value == GoPro.Settings.Fov.LINEAR:
+            return set(Params.VideoFOV.LINEAR)
+
+        return False
 
     def _res(self) -> str:
-        return '1080p'  # TODO
+        res = self.__cam_state[constants.SettingId.RESOLUTION]
+        if res == Params.Resolution.RES_4K:
+            return GoPro.Settings.Resolution.R_4K
+        elif res == Params.Resolution.RES_2_7K:
+            return GoPro.Settings.Resolution.R_2K
+        elif res == Params.Resolution.RES_1440:
+            return GoPro.Settings.Resolution.R_1440P
+        elif res == Params.Resolution.RES_1080:
+            return GoPro.Settings.Resolution.R_1080P
+        return 'unknown'
 
     def _set_res(self, value) -> bool:
-        return False  # TODO
+        def set(v):
+            try:
+                self.__cam.http_setting.resolution.set(v)
+                return True
+            except:
+                pass  # TODO: handle exceptions?!
+            return False
+
+        if value == GoPro.Settings.Resolution.R_4K:
+            return set(Params.Resolution.RES_4K)
+        elif value == GoPro.Settings.Resolution.R_2K:
+            return set(Params.Resolution.RES_2_7K)
+        elif value == GoPro.Settings.Resolution.R_1440P:
+            return set(Params.Resolution.RES_1440)
+        elif value == GoPro.Settings.Resolution.R_1080P:
+            return set(Params.Resolution.RES_1080)
+
+        return False
 
 
 # some tests
 if __name__ == '__main__':
-    #10.1.12.74
-
     logging.basicConfig(level=logging.ERROR)
     #logger = setup_logging('OpenGoPro')
     #logger.setLevel(logging.CRITICAL)
@@ -163,10 +260,11 @@ if __name__ == '__main__':
         elif cmd == 'stop':
             g.stopRecording()
         elif cmd == 'status':
-            #print(g.__cam_status)
             print(blackboard)
         elif cmd == 'photo':
             g.take_photo()
+        elif cmd == 'mode':
+            print(g.mode)
     g.cancel()
     g.join()
     print('Done')

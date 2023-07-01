@@ -18,7 +18,6 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
             FR_24 = 24
             FR_25 = 25
             FR_30 = 30
-            FR_48 = 48
             FR_50 = 50
             FR_60 = 60
             FR_100 = 100
@@ -431,7 +430,7 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _last_video(self) -> str|None:
+    def _last_video(self) -> str:
         """
         Returns the last recorded video or None, if there are no recordings.
         :return:
