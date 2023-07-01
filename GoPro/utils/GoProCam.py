@@ -26,6 +26,11 @@ class GoProCam(GoPro):
     def _unset(self):
         self.__cam = None
 
+    def _keep_alive(self):
+        if self.__cam:
+            # take "keep alive" photo
+            self.take_photo()
+
     def _update_status(self) -> bool:
         if self.__cam:
             raw = self.__cam.getStatusRaw()

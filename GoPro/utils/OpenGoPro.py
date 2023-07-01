@@ -29,6 +29,10 @@ class OpenGoPro(GoPro):
             self.__cam.close()
             self.__cam = None
 
+    def _keep_alive(self):
+        if self.__cam:
+            self.__cam.http_command.set_keep_alive()
+
     def _update_status(self) -> bool:
         if self.__cam and self.__cam.is_open:
             # get GoPro state
@@ -161,6 +165,8 @@ if __name__ == '__main__':
         elif cmd == 'status':
             #print(g.__cam_status)
             print(blackboard)
+        elif cmd == 'photo':
+            g.take_photo()
     g.cancel()
     g.join()
     print('Done')

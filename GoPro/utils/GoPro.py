@@ -52,8 +52,8 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
         self.__ignore = ignore
         self.__max_time = max_time
         self.__rec_invisible = rec_invisible
-        self.__take_photo_when_idle = 0  # in seconds
-        self.__photo_timestamp = 0
+        self.__keep_alive_interval = 0  # in seconds
+        self.__keep_alive_timestamp = 0
 
         # the default GoPro settings
         self.__user_settings = {
@@ -126,10 +126,8 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
                         continue
                     # handling recording state
                     self.__handle_recording(previous_state)
-                    # take "keep alive" photo;
-                    if self.__keep_alive_photo():
-                        self.take_photo()
                     self.__handle_sdcard(previous_state)
+                    self.__keep_alive()
                 else:
                     #
                     self.disconnect()
@@ -210,14 +208,13 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
     def take_photo(self):
         """ Takes a photo, but only if not currently recording a video. """
         if self.is_recording:
-            self.__photo_timestamp = time.monotonic()
+            self.__keep_alive_update()
         else:
             logger.debug("Take a picture")
             if self.connect():
-                self.__photo_timestamp = time.monotonic()
                 self._take_photo()
-                # reset to video mode
-                self._set_video_mode()
+                self._set_video_mode()  # reset to video mode
+                self.__keep_alive_update()
             else:
                 logger.error("Not connected to cam!?")
 
@@ -242,8 +239,13 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
     def __set_bb_lastvideo(self, video: str):
         self.__set_bb('lastVideo', video)
 
-    def __keep_alive_photo(self) -> bool:
-        return self.__take_photo_when_idle > 0 and self.__photo_timestamp + self.__take_photo_when_idle < time.time()
+    def __keep_alive(self):
+        if self.__keep_alive_interval > 0 and self.__keep_alive_timestamp + self.__keep_alive_interval < time.monotonic():
+            self._keep_alive()
+            self.__keep_alive_update()
+
+    def __keep_alive_update(self):
+        self.__keep_alive_timestamp = time.monotonic()
 
     def __handle_sdcard(self, state):
         # update sd-card status on the blackboard
@@ -339,6 +341,14 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
     def _unset(self):
         """
         Disconnects from the GoPro and reset the internal state.
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def _keep_alive(self):
+        """
+        Sends a keep alive signal to GoPro.
         :return:
         """
         pass
