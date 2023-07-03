@@ -77,13 +77,13 @@ def main():
     gopro = OpenGoPro(args.background or args.quiet, args.ignore, args.max_time, args.log_invisible)
     if args.config:
         gopro.setUserSettings({
-            'FRAME_RATE': config.fps if 'fps' in vars(config) else None,
-            'FOV': config.fov if 'fov' in vars(config) else None,
-            'RESOLUTION': config.resolution if 'resolution' in vars(config) else None,
+            GoPro.Settings.FrameRate: config.fps if 'fps' in vars(config) else None,
+            GoPro.Settings.Fov: config.fov if 'fov' in vars(config) else None,
+            GoPro.Settings.Resolution: config.resolution if 'resolution' in vars(config) else None,
         })
     gopro.start()
 
-    teams = config.teams if args.config and  'teams' in vars(config) else None
+    teams = config.teams if args.config and 'teams' in vars(config) else None
     #gameLogger = GameLoggerSql(os.path.join(os.path.dirname(__file__), 'logs/game.db'), teams)
     gameLogger = GameLoggerLog(os.path.join(os.path.dirname(__file__), 'logs/'), teams, args.log_invisible)
     gameLogger.start()
