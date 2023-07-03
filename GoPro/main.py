@@ -16,7 +16,7 @@ import importlib
 import importlib.util
 import ipaddress
 
-from utils import Logger, Daemonize, Network, GoPro, GameController, GameLoggerSql, GameLoggerLog, LedStatusMonitor, \
+from utils import Logger, Daemonize, Network, GoPro, OpenGoPro, GameController, GameLoggerSql, GameLoggerLog, LedStatusMonitor, \
     CheckGameController, rename, CheckBluetooth, blackboard
 
 
@@ -74,7 +74,7 @@ def main():
     led = LedStatusMonitor()
     led.start()
 
-    gopro = GoPro(args.background or args.quiet, args.ignore, args.max_time, args.log_invisible)
+    gopro = OpenGoPro(args.background or args.quiet, args.ignore, args.max_time, args.log_invisible)
     if args.config:
         gopro.setUserSettings({
             'FRAME_RATE': config.fps if 'fps' in vars(config) else None,
