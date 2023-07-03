@@ -1,9 +1,9 @@
 import datetime
 import logging
 
-from open_gopro import WiredGoPro, Params
-from open_gopro import constants
-from open_gopro import interface
+
+from open_gopro import WiredGoPro, Params, constants, interface
+from open_gopro.util import setup_logging, Logger as OGLogger
 
 from utils import GoPro, Logger, blackboard
 
@@ -19,6 +19,11 @@ class OpenGoPro(GoPro):
         self.__cam_state = {}
         self.__cam_presets = {}
         self.__cam_datetime = None
+
+        # set OpenGoPro logging to ERROR (do not spam log)
+        setup_logging(logger)
+        for m in OGLogger.get_instance().modules.keys():
+            logging.getLogger(m).setLevel(logging.ERROR)
 
     def _init(self):
         self.__cam = WiredGoPro(None, rules=[interface.MessageRules.FASTPASS])
@@ -42,23 +47,26 @@ class OpenGoPro(GoPro):
             else:
                 logger.warning(f'Unable to get camera state ({response.status})')
 
-            # get GoPro presets
-            response = self.__cam.http_command.get_preset_status()
-            if response.is_ok:
-                # parse and re-order presets
-                for g in response.data['presetGroupArray']:
-                    for p in g['presetArray']:
-                        self.__cam_presets[p['id']] = p
-                        self.__cam_presets[p['id']]['group'] = g['id']
-            else:
-                logger.warning(f'Unable to get camera presets ({response.status})')
+            # certain commands require, that the GoPro has a certain state (not recording or otherwise busy)
+            # the open_gopro library waits for that state (enforce_message_rules, _wait_for_state)
+            if not self.is_recording:
+                # get GoPro presets
+                response = self.__cam.http_command.get_preset_status()
+                if response.is_ok:
+                    # parse and re-order presets
+                    for g in response.data['presetGroupArray']:
+                        for p in g['presetArray']:
+                            self.__cam_presets[p['id']] = p
+                            self.__cam_presets[p['id']]['group'] = g['id']
+                else:
+                    logger.warning(f'Unable to get camera presets ({response.status})')
 
-            # get GoPro date & time
-            response = self.__cam.http_command.get_date_time()
-            if response.is_ok:
-                self.__cam_datetime = response.data
-            else:
-                logger.warning(f'Unable to get camera datetime ({response.status})')
+                # get GoPro date & time
+                response = self.__cam.http_command.get_date_time()
+                if response.is_ok:
+                    self.__cam_datetime = response.data
+                else:
+                    logger.warning(f'Unable to get camera datetime ({response.status})')
 
             return True
         return False
@@ -243,18 +251,14 @@ class OpenGoPro(GoPro):
 
 # some tests
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.ERROR)
-    #logger = setup_logging('OpenGoPro')
-    #logger.setLevel(logging.CRITICAL)
-
     print('Start OpenGopro')
     g = OpenGoPro(False, False, 900)
     g.start()
     blackboard['network'] = 3  # simulate network available
     while True:
         cmd = input('>>>')
-        if cmd in ['e', 'exit']:
-            break
+        if cmd in ['h', 'help']:
+            print('start|stop|status|photo|mode|exit')
         elif cmd == 'start':
             g.startRecording()
         elif cmd == 'stop':
@@ -265,6 +269,8 @@ if __name__ == '__main__':
             g.take_photo()
         elif cmd == 'mode':
             print(g.mode)
+        elif cmd in ['e', 'exit']:
+            break
     g.cancel()
     g.join()
     print('Done')
