@@ -28,6 +28,8 @@ class OpenGoPro(GoPro):
     def _init(self):
         self.__cam = WiredGoPro(None, rules=[interface.MessageRules.FASTPASS])
         self.__cam.open()
+        # HACK: a network is not required anymore
+        blackboard['network'] = 3
 
     def _unset(self):
         if self.__cam:
