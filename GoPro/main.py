@@ -91,11 +91,12 @@ def main():
     gameController = GameController(args.gc_source)
     gameController.start()
 
-    network = Network(args.device, args.ssid, args.passwd, args.retries, args.mac)
-    network.start()
+    # TODO: move Network to the old GoProCam implementation, since it is required there ...
+    #network = Network(args.device, args.ssid, args.passwd, args.retries, args.mac)
+    #network.start()
 
     # monitor threads and config
-    threads = [ led, gopro, gameLogger, gameController, network ]
+    threads = [led, gopro, gameLogger, gameController]
     try:
         while True:
             #print(blackboard)
@@ -106,7 +107,7 @@ def main():
                     # reload config from file
                     importlib.reload(config)
                     Logger.info("Reloaded modified config")
-                    network.setConfig(None, config.ssid, config.passwd, config.retries, config.mac)
+                    #network.setConfig(None, config.ssid, config.passwd, config.retries, config.mac)
                     gameController.setSource(config.gc_source)
                     gopro.setUserSettings({
                         'FRAME_RATE': config.fps if 'fps' in vars(config) else None,
@@ -129,13 +130,13 @@ def main():
     gopro.cancel()
     gameLogger.cancel()
     gameController.cancel()
-    network.cancel()
+    #network.cancel()
     # wait for finished threads
     led.join()
     gopro.join()
     gameLogger.join()
     gameController.join()
-    network.join()
+    #network.join()
 
     print("Bye")
 
