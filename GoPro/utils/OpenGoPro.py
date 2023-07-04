@@ -74,7 +74,7 @@ class OpenGoPro(GoPro):
                         logger.warning(f'Unable to get camera presets ({response.status})')
                 except exceptions.ResponseTimeout:
                     logger.warning('Lost connection while get preset status?!')
-                    pass  # ignoring, since it is not that important
+                    return False
 
                 # get GoPro date & time
                 try:
@@ -85,7 +85,7 @@ class OpenGoPro(GoPro):
                         logger.warning(f'Unable to get camera datetime ({response.status})')
                 except exceptions.ResponseTimeout:
                     logger.warning('Lost connection while get date/time?!')
-                    pass  # ignoring, since it is not that important
+                    return False
 
             return True
         return False
