@@ -2,7 +2,7 @@ import datetime
 import logging
 
 
-from open_gopro import WiredGoPro, Params, constants, interface
+from open_gopro import WiredGoPro, Params, constants, interface, exceptions
 from open_gopro.util import setup_logging, Logger as OGLogger
 
 from utils import GoPro, Logger, blackboard
@@ -27,7 +27,11 @@ class OpenGoPro(GoPro):
 
     def _init(self):
         self.__cam = WiredGoPro(None, rules=[interface.MessageRules.FASTPASS])
-        self.__cam.open()
+        try:
+            self.__cam.open()
+        except exceptions.FailedToFindDevice:
+            self.__cam = None
+            time.sleep(1)  # GoPro not found, wait before next attempt
         # HACK: a network is not required anymore
         blackboard['network'] = 3
 
