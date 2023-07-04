@@ -24,10 +24,22 @@ check_dependencies() {
 		echo "Python 3 is required! Please install first."
 		return 1
 	fi
+	# check pip
+	which pip > /dev/null
+	if [ $? != 0 ]; then
+		echo "PIP is required! Please install first (eg. 'sudo apt-get install python3-pip')."
+		return 1
+	fi
 	# check python module
 	python3 -c "import RPi.GPIO" 2> /dev/null
 	if [ $? != 0 ]; then
 		echo "Python module 'RPi.GPIO' is required! Please install first (eg. 'sudo apt-get install python3-rpi.gpio')."
+		return 2
+	fi
+	# check python module
+	python3 -c "import open_gopro" 2> /dev/null
+	if [ $? != 0 ]; then
+		echo "Python module 'open_gopro' is required! Please install first (eg. 'sudo pip install open_gopro')."
 		return 2
 	fi
 	# everything 'ok'
