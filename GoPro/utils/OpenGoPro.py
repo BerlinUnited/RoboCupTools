@@ -48,32 +48,44 @@ class OpenGoPro(GoPro):
     def _update_status(self) -> bool:
         if self.__cam and self.__cam.is_open:
             # get GoPro state
-            response = self.__cam.http_command.get_camera_state()
-            if response.is_ok:
-                self.__cam_state = response.data
-            else:
-                logger.warning(f'Unable to get camera state ({response.status})')
+            try:
+                response = self.__cam.http_command.get_camera_state()
+                if response.is_ok:
+                    self.__cam_state = response.data
+                else:
+                    logger.warning(f'Unable to get camera state ({response.status})')
+            except exceptions.ResponseTimeout:
+                logger.warning('Lost connection while get camera state?!')
+                return False
 
             # certain commands require, that the GoPro has a certain state (not recording or otherwise busy)
             # the open_gopro library waits for that state (enforce_message_rules, _wait_for_state)
             if not self.is_recording:
                 # get GoPro presets
-                response = self.__cam.http_command.get_preset_status()
-                if response.is_ok:
-                    # parse and re-order presets
-                    for g in response.data['presetGroupArray']:
-                        for p in g['presetArray']:
-                            self.__cam_presets[p['id']] = p
-                            self.__cam_presets[p['id']]['group'] = g['id']
-                else:
-                    logger.warning(f'Unable to get camera presets ({response.status})')
+                try:
+                    response = self.__cam.http_command.get_preset_status()
+                    if response.is_ok:
+                        # parse and re-order presets
+                        for g in response.data['presetGroupArray']:
+                            for p in g['presetArray']:
+                                self.__cam_presets[p['id']] = p
+                                self.__cam_presets[p['id']]['group'] = g['id']
+                    else:
+                        logger.warning(f'Unable to get camera presets ({response.status})')
+                except exceptions.ResponseTimeout:
+                    logger.warning('Lost connection while get preset status?!')
+                    pass  # ignoring, since it is not that important
 
                 # get GoPro date & time
-                response = self.__cam.http_command.get_date_time()
-                if response.is_ok:
-                    self.__cam_datetime = response.data
-                else:
-                    logger.warning(f'Unable to get camera datetime ({response.status})')
+                try:
+                    response = self.__cam.http_command.get_date_time()
+                    if response.is_ok:
+                        self.__cam_datetime = response.data
+                    else:
+                        logger.warning(f'Unable to get camera datetime ({response.status})')
+                except exceptions.ResponseTimeout:
+                    logger.warning('Lost connection while get date/time?!')
+                    pass  # ignoring, since it is not that important
 
             return True
         return False
