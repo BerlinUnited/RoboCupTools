@@ -1,5 +1,6 @@
 import datetime
 import logging
+import time
 
 
 from open_gopro import WiredGoPro, Params, constants, interface, exceptions
