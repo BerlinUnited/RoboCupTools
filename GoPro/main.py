@@ -16,7 +16,7 @@ import importlib
 import importlib.util
 import ipaddress
 
-from utils import Logger, Daemonize, Network, GoPro, GameController, GameLoggerSql, GameLoggerLog, LedStatusMonitor, \
+from utils import Logger, Daemonize, Network, GoPro, OpenGoPro, GameController, GameLoggerSql, GameLoggerLog, LedStatusMonitor, \
     CheckGameController, rename, CheckBluetooth, blackboard
 
 
@@ -74,16 +74,16 @@ def main():
     led = LedStatusMonitor()
     led.start()
 
-    gopro = GoPro(args.background or args.quiet, args.ignore, args.max_time, args.log_invisible)
+    gopro = OpenGoPro(args.background or args.quiet, args.ignore, args.max_time, args.log_invisible)
     if args.config:
         gopro.setUserSettings({
-            'FRAME_RATE': config.fps if 'fps' in vars(config) else None,
-            'FOV': config.fov if 'fov' in vars(config) else None,
-            'RESOLUTION': config.resolution if 'resolution' in vars(config) else None,
+            GoPro.Settings.FrameRate: config.fps if 'fps' in vars(config) else None,
+            GoPro.Settings.Fov: config.fov if 'fov' in vars(config) else None,
+            GoPro.Settings.Resolution: config.resolution if 'resolution' in vars(config) else None,
         })
     gopro.start()
 
-    teams = config.teams if args.config and  'teams' in vars(config) else None
+    teams = config.teams if args.config and 'teams' in vars(config) else None
     #gameLogger = GameLoggerSql(os.path.join(os.path.dirname(__file__), 'logs/game.db'), teams)
     gameLogger = GameLoggerLog(os.path.join(os.path.dirname(__file__), 'logs/'), teams, args.log_invisible)
     gameLogger.start()
@@ -91,11 +91,12 @@ def main():
     gameController = GameController(args.gc_source)
     gameController.start()
 
-    network = Network(args.device, args.ssid, args.passwd, args.retries, args.mac)
-    network.start()
+    # TODO: move Network to the old GoProCam implementation, since it is required there ...
+    #network = Network(args.device, args.ssid, args.passwd, args.retries, args.mac)
+    #network.start()
 
     # monitor threads and config
-    threads = [ led, gopro, gameLogger, gameController, network ]
+    threads = [led, gopro, gameLogger, gameController]
     try:
         while True:
             #print(blackboard)
@@ -106,7 +107,7 @@ def main():
                     # reload config from file
                     importlib.reload(config)
                     Logger.info("Reloaded modified config")
-                    network.setConfig(None, config.ssid, config.passwd, config.retries, config.mac)
+                    #network.setConfig(None, config.ssid, config.passwd, config.retries, config.mac)
                     gameController.setSource(config.gc_source)
                     gopro.setUserSettings({
                         'FRAME_RATE': config.fps if 'fps' in vars(config) else None,
@@ -129,13 +130,13 @@ def main():
     gopro.cancel()
     gameLogger.cancel()
     gameController.cancel()
-    network.cancel()
+    #network.cancel()
     # wait for finished threads
     led.join()
     gopro.join()
     gameLogger.join()
     gameController.join()
-    network.join()
+    #network.join()
 
     print("Bye")
 
