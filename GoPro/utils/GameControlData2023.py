@@ -11,13 +11,13 @@ class GameControlData(Struct):
     """Representation of the SPL message format."""
 
     GAMECONTROLLER_STRUCT_HEADER = b'RGme'
-    GAMECONTROLLER_STRUCT_VERSION = 16
+    GAMECONTROLLER_STRUCT_VERSION = 15
 
     COMPETITION_PHASE_ROUNDROBIN  = 0
     COMPETITION_PHASE_PLAYOFF     = 1
     
-    COMPETITION_TYPE_NORMAL             = 0
-    COMPETITION_TYPE_SHARED_AUTONOMY    = 1
+    COMPETITION_TYPE_NORMAL                = 0
+    COMPETITION_TYPE_DYNAMIC_BALL_HANDLING = 1
     
     GAME_PHASE_NORMAL                   = 0
     GAME_PHASE_PENALTYSHOOT             = 1
@@ -175,7 +175,7 @@ class GameControlData(Struct):
     def getCompetitionType(self):
       return self.getName({
         self.COMPETITION_TYPE_NORMAL: "normal",
-        self.COMPETITION_TYPE_SHARED_AUTONOMY: "shared autonomy"
+        self.COMPETITION_TYPE_DYNAMIC_BALL_HANDLING: "COMPETITION_TYPE_DYNAMIC_BALL_HANDLING"
       }, self.competitionType)
             
     def getGamePhase(self):
@@ -326,7 +326,6 @@ class PlayerInfo(Struct):
     PENALTY_SPL_LOCAL_GAME_STUCK        = 8
     PENALTY_SPL_ILLEGAL_POSITION_IN_SET = 9
     PENALTY_SPL_PLAYER_STANCE           = 10
-    PENALTY_SPL_ILLEGAL_MOTION_IN_INITIAL = 11
     
     PENALTY_SUBSTITUTE                  = 14
     PENALTY_MANUAL                      = 15
@@ -380,7 +379,6 @@ class PlayerInfo(Struct):
           self.PENALTY_SPL_LOCAL_GAME_STUCK:        "local game stuck",
           self.PENALTY_SPL_ILLEGAL_POSITION_IN_SET: "illegal position in SET",
           self.PENALTY_SPL_PLAYER_STANCE:           "player stance",
-          self.PENALTY_SPL_ILLEGAL_MOTION_IN_INITIAL: "illegal motion in initial",
           
           self.PENALTY_SUBSTITUTE:                  "substitute",
           self.PENALTY_MANUAL:                      "manual",
