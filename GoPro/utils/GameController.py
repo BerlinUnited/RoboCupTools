@@ -19,7 +19,7 @@ class GameController(threading.Thread):
     If new data was received, it gets parsed and published on the blackboard.
     """
 
-    def __init__(self, source=None, tryToGetTrueData=False):
+    def __init__(self, source=None, tryToGetTrueData=True):
         """
         Constructor.
         Inits class variables and establish the udp socket connection to the GameController.
@@ -74,7 +74,7 @@ class GameController(threading.Thread):
                             print("requestTrueData: " + str(address[0]))
                             self.requestTrueData(address[0])
                 else:
-                	logger.debug("Got data from a invalid source: %s != %s", address[0], self.__source)
+                    logger.debug("Got data from a invalid source: %s != %s", address[0], self.__source)
 
             except socket.timeout:
                 blackboard['gamecontroller'] = None

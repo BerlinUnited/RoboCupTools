@@ -88,7 +88,7 @@ def main():
     gameLogger = GameLoggerLog(os.path.join(os.path.dirname(__file__), 'logs/'), teams, args.log_invisible)
     gameLogger.start()
 
-    gameController = GameController(args.gc_source)
+    gameController = GameController(source=args.gc_source, tryToGetTrueData=True)
     gameController.start()
 
     # TODO: move Network to the old GoProCam implementation, since it is required there ...
