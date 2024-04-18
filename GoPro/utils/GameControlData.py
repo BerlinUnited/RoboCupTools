@@ -9,7 +9,7 @@ from struct import Struct
 
 class GameControlData(Struct):
     """Representation of the SPL message format."""
-
+    TRUE_HEADER = b'RGTD'
     GAMECONTROLLER_STRUCT_HEADER = b'RGme'
     GAMECONTROLLER_STRUCT_VERSION = 16
 
@@ -88,7 +88,10 @@ class GameControlData(Struct):
         msg = Struct.unpack(self, data[:self.size])
 
         # check header
-        if msg[0] != self.GAMECONTROLLER_STRUCT_HEADER:
+        self.isTrueData = False
+        if msg[0] == self.TRUE_HEADER:
+          self.isTrueData = True
+        elif msg[0] != self.GAMECONTROLLER_STRUCT_HEADER:
             raise Exception("Invalid message type!")
 
         # check spl message version

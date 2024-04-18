@@ -1,9 +1,14 @@
-import threading, socket
+import threading, socket, struct, datetime, time
 
 from utils import Logger, blackboard
 from utils.GameControlData import GameControlData
 
 GAME_CONTROLLER_PORT = 3838
+
+TRUEDATAREQUEST_HEADER = 'RGTr'
+TRUEDATAREQUEST_VERSION = 0
+TRUEDATAREQUEST_PORT = 3636
+REQUEST_TRUE_DATA_AFTER = 1
 
 # setup logger for network related logs
 logger = Logger.getLogger("GameController")
@@ -14,14 +19,17 @@ class GameController(threading.Thread):
     If new data was received, it gets parsed and published on the blackboard.
     """
 
-    def __init__(self, source=None):
+    def __init__(self, source=None, tryToGetTrueData=True):
         """
         Constructor.
         Inits class variables and establish the udp socket connection to the GameController.
         """
         super().__init__()
 
+        self.tryToGetTrueData = tryToGetTrueData
         self.__cancel = threading.Event()
+
+        self.timestampOfLastTrueGameControlData = 0
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -30,6 +38,13 @@ class GameController(threading.Thread):
         self.socket.settimeout(5)  # in sec
 
         self.__source = str(source) if source is not None else None
+        
+    def requestTrueData(self, gameControllerAddress):
+        request = struct.pack('4sB', bytes(TRUEDATAREQUEST_HEADER, 'UTF-8'), TRUEDATAREQUEST_VERSION)
+        self.trueDataSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.trueDataSocket.sendto(request, (gameControllerAddress, TRUEDATAREQUEST_PORT))
+        self.trueDataSocket.close()
+        pass
 
     def run(self):
         """
@@ -44,11 +59,22 @@ class GameController(threading.Thread):
                 # receive GC data
                 data, address = self.socket.recvfrom(8192)
                 # only if we recieved somethind, parse & publish message
-                if len(data) > 0:
-                    if self.__source is None or address[0] == self.__source:
-                        blackboard['gamecontroller'] = GameControlData(data)
-                    else:
-                        logger.debug("Got data from a invalid source: %s != %s", address[0], self.__source)
+                if len(data) > 0 and (self.__source is None or address[0] == self.__source):
+                    message = GameControlData(data)
+
+                    # accept the message if it is true data
+                    if self.tryToGetTrueData == message.isTrueData or (self.tryToGetTrueData and time.time() - self.timestampOfLastTrueGameControlData > 2 * REQUEST_TRUE_DATA_AFTER):
+                        #print("message.isTrueData: " + str(message.isTrueData))
+                        blackboard['gamecontroller'] = message
+
+                    if self.tryToGetTrueData:
+                        if message.isTrueData:
+                            self.timestampOfLastTrueGameControlData = time.time()
+                        elif time.time() - self.timestampOfLastTrueGameControlData >= REQUEST_TRUE_DATA_AFTER:
+                            print("requestTrueData: " + str(address[0]))
+                            self.requestTrueData(address[0])
+                else:
+                    logger.debug("Got data from a invalid source: %s != %s", address[0], self.__source)
 
             except socket.timeout:
                 blackboard['gamecontroller'] = None
