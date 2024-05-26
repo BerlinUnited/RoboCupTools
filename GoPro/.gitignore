@@ -1,4 +1,5 @@
 #python
 *.pyc
 .idea/
+.venv/
 naoth.egg-info*

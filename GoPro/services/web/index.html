@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoPi Monitoring</title>
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            justify-content: space-around;
+        }
+
+        .card {
+            position: relative;
+            background-color: #f2f2f2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin: 10px;
+            padding: 20px;
+            width: 48%; /* Adjusts the width of each card to fit 3 across */
+            text-align: left;
+            box-sizing: border-box;
+        }
+
+        .card h2 {
+            margin-top: 0; /* Reducing space above the title */
+        }
+
+        pre {
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px; /* Gives a slight rounded effect to the code block */
+            white-space: pre-wrap; /* Helps maintain formatting for long lines */
+            word-wrap: break-word; /* Breaks long words to prevent overflow */
+        }
+
+        .lastUpdate {
+            position: absolute;
+            bottom: 10px;
+            right: 30px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        @media (max-width: 800px) {
+            .card {
+                width: 100%; /* Stacks the cards vertically on smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>GoPi Monitoring</h1>
+    </header>
+
+    <div class="container">
+        <div class="card" id="gc">
+            <h2>GameController</h2>
+            <pre>- NONE -</pre>
+             <div class="lastUpdate">Last Updated: -</div>
+        </div>
+        <div class="card" id="gopro">
+            <h2>GoPro</h2>
+            <pre>- NONE -</pre>
+             <div class="lastUpdate">Last Updated: -</div>
+        </div>
+    </div>
+    <pre id="error"></pre>
+
+    <script type="text/javascript">
+        function formatTime(date) {
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            let seconds = date.getSeconds();
+
+            // Pad single digits with a leading zero
+            hours = (hours < 10 ? "0" : "") + hours;
+            minutes = (minutes < 10 ? "0" : "") + minutes;
+            seconds = (seconds < 10 ? "0" : "") + seconds;
+
+            // Format the time string in HH:mm:ss format
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        function updateCard(id, data) {
+            if (data[id] !== undefined) {
+                let card = document.getElementById(id);
+                card.getElementsByTagName('pre')[0].textContent = data[id];
+                card.getElementsByClassName('lastUpdate')[0].textContent = "Last Updated: " + formatTime(new Date());
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const response = await fetch("/websocket");
+
+            if (!response.ok)
+            {
+                document.getElementById('error').textContent = "Unable to get websocket port!";
+                return;
+            }
+
+            const websocket = await response.json();
+            if (!websocket)
+            {
+                document.getElementById('error').textContent = "Got empty websocket port!";
+                return;
+            }
+
+            var socket = new WebSocket('ws://' + window.location.hostname + ':' + websocket);
+            socket.onmessage = function(event) {
+                try {
+                    var data = JSON.parse(event.data);
+
+                    //document.getElementById('data').textContent = "Last update (" + (new Date()).toISOString() + "):\n" + JSON.stringify(data, null, 2);
+                    updateCard('gc', data);
+                    updateCard('gopro', data);
+
+                } catch (error) {
+                    document.getElementById('error').textContent = "Last error (" + (new Date()).toISOString() + "):\n" + error.message;
+                }
+            };
+        });
+    </script>
+</body>
+</html>

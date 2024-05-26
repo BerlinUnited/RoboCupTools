@@ -1,87 +1,104 @@
-This setup works with any Raspberry pi with Wi-fi and the following GoPro models: Session 4, GoPro5. It might work with GoPro 3 and 6 as well.
+# GoPi
 
-#### INSTALLATION
+GoPi is an application designed to record SPL RoboCup games using a GoPro camera, controlled by a Raspberry Pi. 
+The Raspberry Pi listens for new game events from the GameController and manages the GoPro to start or stop recording 
+based on the game state. The application's status is displayed via LEDs (see LED states below) connected to the 
+Raspberry Pi. Additionally, GoPi logs the mapping of video filenames to their respective games and includes a small 
+web page that shows the current messages on the message bus.
 
+## Setup Raspberry Pi
+[Setup Guide](./docs/Raspi-Setup.md)
+
+## Installation
+- there is an `install.sh` script, which installs the required dependencies
+- root permissions are required for the installation script for:
+  - register GoPi as systemd service
+  - set a new hostname (optional)
+  - set a static ip address (optional)
+- the required python packages are installed into a virtual environment (`.venv`) in the project directory
+- after installation a reboot may be required (if hostname or static ip was set)
+- other options for the `install.sh`:
+  - `uninstall` un-installs everything
+  - `check` checks the required dependencies
+  - `ip` setups the static ip configuration only
+  - `help` shows the help message
+
+
+### Variant #1
+- connect to the Raspberry Pi and run
+```shell
+sudo curl -sSL https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh | bash
+# or
+sudo wget -qO - https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh | bash
+```
+### Variant #2
 - connect to the Raspberry Pi
-- `cd` to the GoPro directory
-- execute the install script `./install.sh`
+- checkout or download the project
+```shell
+git clone https://github.com/BerlinUnited/RoboCupTools.git
+# or just the latest code
+git clone --depth=1 https://github.com/BerlinUnited/RoboCupTools.git
+```
+- `cd` to the `GoPro` directory
+- execute the install script
+  - `sudo ./shell/install.sh`
 
-##### Manual
+### Requirements
+- python3 python3-pip python3-venv bluez
+- python modules: open_gopro pyzmq RPi.GPIO websockets bleak goprocam
 
-Setup Startup-Script:
-- copy the "gopro" file to "/etc/init.d"  
-  `sudo cp gopro /etc/init.d/`
-- make it executable  
-  `sudo chmod 755 /etc/init.d/gopro`  
-- update init scripts  
-  `sudo update-rc.d`
+## Running
 
-Setup GoPro-Controller-Script:
-- copy all python files to "/home/pi/GoPro/"
+If the startup script and the config was set correctly the systemd service starts on the next (re-)boot of the Raspberry Pi.
 
-**Note:** if an other directory is used, the path to the main script in the GoPro startup script has to be adjusted!
+GoPi can be controlled with the following commands:  
+  `sudo gopro start`  
+  `sudo gopro stop`  
+  `sudo gopro status` 
 
-- make main python file executable
-  `chmod +x /home/pi/GoPro/main.py`
+To manually start GoPi with systemd:  
+  `sudo systemctl start gopro`  
+  `sudo systemctl stop gopro`  
+  `sudo systemctl status gopro`
 
-Setup Network:
-- set a appropiate network ip for the lan interface (eg. eth0); if DHCP isn't available
-- set the hostname to a (unique) name; evtl. the logger uses this to write its log files
+### Manually run python scripts
 
-**Note:** In order to get the gamecontroller data, the Raspberry Pi has to be in the "10.0.x.x/16" subnet. Also make sure, there's no other device with the same IP!  
+- start the GoPi directly
+  - `.venv/bin/python main.py gopi`
+- for help use:
+  - `.venv/bin/python main.py -h`
+- the individual services can be started separately:
+  - `.venv/bin/python main.py service [bus|led|gl|gc|gopro|web]`
+- there are also some scripts that may be useful:
+  - `.venv/bin/python main.py script [ble|pair|gc|video|wake]`
 
-Config:
-- Adjust the "config.py" file for the used GoPro (ssid and password). The information should be provided by the GoPro.
+NOTE: everything can also be started as a python module, eg:  
+`.venv/bin/python -m services.bus`  
+`.venv/bin/python -m scripts.bus`
+    
+### LED States
+|  blue |     green     | red   | Description                                           |
+|:-------------:|:-------------:|:-----:|-------------------------------------------------------|
+| blink (short) |               |       | Wifi network is not available/visible                 |
+| blink (1/2s)  |               |       | Currently not connected to network / GoPro            |
+| blink (~1s))  |               | blink | Connect to GoPro, but no sd card available            |
+|      On       |               |       | Connected to GoPro and ready for recording            |
+|               |      Off      |       | No GameController available                           |
+|               | blink (~1/2s) |       | Invalid GameController source/IP                      |
+|               |  blink (~1s)  |       | A game vs. INVISIBLES                                 |
+|               |      On       |       | A game with two teams - GameController is 'connected' |
+|               |               | blink | Camera is recording                                   |
+|               |               | Off   | Camera is NOT recording                               |
+|     Off       |      Off      | Off   | Raspi is not powered or isn't connected to anything   |
 
-#### RUNNING
+### Logging
 
-If the startup script and the config was set correctly the  init script starts on the next (re-)boot of the Raspberry Pi.
+By default, GoPi just prints out its log stdout. If started via systemd service, the log can be viewed   
+  `journalctl -u gopro [-f]`  
 
-The GoPro Controller know the following commands:  
-  `sudo /etc/init.d/gopro start`  
-  `sudo /etc/init.d/gopro stop`  
-  `sudo /etc/init.d/gopro status` 
+Logs of the recorded games are created in the `path/to/GoPro/logs/` directory. Each log contains the file name of the recorded video files separated by ';'.
 
-To manually start the gopro-controller with the init-script:  
-  `sudo /etc/init.d/gopro start`  
-
-OR  
-
-start the gopro-controller directly  
-  `sudo /home/pi/GoPro/main.py -b -c -v --syslog`  
-
-For help use:  
-  `/home/pi/GoPro/main.py -h`  
-
-With other options, one can test, if the raspi can connect to a (new) GoPro  
-  `sudo /home/pi/GoPro/main.py -c -v --syslog`  
-or without config file  
-  `sudo /home/pi/GoPro/main.py -v --syslog -s new_gopro_ssid -p new_gopro_passwd`  
-
-#### LED States
-|  blue | green | red   | Description                                           |
-|:-------------:|:-----:|:-----:|-------------------------------------------------------|
-| blink (short) |       |       | Wifi network is not available/visible                 |
-| blink (1/2s)  |       |       | Currently not connected to network / GoPro            |
-| blink (~1s))  |       | blink | Connect to GoPro, but no sd card available            |
-|      On       |       |       | Connected to GoPro and ready for recording            |
-|               | Off   |       | No GameController available                           |
-|               | blink |       | A game vs. INVISIBLES                                 |
-|               | On    |       | A game with two teams - GameController is 'connected' |
-|               |       | blink | Camera is recording                                   |
-|               |       | Off   | Camera is NOT recording                               |
-|     Off       | Off   | Off   | Raspi is not powered or isn't connected to anything   |
-
-#### Logging
-
-By default the gopro-controller just prints outs its log ouput. With the "--syslog" option, the log is written to the systems log deamon too. To view all output use:  
-  `cat /var/log/syslog`  
-
-If the gopro-controller is running in the background (using option "-b"), nothing is printed out or logged. Not until the "--syslog" option is used!  
-
-Moreover, logs of the recorded games are created in the `/home/pi/GoPro/logs/` directory. Each log contains the file name of the recorded video files seperated by ';'.
-
-#### TESTS
+### Tests
 Some tests to check the functionality of the GoPro setup
 - normal: run a complete game with 2 teams; the camera should record both halfs and a video log should be written
 - normal invisible: run a complete game with only one team; no video should be recorded, but an empty video log is still created
@@ -108,12 +125,41 @@ Some tests to check the functionality of the GoPro setup
         - normal run, but never press "PLAY": after a certain time, the raspi should stop recording
 
 
-#### Bluetooth
+## Bluetooth
 
-For a detailed description, how to control a GoPro from a RaspberryPi over Bluetooth, see:
+For a detailed description, how to control a GoPro from a RaspberryPi over Bluetooth, see:  
 https://github.com/KonradIT/goprowifihack/blob/master/Bluetooth/Platforms/RaspberryPi.md
 
-The following are some examples, how to communicate with the GoPro via Bluetooth:
+In order to pair the GoPro with the RaspberryPi, use the following example:
+```shell
+bluetoothctl
+> scan on
+> scan off
+> scan le
+> scan off
+> trust DE:AD:BE:EF
+> pair DE:AD:BE:EF
+> connect DE:AD:BE:EF
+> disconnect
+> untrust DE:AD:BE:EF
+> remove DE:AD:BE:EF
+```
+
+Alternatively use the commands directly from the terminal
+```shell
+bluetoothctl scan on
+bluetoothctl scan off
+bluetoothctl trust DE:AD:BE:EF
+bluetoothctl pair DE:AD:BE:EF
+bluetoothctl untrust DE:AD:BE:EF
+bluetoothctl remove DE:AD:BE:EF
+# list the trusted/paired devies
+bluetoothctl devices Trusted
+bluetoothctl devices Paired
+```
+
+### Older OS version
+With older OS version of the Raspi OS, we had also success using the following commands:
 ```
 sudo gatttool -t random -b F8:D2:E9:F0:AC:0B -I
 connect
@@ -204,9 +250,18 @@ And some handles from the GoPro bluetooth:
     handle: 0x0047, uuid: 00002902-0000-1000-8000-00805f9b34fb
 
 
-#### Video Tutorial
+## Video Tutorial
 A Video explaining the setup and handling of the GoPro - Pi Setup can be found at https://www2.informatik.hu-berlin.de/~naoth/ressources/howto-robocup-gopro-small.mp4
 
-#### Notes:
- - The GoPro App did not work in Iran (as of 2018)  
- - Not every USB Port of Pi gives enough power to load the GoPro
+## Known Issues
+- Not every USB Port of Pi gives enough power to load the GoPro
+  - if the Raspi supplies too little power via the USB port, no "PC connection" is recognised by the GoPro and therefore the USB Ethernet interface is not activated
+  - a stronger power source on the Raspi or a separate power source for the GoPro (USB hub) can solve the problem
+- with BlueZ version 5.66 the paired GoPro is unpaired, when `disconnect` is called via python
+  - with a newer version (5.70+) this behavior did not occur
+  - the behavior can be shown, when setting the log level to `DEBUG`
+    - the communication with BlueZ is shown on the terminal
+    - the following output is displayed if the "error" occurs
+      - `[DEBUG]: received D-Bus signal: org.freedesktop.DBus.Properties.PropertiesChanged (/org/bluez/hci0/dev_FB_D2_7D_86_13_F8): ['org.bluez.Device1', {'Paired': <dbus_fast.signature.Variant ('b', False)>, 'Connected': <dbus_fast.signature.Variant ('b', False)>}, []]`
+    - otherwise, the "paired" part is not shown
+      - `[DEBUG]: received D-Bus signal: org.freedesktop.DBus.Properties.PropertiesChanged (/org/bluez/hci0/dev_FB_D2_7D_86_13_F8): ['org.bluez.Device1', {'Connected': <dbus_fast.signature.Variant ('b', False)>}, []]`

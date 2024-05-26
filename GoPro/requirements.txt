@@ -1,0 +1,6 @@
+open_gopro==0.16.1
+pyzmq==26.0.3
+RPi.GPIO==0.7.1
+websockets~=12.0
+bleak~=0.21.1
+goprocam~=4.2.0
