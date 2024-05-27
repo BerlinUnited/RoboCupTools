@@ -27,9 +27,12 @@ web page that shows the current messages on the message bus.
 ### Variant #1
 - connect to the Raspberry Pi and run
 ```shell
-sudo curl -sSL https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh | bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh)"
 # or
-sudo wget -qO - https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh | bash
+sh -c "$(wget -qO- https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh)"
+# or
+wget https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh
+sh install.sh
 ```
 ### Variant #2
 - connect to the Raspberry Pi

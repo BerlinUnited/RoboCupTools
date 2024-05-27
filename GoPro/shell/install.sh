@@ -11,7 +11,7 @@ NM_NAME="GoPi"
 REBOOT=false
 
 #check if root first
-if [[ $EUID -ne 0 ]]; then
+if [ "${USER:-$(id -u -n)}" != "root" ]; then
    echo "This script must be run as root"
    exit 1
 fi
@@ -27,7 +27,7 @@ yes_no() { # question, prompt
   fi
 
   read -p "$1 [y|N]: " -r INPUT
-  if [[ $INPUT == "y" || $INPUT == "Y" ]]; then
+  if [ "$INPUT" = "y" ] || [ "$INPUT" = "Y" ]; then
     return 0
   fi
 
@@ -52,108 +52,108 @@ download() {
 }
 
 check_dependencies() {
-	# check python v3
-	if ! which python3 > /dev/null; then
-	  if yes_no "Python 3 is required! Please install first (eg. 'apt install python3 python3-pip python3-venv')" "Install now?" ; then
-		  apt install -y python3 python3-pip python3-venv
+  # check python v3
+  if ! which python3 > /dev/null; then
+    if yes_no "Python 3 is required! Please install first (eg. 'apt install python3 python3-pip python3-venv')" "Install now?" ; then
+      apt install -y python3 python3-pip python3-venv
     else
-		  return 1
-		fi
-	fi
-	# check pip
-	if ! which pip > /dev/null; then
-		if yes_no "PIP is required! Please install first (eg. 'apt install python3-pip')." "Install?"; then
-			apt install -y python3-pip
-		else
-		  return 1
-		fi
-	fi
-	# check python environment module
-	if ! python3 -m venv --help > /dev/null; then
-		if yes_no "Python Virtual Environment is required! Please install first (eg. 'apt install python3-venv')." "Install?"; then
-			apt install -y python3-venv
-		else
-		  return 1
-		fi
-	fi
+      return 1
+    fi
+  fi
+  # check pip
+  if ! which pip > /dev/null; then
+    if yes_no "PIP is required! Please install first (eg. 'apt install python3-pip')." "Install?"; then
+      apt install -y python3-pip
+    else
+      return 1
+    fi
+  fi
+  # check python environment module
+  if ! python3 -m venv --help > /dev/null; then
+    if yes_no "Python Virtual Environment is required! Please install first (eg. 'apt install python3-venv')." "Install?"; then
+      apt install -y python3-venv
+    else
+      return 1
+    fi
+  fi
 
-	if [ ! -d "$GOPRO_HOME/.venv" ]; then
-	  if yes_no "Python virtual environment doesn't exists ('python3 -m venv .venv')" "Create?"; then
-			python3 -m venv "$GOPRO_HOME/.venv"
-		else
-		  return 1
-		fi
+  if [ ! -d "$GOPRO_HOME/.venv" ]; then
+    if yes_no "Python virtual environment doesn't exists ('python3 -m venv .venv')" "Create?"; then
+      python3 -m venv "$GOPRO_HOME/.venv"
+    else
+      return 1
+    fi
   fi
 
   if "$GOPRO_HOME/.venv/bin/pip" freeze --no-color -r "$GOPRO_HOME/requirements.txt" 2>&1 | grep -q "not installed" ; then
-	  if yes_no "Install required dependencies to virtual environment?" "Continue?"; then
-			"$GOPRO_HOME/.venv/bin/pip" install -r "$GOPRO_HOME/requirements.txt"
-		else
-		  return 1
-		fi
+    if yes_no "Install required dependencies to virtual environment?" "Continue?"; then
+      "$GOPRO_HOME/.venv/bin/pip" install -r "$GOPRO_HOME/requirements.txt"
+    else
+      return 1
+    fi
   fi
 
-	# everything 'ok'
-	return 0
+  # everything 'ok'
+  return 0
 }
 
 setup_static_ip() {
-	# some defaults
-	IF="eth0"
-	IP="10.0.4.99/16"
-	R="10.0.0.1"
-	DNS="10.0.0.1 8.8.8.8"
+  # some defaults
+  IF="eth0"
+  IP="10.0.4.99/16"
+  R="10.0.0.1"
+  DNS="10.0.0.1 8.8.8.8"
 
-	# which interface?
-	read -p "interface [$IF]: " -r INPUT
-	if [[ ! -z $INPUT ]]; then
-		IF=$INPUT
-	fi
+  # which interface?
+  read -p "interface [$IF]: " -r INPUT
+  if [ -n "$INPUT" ]; then
+    IF=$INPUT
+  fi
 
-	# which ip address?
-	read -p "ip address [$IP]: " -r INPUT
-	if [[ ! -z $INPUT ]]; then
-		until [[ -z $INPUT || $INPUT =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,3}$ ]]; do
-			echo "invalid format: a.b.c.d/m"
-			read -p "ip address [$IP]: " -r INPUT
-		done
-		if [[ ! -z $INPUT ]]; then
-			IP=$INPUT
-		fi
-	fi
-	
-	# which router ip address?
-	read -p "router address [$R]: " -r INPUT
-	if [[ ! -z $INPUT ]]; then
-		until [[ -z $INPUT || $INPUT =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; do
-			echo "invalid format: a.b.c.d"
-			read -p "router address [$R]: " -r INPUT
-		done
-		if [[ ! -z $INPUT ]]; then
-			R=$INPUT
-		fi
-	fi
+  # which ip address?
+  read -p "ip address [$IP]: " -r INPUT
+  if [ -n "$INPUT" ]; then
+    while [ -n "$INPUT" ] && ! echo "$INPUT" | grep -Eq '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,3}$'; do
+      echo "invalid format: a.b.c.d/m"
+      read -p "ip address [$IP]: " -r INPUT
+    done
+    if [ -n "$INPUT" ]; then
+      IP=$INPUT
+    fi
+  fi
 
-	# which dns ip address?
-	read -p "dns address [$DNS]: " -r INPUT
-	if [[ ! -z $INPUT ]]; then
-		until [[ -z $INPUT || $INPUT =~ ^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}[ ]*)+$ ]]; do
-			echo "invalid format: a.b.c.d"
-			read -p "dns address [$DNS]: " -r INPUT
-		done
-		if [[ ! -z $INPUT ]]; then
-			DNS=$INPUT
-		fi
-	fi
-	
-	# remove 'old' configuration
-	remove_static_ip "$IF"
+  # which router ip address?
+  read -p "router address [$R]: " -r INPUT
+  if [ -n "$INPUT" ]; then
+    while [ -n "$INPUT" ] && ! echo "$INPUT" | grep -Eq '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'; do
+      echo "invalid format: a.b.c.d"
+      read -p "router address [$R]: " -r INPUT
+    done
+    if [ -n "$INPUT" ]; then
+      R=$INPUT
+    fi
+  fi
 
-	# set the new configuration
-	if [[ -f $DHCP_CONFIG ]]; then
-		echo -e "interface $IF\nstatic ip_address=$IP\nstatic routers=$R\nstatic domain_name_servers=$DNS\n" >> $DHCP_CONFIG
-	else
-		cat <<EOF > "/etc/NetworkManager/system-connections/$NM_NAME.nmconnection"
+  # which dns ip address?
+  read -p "dns address [$DNS]: " -r INPUT
+  if [ -n "$INPUT" ]; then
+    while [ -n "$INPUT" ] && ! echo "$INPUT" | grep -Eq '^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}[ ]*)+$'; do
+      echo "invalid format: a.b.c.d"
+      read -p "dns address [$DNS]: " -r INPUT
+    done
+    if [ -n "$INPUT" ]; then
+      DNS=$INPUT
+    fi
+  fi
+
+  # remove 'old' configuration
+  remove_static_ip "$IF"
+
+  # set the new configuration
+  if [ -f $DHCP_CONFIG ]; then
+    echo -e "interface $IF\nstatic ip_address=$IP\nstatic routers=$R\nstatic domain_name_servers=$DNS\n" >> $DHCP_CONFIG
+  else
+    cat <<EOF > "/etc/NetworkManager/system-connections/$NM_NAME.nmconnection"
 [connection]
 id=$NM_NAME
 uuid=$(uuid)
@@ -173,123 +173,135 @@ method=auto
 
 [proxy]
 EOF
-		chmod 600 "/etc/NetworkManager/system-connections/$NM_NAME.nmconnection"
-	fi
+    chmod 600 "/etc/NetworkManager/system-connections/$NM_NAME.nmconnection"
+  fi
 
-	REBOOT=true
+  REBOOT=true
 }
 
 setup_hostname() {
-  if [[ "${1-}" == "" ]]; then
-      NAME=`cat $HOST_CONFIG`
+  if [ "${1-}" = "" ]; then
+      NAME=$(cat $HOST_CONFIG)
       # ask for hostname
       read -p "New hostname [$NAME]: " -r INPUT
-      if [[ ! -z $INPUT ]]; then
+      if [ -n "$INPUT" ]; then
           NAME=$INPUT
       fi
   else
       NAME="$1"
   fi
-	echo -e "$NAME" > $HOST_CONFIG
+  echo -e "$NAME" > $HOST_CONFIG
 
-	sed -i '/^\s*127.0.1.1/ d' $HOSTS_CONFIG
-	echo -e "127.0.1.1\t$NAME" >> $HOSTS_CONFIG
+  sed -i '/^\s*127.0.1.1/ d' $HOSTS_CONFIG
+  echo -e "127.0.1.1\t$NAME" >> $HOSTS_CONFIG
 
-	REBOOT=true
+  REBOOT=true
 }
 
 remove_static_ip() {
-	# remove existing configuration
-	if [[ -f $DHCP_CONFIG ]]; then
-		sed -i '/^\s*interface/ d' $DHCP_CONFIG
-		sed -i '/^\s*static ip_address/ d' $DHCP_CONFIG
-		sed -i '/^\s*static routers/ d' $DHCP_CONFIG
-		sed -i '/^\s*static domain_name_servers/ d' $DHCP_CONFIG
-	else
-		rm -f "/etc/NetworkManager/system-connections/$NM_NAME.nmconnection"
-	fi
+  # remove existing configuration
+  if [ -f $DHCP_CONFIG ]; then
+    sed -i '/^\s*interface/ d' $DHCP_CONFIG
+    sed -i '/^\s*static ip_address/ d' $DHCP_CONFIG
+    sed -i '/^\s*static routers/ d' $DHCP_CONFIG
+    sed -i '/^\s*static domain_name_servers/ d' $DHCP_CONFIG
+  else
+    rm -f "/etc/NetworkManager/system-connections/$NM_NAME.nmconnection"
+  fi
 }
 
 stop_service() {
-	# helper for stopping the services
-	if systemctl -q is-active "$1"; then
-		echo "stopping $1"
-		systemctl stop "$1" > /dev/null
-	fi
+  # helper for stopping the services
+  if systemctl -q is-active "$1"; then
+    echo "stopping $1"
+    systemctl stop "$1" > /dev/null
+  fi
 }
 
 install() {
-	echo "Installing ..."
+  echo "Installing ..."
 
-  if [[ ! -f "$GOPRO_HOME/shell/install.sh" ]]; then
-    download
+  if [ ! -f "$GOPRO_HOME/shell/install.sh" ]; then
+    if [ ! -d "GoPro" ]; then
+      download
+    else
+      echo "The installation directory 'GoPro' already exists"
+      if yes_no "Use it for installation?"; then
+        # update the home directory variable
+        cd GoPro
+        GOPRO_HOME=$(pwd)
+      else
+        echo "Remove it first or change directory!"
+        return 1
+    fi
+  fi
   fi
 
-	echo "Check required dependencies ..."
+  echo "Check required dependencies ..."
   if ! check_dependencies; then
     exit $?
   fi
 
-	echo "Stopping running service ..."
-	stop_service gopro
+  echo "Stopping running service ..."
+  stop_service gopro
 
-	echo "Create executable ..."
-	ln -sf "$GOPRO_HOME/shell/gopro" /usr/bin/gopro
-	chmod +x /usr/bin/gopro
-	chmod +x $GOPRO_HOME/main.py
+  echo "Create executable ..."
+  ln -sf "$GOPRO_HOME/shell/gopro" /usr/bin/gopro
+  chmod +x /usr/bin/gopro
+  chmod +x $GOPRO_HOME/main.py
 
-	echo "Install service ..."
-	cp $GOPRO_HOME/shell/gopro.service /lib/systemd/system/
-	chmod 644 /lib/systemd/system/gopro.service
-	
-	echo "Enable service ..."
-	systemctl daemon-reload
-	systemctl enable gopro.service
+  echo "Install service ..."
+  cp $GOPRO_HOME/shell/gopro.service /lib/systemd/system/
+  chmod 644 /lib/systemd/system/gopro.service
 
-	echo "Start service ..."
-	systemctl start gopro
+  echo "Enable service ..."
+  systemctl daemon-reload
+  systemctl enable gopro.service
 
-	if yes_no "Setup (unique) hostname?"; then
-		setup_hostname
-	fi
+  echo "Start service ..."
+  systemctl start gopro
 
-	if yes_no "Setup static ip address?"; then
-		setup_static_ip
-	fi
+  if yes_no "Setup (unique) hostname?"; then
+    setup_hostname
+  fi
 
-	echo "finished!"
+  if yes_no "Setup static ip address?"; then
+    setup_static_ip
+  fi
+
+  echo "finished!"
 }
 
 uninstall() {
-	echo "uninstalling";
+  echo "uninstalling";
 
-	stop_service gopro
+  stop_service gopro
 
-	systemctl disable gopro.service
+  systemctl disable gopro.service
 
-	rm -f /usr/bin/gopro /lib/systemd/system/gopro.service
+  rm -f /usr/bin/gopro /lib/systemd/system/gopro.service
 
-	systemctl daemon-reload
+  systemctl daemon-reload
 
-	if yes_no "Set hostname (back) to 'raspberrypi'?"; then
-		setup_hostname "raspberrypi"
-	fi
+  if yes_no "Set hostname (back) to 'raspberrypi'?"; then
+    setup_hostname "raspberrypi"
+  fi
 
-	if yes_no "Remove static ip address configuration?"; then
-		remove_static_ip
-		REBOOT=true
-	fi
+  if yes_no "Remove static ip address configuration?"; then
+    remove_static_ip
+    REBOOT=true
+  fi
 
-	echo "FINSIH"
+  echo "FINSIH"
 }
 
 help() {
-	echo "Install script for the GoPi application"
-	echo -e "\t install \t installs everything needed to for running the GoPi permanently"
-	echo -e "\t uninstall \t uninstalls everything"
-	echo -e "\t check \t\t checks the required dependencies"
-	echo -e "\t ip \t\t setups the static ip configuration only"
-	echo -e "\t help \t\t shows this help"
+  echo "Install script for the GoPi application"
+  echo -e "\t install \t installs everything needed to for running the GoPi permanently"
+  echo -e "\t uninstall \t uninstalls everything"
+  echo -e "\t check \t\t checks the required dependencies"
+  echo -e "\t ip \t\t setups the static ip configuration only"
+  echo -e "\t help \t\t shows this help"
 }
 
 ############################################################################################
@@ -305,8 +317,8 @@ case "${1-}" in
     ;;
   check)
     check_dependencies
-    if [[ $? == 0 ]]; then
-    	echo "Success, ready to install!"
+    if [ $? -eq 0 ]; then
+      echo "Success, ready to install!"
     fi
     ;;
   ip)
@@ -327,8 +339,8 @@ esac
 ############################################################################################
 
 # check if we need to reboot
-if [ "$REBOOT" == true ] ; then
-	if yes_no "A reboot is required in order to complete installation. Reboot?"; then
-		reboot
-	fi
+if [ "$REBOOT" = true ]; then
+  if yes_no "A reboot is required in order to complete installation. Reboot?"; then
+    reboot
+  fi
 fi
