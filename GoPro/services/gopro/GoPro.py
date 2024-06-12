@@ -3,6 +3,7 @@ import logging
 import threading
 import time
 import traceback
+from typing import Union
 
 import zmq
 from abc import ABCMeta, abstractmethod
@@ -470,7 +471,7 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _last_video(self) -> str|None:
+    def _last_video(self) -> Union[str, None]:
         """
         Returns the last recorded video or None, if there are no recordings.
         :return:

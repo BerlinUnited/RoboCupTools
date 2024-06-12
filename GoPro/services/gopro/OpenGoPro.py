@@ -1,6 +1,8 @@
 import asyncio
 import datetime
 import logging
+from typing import Union
+
 import zmq
 
 from open_gopro import WiredGoPro, Params, constants, exceptions, logger as gp_logger
@@ -23,7 +25,7 @@ class OpenGoPro(GoPro):
 
         super().__init__(context, mq_send, mq_recv, quiet, ignore, max_time, rec_invisible, update_interval, logger)
         # TODO: add parameter/config to set the connection timeout
-        self.__cam = None  # type: WiredGoPro|None
+        self.__cam: Union[WiredGoPro, None] = None
         self.__cam_state = {}
         self.__cam_presets = {}
         self.__cam_datetime = None

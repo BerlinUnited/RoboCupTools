@@ -1,9 +1,10 @@
 import asyncio
+from typing import Union
 
 from services.gopro.GoProCam import Bluetooth
 
 
-async def wakeup_device(mac_address: str | None = None):
+async def wakeup_device(mac_address: Union[str, None] = None):
 
     ble = Bluetooth(mac_address)
     if await ble.connect():
@@ -26,7 +27,7 @@ async def wakeup_device(mac_address: str | None = None):
     print('Done')
 
 
-def run(mac_address: str | None = None):
+def run(mac_address: Union[str, None] = None):
     """
     Switches the GoPro on using Bluetooth.
     """
