@@ -9,6 +9,7 @@ import subprocess
 import threading
 from abc import ABCMeta, abstractmethod
 from enum import Enum
+from typing import Union
 
 import zmq
 from bleak import BLEDevice, AdvertisementData, BleakScanner, BleakClient
@@ -71,7 +72,7 @@ class GoProCam(GoPro):
 
         self.__network = Network(device, ssid, passwd, ble_mac, logger=self._logger)
 
-        self.__cam: GoProCamera.GoPro | None = None
+        self.__cam: Union[GoProCamera.GoPro, None] = None
         self.__cam_info = {}
         self.__cam_status = {}
         self.__cam_settings = {}
@@ -655,7 +656,7 @@ class Bluetooth:
         self.__logger = logging.getLogger(self.__class__.__name__) if logger is None else logger.getChild(
             self.__class__.__name__)
 
-        self.__ble: BleakClient | None = None
+        self.__ble: Union[BleakClient, None] = None
         self.__address: str = address
         self.__timeout: int = timeout
         self.__retries: int = retries
@@ -670,7 +671,7 @@ class Bluetooth:
         }
 
     @staticmethod
-    async def find_device(timeout: int = 5, retries: int = 5) -> BLEDevice|None:
+    async def find_device(timeout: int = 5, retries: int = 5) -> Union[BLEDevice, None]:
         device = None
 
         def scan_callback(d: BLEDevice, adv_data: AdvertisementData) -> None:

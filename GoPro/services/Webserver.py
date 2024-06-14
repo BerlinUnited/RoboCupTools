@@ -68,7 +68,7 @@ class Webserver(threading.Thread):
         self.__cancel.set()
 
     def run(self):
-        self.__logger.info('Start Webserver')
+        self.__logger.info(f'Start Webserver on port {self.__http_port}')
 
         wsd = websockets.sync.server.serve(self.__handler, "", self.__ws_port, logger=self.__ws_logger)
         threading.Thread(target=wsd.serve_forever).start()

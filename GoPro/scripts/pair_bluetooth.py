@@ -1,5 +1,6 @@
 import asyncio
 import subprocess
+from typing import Union
 
 from services.gopro.GoProCam import Bluetooth
 
@@ -40,7 +41,7 @@ def pair_device(address: str):
     return False
 
 
-def run(mac_address: str | None = None):
+def run(mac_address: Union[str, None] = None):
     """
     Pairs the GoPro on using Bluetooth.
     """
