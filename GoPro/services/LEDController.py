@@ -242,7 +242,7 @@ class LEDServer(threading.Thread):
         elif self.gopro['state'] == Messages.GoProStatus.State.MISSING_CARD.value:
             self.__server.blue.blink(valid=1)  # gopro has no sdcard
         elif self.gopro['state'] == Messages.GoProStatus.State.RECORDING.value:
-            pass  # nothing to do for blue LED
+            self.__server.blue.on(valid=1)
         else:
             self.__server.blue.blink(0.2, 1)  # something else (unknown)
 
