@@ -48,7 +48,12 @@ git clone --depth=1 https://github.com/BerlinUnited/RoboCupTools.git
 
 ### Requirements
 - python3 python3-pip python3-venv bluez
+  - minimum python3.9 & maximum 3.11 (required by the open_gopro dependency) 
 - python modules: open_gopro pyzmq RPi.GPIO websockets bleak goprocam
+
+#### Ubuntu
+The latest Ubuntu installs Python 3.12. To install an older version, see:
+https://launchpad.net/%7Edeadsnakes/+archive/ubuntu/ppa
 
 ## Running
 

@@ -38,6 +38,14 @@ download() {
   echo "Downloading the repository as a ZIP file ..."
   curl -Ls -o master.zip "$GOPRO_URL/archive/refs/heads/master.zip"
 
+  if ! which unzip > /dev/null; then
+    if yes_no "Unzip is required! Please install first (eg. 'apt install unzip')" "Install now?" ; then
+      apt install -y unzip
+    else
+      return 1
+    fi
+  fi
+
   echo "Extract ZIP file ..."
   unzip -qq master.zip "RoboCupTools-master/GoPro/*" \
     && mkdir GoPro/ \
@@ -52,10 +60,26 @@ download() {
 }
 
 check_dependencies() {
+  python=""
+  # try to find a supported version (>= 3.9 && <= 3.11) -- required by the open_gopro dependency!
+  python_executables="python3.11 python3.10 python3.9"
+  for exe in $python_executables; do
+    if command -v "$exe" > /dev/null; then
+      python="$exe"
+      break
+    fi
+  done
   # check python v3
-  if ! which python3 > /dev/null; then
-    if yes_no "Python 3 is required! Please install first (eg. 'apt install python3 python3-pip python3-venv')" "Install now?" ; then
-      apt install -y python3 python3-pip python3-venv
+  if [ -z "$python" ]; then
+    # check available versions
+    python=$(apt-cache search --names-only "^($(echo "$python_executables" | tr ' ' '|'))\$" | awk '{print $1}' | sort -t. -k2,2n | tail -n 1)
+    if [ -z "$python" ]; then
+      echo -e "\033[1;31mUnable to find a matching python version!\033[0m"
+      return 1
+    fi
+    # install it
+    if yes_no "Python 3 is required! Please install first (eg. 'apt install $python $python-dev $python-venv python3-pip')" "Install now?" ; then
+      apt install -y "$python" "$python-dev" "$python-venv" python3-pip
     else
       return 1
     fi
@@ -69,17 +93,18 @@ check_dependencies() {
     fi
   fi
   # check python environment module
-  if ! python3 -m venv --help > /dev/null; then
-    if yes_no "Python Virtual Environment is required! Please install first (eg. 'apt install python3-venv')." "Install?"; then
-      apt install -y python3-venv
+  if ! $python -m venv --help > /dev/null || ! $python -m ensurepip --help > /dev/null 2>&1; then
+    if yes_no "Python Virtual Environment is required! Please install first (eg. 'apt install $python-venv')." "Install?"; then
+      apt install -y "$python-venv"
     else
       return 1
     fi
   fi
 
   if [ ! -d "$GOPRO_HOME/.venv" ]; then
-    if yes_no "Python virtual environment doesn't exists ('python3 -m venv .venv')" "Create?"; then
-      python3 -m venv "$GOPRO_HOME/.venv"
+    if yes_no "Python virtual environment doesn't exists ('$python -m venv .venv')" "Create?"; then
+      echo "Creating python virtual environment ..."
+      $python -m venv "$GOPRO_HOME/.venv"
     else
       return 1
     fi
