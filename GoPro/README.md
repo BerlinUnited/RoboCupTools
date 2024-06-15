@@ -25,14 +25,17 @@ web page that shows the current messages on the message bus.
 
 
 ### Variant #1
-- connect to the Raspberry Pi and run
+- connect to the Raspberry Pi and run one of the following alternatives:
 ```shell
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh)"
-# or
-sh -c "$(wget -qO- https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh)"
-# or
+sudo sh -c "$(curl -fsSL https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh)"
+```
+```shell
+sudo sh -c "$(wget -qO- https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh)"
+```
+```shell
 wget https://raw.githubusercontent.com/BerlinUnited/RoboCupTools/master/GoPro/shell/install.sh
-sh install.sh
+chmod +x ./install.sh
+sudo ./install.sh
 ```
 ### Variant #2
 - connect to the Raspberry Pi
@@ -265,6 +268,8 @@ A Video explaining the setup and handling of the GoPro - Pi Setup can be found a
 - Not every USB Port of Pi gives enough power to load the GoPro
   - if the Raspi supplies too little power via the USB port, no "PC connection" is recognised by the GoPro and therefore the USB Ethernet interface is not activated
   - a stronger power source on the Raspi or a separate power source for the GoPro (USB hub) can solve the problem
+  - another approach is to lift the limit and edit `sudo nano /boot/config.txt` to set or add `max_usb_current = 1`
+    - https://kalitut.com/increase-usb-current-limit-raspberry-pi/
 - with BlueZ version 5.66 the paired GoPro is unpaired, when `disconnect` is called via python
   - with a newer version (5.70+) this behavior did not occur
   - the behavior can be shown, when setting the log level to `DEBUG`

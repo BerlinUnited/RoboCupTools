@@ -36,7 +36,14 @@ yes_no() { # question, prompt
 
 download() {
   echo "Downloading the repository as a ZIP file ..."
-  curl -Ls -o master.zip "$GOPRO_URL/archive/refs/heads/master.zip"
+  if command -v "curl" > /dev/null; then
+    curl -Ls -o master.zip "$GOPRO_URL/archive/refs/heads/master.zip"
+  elif command -v "wget" > /dev/null; then
+    wget -qO master.zip "$GOPRO_URL/archive/refs/heads/master.zip"
+  else
+    echo "Neither 'curl' nor 'wget' are available!"
+    return 1
+  fi
 
   if ! which unzip > /dev/null; then
     if yes_no "Unzip is required! Please install first (eg. 'apt install unzip')" "Install now?" ; then
