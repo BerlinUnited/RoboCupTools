@@ -212,20 +212,21 @@ EOF
 }
 
 setup_hostname() {
-  if [ "${1-}" = "" ]; then
-      NAME=$(cat $HOST_CONFIG)
-      # ask for hostname
-      read -p "New hostname [$NAME]: " -r INPUT
-      if [ -n "$INPUT" ]; then
-          NAME=$INPUT
-      fi
+  if [ -z "${1-}" ]; then
+    NAME=$(cat "$HOST_CONFIG")
+    # ask for hostname
+    read -p "New hostname [$NAME]: " -r INPUT
+    if [ -n "$INPUT" ]; then
+      NAME=$INPUT
+    fi
   else
-      NAME="$1"
+    NAME="$1"
   fi
-  echo -e "$NAME" > $HOST_CONFIG
 
-  sed -i '/^\s*127.0.1.1/ d' $HOSTS_CONFIG
-  echo -e "127.0.1.1\t$NAME" >> $HOSTS_CONFIG
+  echo "$NAME" > "$HOST_CONFIG"
+
+  sed -i '/^[[:space:]]*127\.0\.1\.1/ d' "$HOSTS_CONFIG"
+  echo "127.0.1.1\t$NAME" >> "$HOSTS_CONFIG"
 
   REBOOT=true
 }
