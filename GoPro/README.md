@@ -265,6 +265,14 @@ And some handles from the GoPro bluetooth:
 A Video explaining the setup and handling of the GoPro - Pi Setup can be found at https://www2.informatik.hu-berlin.de/~naoth/ressources/howto-robocup-gopro-small.mp4
 
 ## Known Issues
+- the GoPro doesn't recognize the Pi ("USB connected" is not shown on the GoPro)
+  - normally, when the GoPro is connected to the Pi, it shows "USB connected" and after a short time, the GoPro switches to video mode. But sometimes, the GoPro doesn't recognize the Pi
+  - in that case, you must turn off the GoPro and remove the battery for some seconds
+  - then turn on the GoPro and connect to the Pi, the GoPro should now show "USB connect"
+- the Pi doesn't find the GoPro after reboot
+  - if the GoPro was connected to the Pi at reboot, the OS may assign the first IP address to the GoPro ethernet device
+  - that conflicts with the GoPro discovery
+  - it is recommended, to disconnect the GoPro from the Pi on reboot
 - Not every USB Port of Pi gives enough power to load the GoPro
   - if the Raspi supplies too little power via the USB port, no "PC connection" is recognised by the GoPro and therefore the USB Ethernet interface is not activated
   - a stronger power source on the Raspi or a separate power source for the GoPro (USB hub) can solve the problem
