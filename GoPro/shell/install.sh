@@ -196,7 +196,7 @@ interface-name=$IF
 
 [ipv4]
 address1=$IP,$R
-dns=${DNS// /;};
+dns=$(echo "$DNS" | tr ' ' ';');
 method=manual
 
 [ipv6]
