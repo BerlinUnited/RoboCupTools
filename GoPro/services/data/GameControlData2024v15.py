@@ -14,7 +14,7 @@ class GameControlData(Struct):
     GAMECONTROLLER_TRUE_DATA_VERSION = 0
 
     GAMECONTROLLER_STRUCT_HEADER = b'RGme'
-    GAMECONTROLLER_STRUCT_VERSION = 18
+    GAMECONTROLLER_STRUCT_VERSION = 16
 
     COMPETITION_PHASE_ROUNDROBIN  = 0
     COMPETITION_PHASE_PLAYOFF     = 1
@@ -32,7 +32,6 @@ class GameControlData(Struct):
     STATE_SET                           = 2
     STATE_PLAYING                       = 3
     STATE_FINISHED                      = 4
-    STATE_STANDBY                       = 5
 
     SET_PLAY_NONE                       = 0
     SET_PLAY_GOAL_KICK                  = 1
@@ -203,8 +202,7 @@ class GameControlData(Struct):
             self.STATE_READY: "ready",
             self.STATE_SET: "set",
             self.STATE_PLAYING: "playing",
-            self.STATE_FINISHED: "finished",
-            self.STATE_STANDBY: "standby"
+            self.STATE_FINISHED: "finished"
         }, self.gameState)
 
     def getSetPlay(self):
@@ -352,7 +350,7 @@ class PlayerInfo(Struct):
     PENALTY_SPL_LOCAL_GAME_STUCK        = 8
     PENALTY_SPL_ILLEGAL_POSITION_IN_SET = 9
     PENALTY_SPL_PLAYER_STANCE           = 10
-    PENALTY_SPL_ILLEGAL_MOTION_IN_STANDBY=11
+    PENALTY_SPL_ILLEGAL_MOTION_IN_INITIAL = 11
 
     PENALTY_SUBSTITUTE                  = 14
     PENALTY_MANUAL                      = 15
@@ -403,7 +401,7 @@ class PlayerInfo(Struct):
               self.PENALTY_SPL_LOCAL_GAME_STUCK:        "local game stuck",
               self.PENALTY_SPL_ILLEGAL_POSITION_IN_SET: "illegal position in SET",
               self.PENALTY_SPL_PLAYER_STANCE:           "player stance",
-              self.PENALTY_SPL_ILLEGAL_MOTION_IN_STANDBY: "illegal motion in STANDBY",
+              self.PENALTY_SPL_ILLEGAL_MOTION_IN_INITIAL: "illegal motion in INITIAL",
 
               self.PENALTY_SUBSTITUTE:                  "substitute",
               self.PENALTY_MANUAL:                      "manual",
