@@ -66,6 +66,12 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
         self.__update_interval = update_interval  # in seconds
         self.__keep_alive_interval = 30  # in seconds
         self.__keep_alive_timestamp = 0
+        self.__recording_states = [
+            GameControlData.STATE_STANDBY,
+            GameControlData.STATE_READY,
+            GameControlData.STATE_SET,
+            GameControlData.STATE_PLAYING
+        ]
 
         # the default GoPro settings
         self.__user_settings = {
@@ -317,11 +323,9 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
                     if self.is_recording:
                         self._logger.debug("Stopped recording because we were too long in set")
                         self.stopRecording()
-                elif self.has_sdcard and not self.is_recording and both_teams_valid and (
-                        gc_data.gameState in [GameControlData.STATE_READY, GameControlData.STATE_SET, GameControlData.STATE_PLAYING]):
+                elif self.has_sdcard and not self.is_recording and both_teams_valid and (gc_data.gameState in self.__recording_states):
                     self.startRecording()
-                elif self.is_recording and not (
-                        gc_data.gameState in [GameControlData.STATE_READY, GameControlData.STATE_SET, GameControlData.STATE_PLAYING]):
+                elif self.is_recording and not (gc_data.gameState in self.__recording_states):
                     self.stopRecording()
 
                 # handle game changes
