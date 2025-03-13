@@ -45,9 +45,8 @@ git clone https://github.com/BerlinUnited/RoboCupTools.git
 # or just the latest code
 git clone --depth=1 https://github.com/BerlinUnited/RoboCupTools.git
 ```
-- `cd` to the `GoPro` directory
 - execute the install script
-  - `sudo ./shell/install.sh`
+  - `sudo ./GoPro/shell/install.sh`
 
 ### Requirements
 - python3 python3-pip python3-venv bluez

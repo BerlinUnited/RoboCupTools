@@ -109,9 +109,9 @@ check_dependencies() {
   fi
 
   if [ ! -d "$GOPRO_HOME/.venv" ]; then
-    if yes_no "Python virtual environment doesn't exists ('$python -m venv .venv')" "Create?"; then
+    if yes_no "Python virtual environment doesn't exists ('$python -m venv --system-site-packages .venv')" "Create?"; then
       echo "Creating python virtual environment ..."
-      $python -m venv "$GOPRO_HOME/.venv"
+      $python -m venv --system-site-packages "$GOPRO_HOME/.venv"
     else
       return 1
     fi

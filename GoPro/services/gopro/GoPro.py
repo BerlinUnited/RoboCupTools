@@ -186,7 +186,7 @@ class GoPro(threading.Thread, metaclass=ABCMeta):
                     # handling recording state
                     self.__handle_recording(previous_state)
                     self.__handle_sdcard(previous_state)
-                    self.__keep_alive()
+                    #self.__keep_alive()
                 else:
                     #
                     self.disconnect()
