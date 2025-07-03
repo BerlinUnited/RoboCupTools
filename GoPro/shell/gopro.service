@@ -1,9 +1,13 @@
 [Unit]
 Description=GoPi startup-script
 After=multi-user.target
+After=pulseaudio.service
 
 [Service]
 Type=idle
+User=pi
+Group=pi
+Environment="PULSE_SERVER=unix:/run/user/1000/pulse/native"
 ExecStart=/usr/bin/gopro
 
 [Install]

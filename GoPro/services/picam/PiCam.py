@@ -5,6 +5,7 @@ import time
 import datetime                                                                             
 from picamera2.encoders import H264Encoder, Quality
 from picamera2 import Picamera2, Preview
+from picamera2.outputs import FfmpegOutput
 
 import traceback
 from typing import Union
@@ -65,9 +66,10 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
     def startRecording(self):
         if not self.is_recording():
             self._is_recording = True
-            output_name = "/home/pi/recording-{date:%Y-%m-%d_%H:%M:%S}.h264".format( date=datetime.datetime.now())
-            timestamp_name = "/home/pi/timestamp-{date:%Y-%m-%d_%H:%M:%S}.txt".format( date=datetime.datetime.now())
-            self.picam2.start_recording(self.encoder, output_name, quality=Quality.MEDIUM, pts=timestamp_name)
+            output_name = "/home/pi/recording-{date:%Y-%m-%d_%H:%M:%S}.mp4".format( date=datetime.datetime.now())
+            #timestamp_name = "/home/pi/recording-{date:%Y-%m-%d_%H:%M:%S}.txt".format( date=datetime.datetime.now())
+            output = FfmpegOutput(output_name, audio=True)
+            self.picam2.start_recording(self.encoder, output, quality=Quality.MEDIUM)
 
     def stopRecording(self):
         if self.is_recording():
@@ -94,8 +96,7 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
             except Exception as ex:
                 # something unexpected happen!?
                 self._logger.error("{}\n{}".format(str(ex), traceback.format_exc()))
-        # if canceled, at least fire the disconnect event
-        self.disconnect()
+
         self.__pub.close()
         self.__sub.close()
         self.__gc_recv.join()
