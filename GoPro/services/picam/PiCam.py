@@ -66,7 +66,8 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
     def startRecording(self):
         if not self.is_recording():
             self._is_recording = True
-            output_name = "/home/pi/recording-{date:%Y-%m-%d_%H:%M:%S}.mp4".format( date=datetime.datetime.now())
+            output_name = f'/home/pi/{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{self.__gc.team[0].teamNumber}_vs_{self.__gc.team[1].teamNumber}.mp4'
+
             #timestamp_name = "/home/pi/recording-{date:%Y-%m-%d_%H:%M:%S}.txt".format( date=datetime.datetime.now())
             output = FfmpegOutput(output_name, audio=True)
             self.picam2.start_recording(self.encoder, output, quality=Quality.MEDIUM)
