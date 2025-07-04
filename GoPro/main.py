@@ -73,15 +73,14 @@ def main(config: Configuration):
         threading.Thread(target=GameLogger.main, args=(ctx, config)),
         #threading.Thread(target=GoProController.main, args=(ctx, config)),
         threading.Thread(target=Webserver.main, args=(ctx, config)),
-        threading.Thread(target=PiCamController.main, args=(ctx, config))
+        threading.Thread(target=PiCamController.main, args=(ctx, config)),
+        threading.Thread(target=LEDController.main, args=(ctx, config))
     ]
     if not args.picam:
         services.append(
             threading.Thread(target=GoProController.main, args=(ctx, config)),
         )
-        services.append(
-            threading.Thread(target=LEDController.main, args=(ctx, config)),
-        )
+        
     else:
         pass
         #services.append(
