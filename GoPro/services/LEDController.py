@@ -141,11 +141,13 @@ class LEDServer(threading.Thread):
 
         self.__sub = context.socket(zmq.SUB)  # type: zmq.Socket
         self.__sub.setsockopt(zmq.SUBSCRIBE, Messages.GoPro.key)
+        self.__sub.setsockopt(zmq.SUBSCRIBE, Messages.PiCamStatus.key)
         self.__sub.setsockopt(zmq.SUBSCRIBE, Messages.GameController.key)
         self.__sub.connect(f"tcp://localhost:{mq_port}")
 
         self.gopro = None  # type: dict|None
         self.gc = None  # type: GameControlData|None
+        self.recording = None
 
     def wait(self, timeout=None):
         self.__cancel.wait(timeout)
@@ -171,7 +173,11 @@ class LEDServer(threading.Thread):
         self.__logger.info('Stopped LED controller')
 
     def __handle_message(self, topic, message):
-        if topic == Messages.GoProStatus.key:
+        if topic == Messages.PiCamStatus.key:
+            self.__logger.info(topic)
+            self.__logger.info(message)
+            self.recording = json.loads(message)
+        elif topic == Messages.GoProStatus.key:
             self.gopro = json.loads(message)
         elif topic == Messages.GoProShutdown.key:
             self.gopro = None
@@ -217,12 +223,9 @@ class LEDServer(threading.Thread):
             self.__server.green.on(valid=1)
 
     def __handle_led_red(self):
-        if self.gopro is not None and self.gopro['state'] == 4:
+        if self.recording:
             # gopro is recording
-            self.__server.red.blink(valid=1)
-        elif self.gopro is not None and self.gopro['state'] == 3:
-            # gopro has no sdcard!
-            self.__server.red.blink(delay=0.1, valid=1)
+            self.__server.red.on()
         else:
             # gopro is NOT recording
             self.__server.red.off()

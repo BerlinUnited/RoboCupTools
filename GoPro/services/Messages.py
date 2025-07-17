@@ -71,3 +71,9 @@ class GoProStatus(GoPro):
 
 class GoProShutdown(GoPro):
     key = b'gopro/shutdown'
+
+class PiCamStatus(Message):
+    key = b'picam/status'
+
+    def __init__(self, value: dict):
+        self.value = json.dumps(value).encode()

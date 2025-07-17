@@ -59,11 +59,21 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
     
     #@property
     def is_recording(self) -> bool:
+        self._publish(Messages.PiCamStatus(self._is_recording))
         return self._is_recording
 
     @property
     def is_canceled(self) -> bool:
         return self._cancel.is_set()
+
+    def _publish(self, message: Messages.Message):
+        self._logger.warning(f'published is called in picam: {message.key}, {message.value}')
+        try:
+            self.__pub.send_multipart([message.key, message.value])
+        except zmq.error.ContextTerminated:
+            # ignore on stop otherwise something else happen
+            if not self._cancel.is_set():
+                raise
 
     def startRecording(self):
         if not self.is_recording():
@@ -126,6 +136,8 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
 
     def __handle_recording(self, previous_state):
         with self.__gc_lock:
+            self._publish(Messages.PiCamStatus(self._is_recording))
+
             gc_data = self.__gc
             if gc_data is not None:
                 # check if one team is 'invisible'
@@ -166,11 +178,3 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
                 self.stopRecording()
                 # no valid GC data, reset state back to initial
                 previous_state['game'] = GameControlData.STATE_INITIAL
-
-    #@abstractmethod
-    #def _is_recording(self) -> bool:
-    #    """
-    #    Indicates, whether the GoPro is recording (True) or not (False).
-    #    :return:
-    #    """
-    #    return False
