@@ -1,5 +1,6 @@
 import threading
 import logging
+import socket
 import zmq
 import time
 import datetime                                                                             
@@ -37,6 +38,7 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
         self.__sub.connect(f"tcp://localhost:{mq_recv}")
 
         self._cancel = threading.Event()
+        self.hostname = socket.gethostname()
 
         self.__gc = None
         self.__gc_recv = threading.Thread(target=self.__handle_gc)
@@ -66,7 +68,8 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
     def startRecording(self):
         if not self.is_recording():
             self._is_recording = True
-            output_name = f'/home/pi/{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{self.__gc.team[0].teamNumber}_vs_{self.__gc.team[1].teamNumber}.mp4'
+            
+            output_name = f'/home/pi/pi{self.hostname}_{datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{self.__gc.team[0].teamNumber}_vs_{self.__gc.team[1].teamNumber}.mp4'
 
             #timestamp_name = "/home/pi/recording-{date:%Y-%m-%d_%H:%M:%S}.txt".format( date=datetime.datetime.now())
             output = FfmpegOutput(output_name, audio=True)
