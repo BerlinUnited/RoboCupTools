@@ -1,4 +1,19 @@
-# GoPi
+# Raspberry Pi Recording System
+
+We need to set up
+python3 -m venv --system-site-packages .venv
+
+this is important such that the picamera2 module can be used in the venv
+
+
+
+
+
+
+
+
+
+# Old
 
 GoPi is an application designed to record SPL RoboCup games using a GoPro camera, controlled by a Raspberry Pi. 
 The Raspberry Pi listens for new game events from the GameController and manages the GoPro to start or stop recording 
@@ -45,9 +60,8 @@ git clone https://github.com/BerlinUnited/RoboCupTools.git
 # or just the latest code
 git clone --depth=1 https://github.com/BerlinUnited/RoboCupTools.git
 ```
-- `cd` to the `GoPro` directory
 - execute the install script
-  - `sudo ./shell/install.sh`
+  - `sudo ./GoPro/shell/install.sh`
 
 ### Requirements
 - python3 python3-pip python3-venv bluez

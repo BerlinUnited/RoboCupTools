@@ -11,7 +11,7 @@ from services.data.GameControlData import GameControlData
 from utils.Configuration import Configuration
 
 try:
-    import RPi.GPIO as GPIO
+    from gpiozero import LED 
 except (ImportError, RuntimeError):
     class _GPIOMock:
         """Mock class in case this is not running on a raspi."""
@@ -26,48 +26,6 @@ except (ImportError, RuntimeError):
 
     # Create an instance alias
     GPIO = _GPIOMock()
-
-
-class LED:
-    """
-    Represent a LED
-
-    Setting a new state (on/off) doesn't immediately take effect. The new state is only applied if `update()` is
-    called. In order to immediately update the state, use the `update` parameter on the respective method.
-    This implementation somewhat follows the builder pattern.
-    """
-
-    def __init__(self, pin: int):
-        self.__pin = pin
-        self.__state = False
-
-        GPIO.setup(self.__pin, GPIO.OUT)
-        self.update()
-
-    @property
-    def pin(self) -> int:
-        return self.__pin
-
-    def on(self, update: bool = False):
-        self.__state = True
-        if update:
-            self.update()
-
-    def off(self, update: bool = False):
-        self.__state = False
-        if update:
-            self.update()
-
-    def toggle(self, update: bool = False):
-        self.__state = not self.__state
-        if update:
-            self.update()
-
-    def update(self):
-        if self.__state:
-            GPIO.output(self.__pin, GPIO.HIGH)
-        else:
-            GPIO.output(self.__pin, GPIO.LOW)
 
 
 class LEDState:
@@ -125,15 +83,12 @@ class LEDState:
             if self.__valid > 0 and time.time() > self.__valid:
                 self.__led.off()
             # apply LED state
-            self.__led.update()
+            #self.__led.update()
 
 
 class LEDController(threading.Thread):
     def __init__(self):
         super().__init__()
-
-        GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
 
         self.red = LEDState(LED(22))
         self.blue = LEDState(LED(17))
@@ -160,12 +115,14 @@ class LEDController(threading.Thread):
             time.sleep(0.2)
             self.off()
             time.sleep(0.2)
+            
 
     def run(self):
         self.start_animation()
         while not self.__cancel.is_set():
             time.sleep(0.1)
             self.update()
+
         self.off()
 
     def stop(self):
@@ -277,7 +234,6 @@ def main(ctx: zmq.Context = None, config: Configuration = None):
 
     _controller = LEDController()
     _server = LEDServer(_ctx, _config.bus.port_recv, _controller, logger=_config.logger())
-
     _controller.start()
     try:
         _server.run()

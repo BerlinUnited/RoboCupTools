@@ -11,13 +11,14 @@ import time
 import zmq
 
 from scripts import check_gamecontroller, check_bluetooth, video_rename, wake_up_gopro, pair_bluetooth
-from services import MessageBus, GameController, GameLogger, LEDController, GoProController, Webserver
+from services import MessageBus, GameController, GameLogger, LEDController, GoProController, Webserver, PiCamController
 from utils.Configuration import Configuration
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', '-c', type=argparse.FileType(), default='config.ini')
+    parser.add_argument('--picam', action="store_true", default=False)
     parser.add_argument('--verbose', '-v', action='count', default=0)
 
     subparsers = parser.add_subparsers(dest='action', required=True)
@@ -68,12 +69,23 @@ def main(config: Configuration):
     ctx = zmq.Context.instance()
     services = [
         threading.Thread(target=MessageBus.main, args=(ctx, config)),
-        threading.Thread(target=LEDController.main, args=(ctx, config)),
         threading.Thread(target=GameController.main, args=(ctx, config)),
         threading.Thread(target=GameLogger.main, args=(ctx, config)),
-        threading.Thread(target=GoProController.main, args=(ctx, config)),
-        threading.Thread(target=Webserver.main, args=(ctx, config))
+        #threading.Thread(target=GoProController.main, args=(ctx, config)),
+        threading.Thread(target=Webserver.main, args=(ctx, config)),
+        threading.Thread(target=PiCamController.main, args=(ctx, config)),
+        threading.Thread(target=LEDController.main, args=(ctx, config))
     ]
+    if not args.picam:
+        services.append(
+            threading.Thread(target=GoProController.main, args=(ctx, config)),
+        )
+        
+    else:
+        pass
+        #services.append(
+        #    ,
+        #)
 
     try:
         def stop_handler(_s, _f):
@@ -90,9 +102,9 @@ def main(config: Configuration):
         # monitor service threads
         while not stop_event.is_set():
             time.sleep(1)
-            for s in services:
+            for idx, s in enumerate(services):
                 if not s.is_alive():
-                    config.logger().error("Thread %s is not running (anymore)!", str(s.__class__.__name__))
+                    config.logger().error(f"Thread {str(s.__class__.__name__)} is not running (anymore)! - {idx}")
 
         raise SystemExit
     except (KeyboardInterrupt, SystemExit):
@@ -124,7 +136,7 @@ if __name__ == '__main__':
             GameLogger.main()
         elif args.service == 'gc':
             GameController.main()
-        elif args.service == 'gopro':
+        elif args.service == 'gopro' and not args.picam:
             GoProController.main()
         elif args.service == 'web':
             Webserver.main()
