@@ -10,8 +10,8 @@ import threading
 import time
 import zmq
 
-from scripts import check_gamecontroller, check_bluetooth, video_rename, wake_up_gopro, pair_bluetooth
-from services import MessageBus, GameController, GameLogger, LEDController, GoProController, Webserver, PiCamController
+from scripts import check_gamecontroller, video_rename
+from services import MessageBus, GameController, GameLogger, LEDController, Webserver, PiCamController
 from utils.Configuration import Configuration
 
 

@@ -14,17 +14,15 @@ class GameControlData(Struct):
     GAMECONTROLLER_TRUE_DATA_VERSION = 0
 
     GAMECONTROLLER_STRUCT_HEADER = b'RGme'
-    GAMECONTROLLER_STRUCT_VERSION = 18
+    GAMECONTROLLER_STRUCT_VERSION = 19
 
-    COMPETITION_PHASE_ROUNDROBIN  = 0
-    COMPETITION_PHASE_PLAYOFF     = 1
-
-    COMPETITION_TYPE_NORMAL                = 0
-    COMPETITION_TYPE_SHARED_AUTONOMY       = 1
+    COMPETITION_TYPE_SMALL              = 0
+    COMPETITION_TYPE_MIDDLE             = 1
+    COMPETITION_TYPE_LARGE              = 3
 
     GAME_PHASE_NORMAL                   = 0
-    GAME_PHASE_PENALTYSHOOT             = 1
-    GAME_PHASE_OVERTIME                 = 2
+    GAME_PHASE_PENALTY_SHOOT_OUT        = 1
+    GAME_PHASE_EXTRA_TIME               = 2
     GAME_PHASE_TIMEOUT                  = 3
 
     STATE_INITIAL                       = 0
@@ -32,14 +30,14 @@ class GameControlData(Struct):
     STATE_SET                           = 2
     STATE_PLAYING                       = 3
     STATE_FINISHED                      = 4
-    STATE_STANDBY                       = 5
 
     SET_PLAY_NONE                       = 0
-    SET_PLAY_GOAL_KICK                  = 1
-    SET_PLAY_PUSHING_FREE_KICK          = 2
-    SET_PLAY_CORNER_KICK                = 3
-    SET_PLAY_KICK_IN                    = 4
-    SET_PLAY_PENALTY_KICK               = 5
+    SET_PLAY_DIRECT_FREE_KICK           = 1
+    SET_PLAY_INDIRECT_FREE_KICK         = 2
+    SET_PLAY_PENALTY_KICK               = 3
+    SET_PLAY_THROW_IN                   = 4
+    SET_PLAY_GOAL_KICK                  = 5
+    SET_PLAY_CORNER_KICK                = 6
 
     def __init__(self, data=None, **kwargs):
         """Constructor."""
@@ -49,8 +47,8 @@ class GameControlData(Struct):
                                               'B'  # version
                                               'B'  # packetNumber
                                               'B'  # playersPerTeam
-                                              'B'  # competitionPhase
                                               'B'  # competitionType
+                                              'B'  # stopped
                                               'B'  # gamePhase
                                               'B'  # gameState #state
                                               'B'  # setPlay
@@ -63,8 +61,8 @@ class GameControlData(Struct):
         self.packetNumber = kwargs.pop('packetNumber', 0)
         self.playersPerTeam = kwargs.pop('playersPerTeam', 7)
 
-        self.competitionPhase = kwargs.pop('competitionPhase', self.COMPETITION_PHASE_ROUNDROBIN)
-        self.competitionType = kwargs.pop('competitionType', self.COMPETITION_TYPE_NORMAL)
+        self.competitionType = kwargs.pop('competitionType', self.COMPETITION_TYPE_SMALL)
+        self.stopped = kwargs.pop('stopped', 0)
         self.gamePhase = kwargs.pop('gamePhase', self.GAME_PHASE_NORMAL)
         self.gameState = kwargs.pop('gameState', self.STATE_INITIAL)
         self.setPlay = kwargs.pop('setPlay', self.SET_PLAY_NONE)
@@ -104,8 +102,8 @@ class GameControlData(Struct):
         self.packetNumber     = next(it)
         self.playersPerTeam   = next(it)
 
-        self.competitionPhase = next(it)
         self.competitionType  = next(it)
+        self.stopped          = next(it)
         self.gamePhase        = next(it)
         self.gameState        = next(it)
         self.setPlay          = next(it)
@@ -126,8 +124,8 @@ class GameControlData(Struct):
                           self.GAMECONTROLLER_STRUCT_VERSION,
                           self.packetNumber,
                           self.playersPerTeam,
-                          self.competitionPhase,
                           self.competitionType,
+                          self.stopped,
                           self.gamePhase,
                           self.gameState,
                           self.setPlay,
@@ -147,11 +145,11 @@ class GameControlData(Struct):
         out += "      Packet Number: " + str(self.packetNumber & 0xFF) + "\n"
         out += "   Players per Team: " + str(self.playersPerTeam) + "\n"
 
-        out += "   competitionPhase: " + self.getCompetitionPhase() + "\n"
+        out += "            stopped: " + str(self.stopped) + "\n"
         out += "    competitionType: " + self.getCompetitionType() + "\n"
         out += "          gamePhase: " + self.getGamePhase() + "\n"
-        out += "          gameState: " + self.getGameState() + "\n"
-        out += "            setPlay: " + self.getSetPlay() + "\n"
+        #out += "          gameState: " + self.getGameState() + "\n"
+        #out += "            setPlay: " + self.getSetPlay() + "\n"
 
         out += "          firstHalf: "
         if self.firstHalf == 1:
@@ -177,23 +175,18 @@ class GameControlData(Struct):
         else:
             return "undefined({})".format(value)
 
-    def getCompetitionPhase(self):
-        return self.getName({
-            self.COMPETITION_PHASE_ROUNDROBIN: "round robin",
-            self.COMPETITION_PHASE_PLAYOFF   : "playoff",
-        }, self.competitionPhase)
-
     def getCompetitionType(self):
         return self.getName({
-            self.COMPETITION_TYPE_NORMAL: "normal",
-            self.COMPETITION_TYPE_SHARED_AUTONOMY: "COMPETITION_TYPE_SHARED_AUTONOMY"
+            self.COMPETITION_TYPE_SMALL: "Small Division",
+            self.COMPETITION_TYPE_MIDDLE: "Middle Division",
+            self.COMPETITION_TYPE_LARGE: "Large Division",
         }, self.competitionType)
 
     def getGamePhase(self):
         return self.getName({
             self.GAME_PHASE_NORMAL: "normal",
-            self.GAME_PHASE_PENALTYSHOOT: "penalty shoot",
-            self.GAME_PHASE_OVERTIME: "over time",
+            self.GAME_PHASE_PENALTY_SHOOT_OUT: "penalty shoot",
+            self.GAME_PHASE_EXTRA_TIME: "over time",
             self.GAME_PHASE_TIMEOUT: "timeout"
         }, self.gamePhase)
 
@@ -204,17 +197,17 @@ class GameControlData(Struct):
             self.STATE_SET: "set",
             self.STATE_PLAYING: "playing",
             self.STATE_FINISHED: "finished",
-            self.STATE_STANDBY: "standby"
         }, self.gameState)
 
     def getSetPlay(self):
         return self.getName({
             self.SET_PLAY_NONE: "none",
-            self.SET_PLAY_GOAL_KICK: "goal kick",
-            self.SET_PLAY_PUSHING_FREE_KICK: "pushing free kick",
-            self.SET_PLAY_CORNER_KICK: "corner kick",
-            self.SET_PLAY_KICK_IN: "kick in",
-            self.SET_PLAY_PENALTY_KICK: "penalty kick"
+            self.SET_PLAY_DIRECT_FREE_KICK: "SET_PLAY_DIRECT_FREE_KICK",
+            self.SET_PLAY_INDIRECT_FREE_KICK: "SET_PLAY_INDIRECT_FREE_KICK",
+            self.SET_PLAY_PENALTY_KICK : "SET_PLAY_PENALTY_KICK ",
+            self.SET_PLAY_THROW_IN: "SET_PLAY_THROW_IN",
+            self.SET_PLAY_GOAL_KICK : "SET_PLAY_GOAL_KICK ",
+            self.SET_PLAY_CORNER_KICK : "SET_PLAY_CORNER_KICK ",
         }, self.setPlay)
 
 
@@ -359,10 +352,14 @@ class PlayerInfo(Struct):
 
     def __init__(self, data: bytes = None, **kwargs):
         super().__init__('B'   # penalty
-                         'B')  # secsTillUnpenalised
+                         'B'   # secsTillUnpenalised
+                         'B'   # warnings
+                         'B')  # cautions  
 
         self.penalty = kwargs.pop('penalty', 0)
         self.secsTillUnpenalised = kwargs.pop('secsTillUnpenalised', 0)
+        self.warnings = kwargs.pop('warnings', 0)
+        self.cautions = kwargs.pop('cautions', 0)
 
         if data is not None:
             self.unpack(data)
@@ -378,11 +375,13 @@ class PlayerInfo(Struct):
         it = iter(msg)
         self.penalty = next(it)
         self.secsTillUnpenalised = next(it)
+        self.warnings = next(it)
+        self.cautions = next(it)
 
         return True, None
 
     def pack(self):
-        return Struct.pack(self, self.penalty, self.secsTillUnpenalised)
+        return Struct.pack(self, self.penalty, self.secsTillUnpenalised, self.warnings, self.cautions)
 
     def getName(self, names, value):
         if value in names:

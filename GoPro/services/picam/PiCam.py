@@ -45,7 +45,6 @@ class PiCam(threading.Thread, metaclass=ABCMeta):
         self.__gc_lock = threading.Lock()
 
         self.__recording_states = [
-            GameControlData.STATE_STANDBY,
             GameControlData.STATE_READY,
             GameControlData.STATE_SET,
             GameControlData.STATE_PLAYING
